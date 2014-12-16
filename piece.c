@@ -52,6 +52,15 @@ static piece_t *piece_find(piece_table_t *table, int pos, int *offset) {
   return NULL;
 }
 
+static void link(piece_t* prev, piece_t* next) {
+  if (prev) {
+    prev->next = next;
+  }
+  if (next) {
+    next->prev = prev;
+  }
+}
+
 void piece_table_insert(piece_table_t *table, int pos, char c) {
   int offset;
   piece_t *piece = piece_find(table, pos, &offset);
@@ -66,15 +75,9 @@ void piece_table_insert(piece_table_t *table, int pos, char c) {
   fseek(table->add_fp, table->add_pos++, SEEK_SET);
   fputc(c, table->add_fp);
 
-  right_piece->next = piece->next;
-  if (right_piece->next) {
-    right_piece->next->prev = right_piece;
-  }
-
-  piece->next = new_piece;
-  new_piece->prev = piece;
-  new_piece->next = right_piece;
-  right_piece->prev = new_piece;
+  link(right_piece, piece->next);
+  link(piece, new_piece);
+  link(new_piece, right_piece);
 
   table->size++;
 }
@@ -90,12 +93,8 @@ void piece_table_delete(piece_table_t *table, int pos) {
       piece->which, piece->start + offset + 1, piece->length - offset);
   piece->length = offset;
 
-  new_piece->next = piece->next;
-  if (new_piece->next) {
-    new_piece->next->prev = new_piece;
-  }
-  piece->next = new_piece;
-  new_piece->prev = piece;
+  link(new_piece, piece->next);
+  link(piece, new_piece);
 
   table->size--;
 }

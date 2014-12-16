@@ -8,60 +8,80 @@
 
 #define max(x, y) ((x) > (y) ? (x) : (y))
 
-struct cursor {
-  int x;
-  int y;
-};
+static FILE *DEBUG_FP;
 
-struct editor {
-  struct mode* mode;
+typedef struct {
+  // x and y are the screen coordinates.
+  int x; int y;
+  // offset is the offset from the start of the file.
+  int offset;
+} cursor_t;
+
+struct editing_mode_t;
+typedef struct editing_mode_t editing_mode_t;
+
+typedef struct {
+  editing_mode_t* mode;
   piece_table_t* piece_table;
-  struct cursor cursor;
-};
+  cursor_t cursor;
+} editor_t;
 
-typedef void (mode_keypress_handler_t) (struct editor*, struct tb_event*);
+typedef void (mode_keypress_handler_t) (editor_t*, struct tb_event*);
 
-struct mode {
+struct editing_mode_t {
   mode_keypress_handler_t* key_pressed;
 };
 
-void editor_draw(struct editor*);
+void editor_draw(editor_t*);
 void display_file(piece_table_t*);
-void draw_cursor(struct cursor);
+void draw_cursor(cursor_t);
 
-void editor_draw(struct editor *editor) {
+void editor_draw(editor_t *editor) {
   tb_clear();
   display_file(editor->piece_table);
   draw_cursor(editor->cursor);
   tb_present();
 }
 
-void editor_handle_key_press(struct editor *editor, struct tb_event *ev) {
+void editor_handle_key_press(editor_t *editor, struct tb_event *ev) {
   editor->mode->key_pressed(editor, ev);
 }
 
-void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
+void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   if (ev->key & TB_KEY_ESC) {
     exit(0);
   }
+  cursor_t *cursor = &editor->cursor;
   switch (ev->ch) {
     case 'h':
-      editor->cursor.x = max(editor->cursor.x - 1, 0);
+      if (cursor->x > 0) {
+        cursor->x--;
+        cursor->offset--;
+      }
       break;
+    // TODO(isbadawi): Keep track of offset across vertical moves.
     case 'j':
-      editor->cursor.y++;
+      cursor->y++;
       break;
     case 'k':
-      editor->cursor.y = max(editor->cursor.y - 1, 0);
+      cursor->y = max(cursor->y - 1, 0);
       break;
     case 'l':
-      editor->cursor.x++;
+      cursor->x++;
+      cursor->offset++;
+      break;
+    case 'x':
+      piece_table_delete(editor->piece_table, cursor->offset);
+      break;
+    // Just for debugging
+    case 'm':
+      piece_table_dump(editor->piece_table, DEBUG_FP);
       break;
   }
   editor_draw(editor);
 }
 
-struct mode normal_mode = {normal_mode_key_pressed};
+editing_mode_t normal_mode = {normal_mode_key_pressed};
 
 void display_file(piece_table_t *table) {
   int x = 0;
@@ -77,7 +97,7 @@ void display_file(piece_table_t *table) {
   }
 }
 
-void draw_cursor(struct cursor cursor) {
+void draw_cursor(cursor_t cursor) {
   struct tb_cell *cells = tb_cell_buffer();
   struct tb_cell *cell = &cells[cursor.y * tb_width() + cursor.x];
   cell->bg = TB_WHITE;
@@ -90,12 +110,12 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  struct editor editor;
+  DEBUG_FP = fopen("log.txt", "w");
+
+  editor_t editor;
   editor.mode = &normal_mode;
   editor.piece_table = piece_table_new(argv[1]);
-  editor.cursor.x = editor.cursor.y = 0;
-
-  piece_table_dump(editor.piece_table);
+  memset(&editor.cursor, 0, sizeof(cursor_t));
 
   int err = tb_init();
   if (err) {

@@ -38,6 +38,6 @@ void piece_table_delete(piece_table_t *table, int pos);
 char piece_table_get(piece_table_t *table, int pos);
 
 // Exposed for debugging purposes
-void piece_table_dump(piece_table_t *table);
+void piece_table_dump(piece_table_t *table, FILE* fp);
 
 #endif

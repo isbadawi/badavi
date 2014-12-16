@@ -90,7 +90,7 @@ void piece_table_delete(piece_table_t *table, int pos) {
   }
 
   piece_t* new_piece = piece_new(
-      piece->which, piece->start + offset + 1, piece->length - offset);
+      piece->which, piece->start + offset + 1, piece->length - offset - 1);
   piece->length = offset;
 
   link(new_piece, piece->next);
@@ -110,12 +110,13 @@ char piece_table_get(piece_table_t *table, int pos) {
   return fgetc(fp);
 }
 
-void piece_table_dump(piece_table_t* table) {
-  printf("File     Start    Length   (Offset)\n");
+void piece_table_dump(piece_table_t* table, FILE *fp) {
+  fprintf(fp, "File     Start    Length   (Offset)\n");
   int offset = 0;
   for (piece_t* piece = table->head; piece != NULL; piece = piece->next) {
-    printf("%s", piece->which == ADD ? "Add      " : "Original ");
-    printf("%-8d %-8d %-8d\n", piece->start, piece->length, offset);
+    fprintf(fp, "%s", piece->which == ADD ? "Add      " : "Original ");
+    fprintf(fp, "%-8d %-8d %-8d\n", piece->start, piece->length, offset);
     offset += piece->length;
   }
+  fflush(fp);
 }

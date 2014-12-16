@@ -2,7 +2,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <sys/stat.h>
+#include <unistd.h>
 
 static off_t file_size(FILE *fp) {
   struct stat info;
@@ -28,13 +30,18 @@ piece_table_t *piece_table_new(char *filename) {
     return NULL;
   }
 
-  table->original_fp = fopen(filename, "r");
-  table->size = file_size(table->original_fp);
+  if (access(filename, F_OK) == -1) {
+    table->original_fp = NULL;
+    table->size = 0;
+  } else {
+    table->original_fp = fopen(filename, "r");
+    table->size = file_size(table->original_fp);
+  }
   table->add_fp = tmpfile();
   table->add_pos = 0;
   table->head = piece_new(ORIGINAL, 0, table->size);
 
-  if (!table->original_fp || !table->add_fp || !table->head) {
+  if (!table->add_fp || !table->head) {
     return NULL;
   }
   return table;
@@ -52,7 +59,7 @@ static piece_t *piece_find(piece_table_t *table, int pos, int *offset) {
   return NULL;
 }
 
-static void link(piece_t* prev, piece_t* next) {
+static void piece_link(piece_t* prev, piece_t* next) {
   if (prev) {
     prev->next = next;
   }
@@ -75,9 +82,9 @@ void piece_table_insert(piece_table_t *table, int pos, char c) {
   fseek(table->add_fp, table->add_pos++, SEEK_SET);
   fputc(c, table->add_fp);
 
-  link(right_piece, piece->next);
-  link(piece, new_piece);
-  link(new_piece, right_piece);
+  piece_link(right_piece, piece->next);
+  piece_link(piece, new_piece);
+  piece_link(new_piece, right_piece);
 
   table->size++;
 }
@@ -93,8 +100,8 @@ void piece_table_delete(piece_table_t *table, int pos) {
       piece->which, piece->start + offset + 1, piece->length - offset - 1);
   piece->length = offset;
 
-  link(new_piece, piece->next);
-  link(piece, new_piece);
+  piece_link(new_piece, piece->next);
+  piece_link(piece, new_piece);
 
   table->size--;
 }

@@ -1,8 +1,8 @@
-badavi: main.c util.o
-	clang main.c util.o -o badavi -ltermbox
+badavi: main.c piece.o
+	clang main.c piece.o -o badavi -ltermbox
 
-util.o: util.c util.h
-	clang -c util.c
+piece.o: piece.c piece.h
+	clang -c piece.c
 
 hello: hello.c
 	clang hello.c -o hello -ltermbox

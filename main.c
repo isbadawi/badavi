@@ -4,7 +4,9 @@
 
 #include <termbox.h>
 
-#include "util.h"
+#include "piece.h"
+
+#define max(x, y) ((x) > (y) ? (x) : (y))
 
 struct cursor {
   int x;
@@ -13,8 +15,7 @@ struct cursor {
 
 struct editor {
   struct mode* mode;
-  char *buffer;
-  int nlines;
+  piece_table_t* piece_table;
   struct cursor cursor;
 };
 
@@ -25,12 +26,12 @@ struct mode {
 };
 
 void editor_draw(struct editor*);
-void display_file(char *, int);
+void display_file(piece_table_t*);
 void draw_cursor(struct cursor);
 
 void editor_draw(struct editor *editor) {
   tb_clear();
-  display_file(editor->buffer, editor->nlines);
+  display_file(editor->piece_table);
   draw_cursor(editor->cursor);
   tb_present();
 }
@@ -48,7 +49,7 @@ void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
       editor->cursor.x = max(editor->cursor.x - 1, 0);
       break;
     case 'j':
-      editor->cursor.y = min(editor->cursor.y + 1, editor->nlines - 1);
+      editor->cursor.y++;
       break;
     case 'k':
       editor->cursor.y = max(editor->cursor.y - 1, 0);
@@ -62,19 +63,17 @@ void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
 
 struct mode normal_mode = {normal_mode_key_pressed};
 
-
-void draw_text(int x, int y, const char* text) {
-  int len = strlen(text);
-  for (int i = 0; i < len; ++i) {
-    tb_change_cell(x + i, y, text[i], TB_WHITE, TB_DEFAULT);
-  }
-}
-
-void display_file(char *contents, int nlines) {
-  char *line = contents;
-  for (int i = 0; i < nlines; ++i) {
-    draw_text(0, i, line);
-    line = line + strlen(line) + 1;
+void display_file(piece_table_t *table) {
+  int x = 0;
+  int y = 0;
+  for (int i = 0; i < table->size; ++i) {
+    char c = piece_table_get(table, i);
+    if (c == '\n') {
+      ++y;
+      x = 0;
+    } else {
+      tb_change_cell(x++, y, c, TB_WHITE, TB_DEFAULT);
+    }
   }
 }
 
@@ -94,9 +93,10 @@ int main(int argc, char *argv[]) {
 
   struct editor editor;
   editor.mode = &normal_mode;
-  editor.buffer = read_file(argv[1]);
-  editor.nlines = split_lines(editor.buffer);
+  editor.piece_table = piece_table_new(argv[1]);
   editor.cursor.x = editor.cursor.y = 0;
+
+  piece_table_dump(editor.piece_table);
 
   int err = tb_init();
   if (err) {

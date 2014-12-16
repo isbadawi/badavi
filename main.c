@@ -80,9 +80,8 @@ void display_file(piece_table_t *table) {
 void draw_cursor(struct cursor cursor) {
   struct tb_cell *cells = tb_cell_buffer();
   struct tb_cell *cell = &cells[cursor.y * tb_width() + cursor.x];
-  uint16_t temp = cell->fg;
-  cell->fg = cell->bg;
-  cell->bg = temp;
+  cell->bg = TB_WHITE;
+  cell->fg = TB_DEFAULT;
 }
 
 int main(int argc, char *argv[]) {

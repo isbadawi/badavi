@@ -78,6 +78,7 @@ void piece_table_insert(piece_table_t *table, int pos, char c) {
   piece_t *new_piece = piece_new(ADD, table->add_pos, 1);
   piece_t *right_piece = piece_new(
       piece->which, piece->start + offset, piece->length - offset + 1);
+  piece->length = offset;
 
   fseek(table->add_fp, table->add_pos++, SEEK_SET);
   fputc(c, table->add_fp);

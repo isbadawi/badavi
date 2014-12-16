@@ -46,7 +46,11 @@ void editor_draw(editor_t *editor) {
 
 void editor_handle_key_press(editor_t *editor, struct tb_event *ev) {
   editor->mode->key_pressed(editor, ev);
+  editor_draw(editor);
 }
+
+editing_mode_t normal_mode;
+editing_mode_t insert_mode;
 
 void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   if (ev->key & TB_KEY_ESC) {
@@ -54,6 +58,9 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   }
   cursor_t *cursor = &editor->cursor;
   switch (ev->ch) {
+    case 'i':
+      editor->mode = &insert_mode;
+      break;
     case 'h':
       if (cursor->x > 0) {
         cursor->x--;
@@ -82,7 +89,31 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
       piece_table_write(editor->piece_table, editor->file);
       break;
   }
-  editor_draw(editor);
+}
+
+void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
+  cursor_t *cursor = &editor->cursor;
+  char ch;
+  switch (ev->key) {
+    case TB_KEY_ESC:
+      editor->mode = &normal_mode;
+      return;
+    case TB_KEY_ENTER:
+      ch = '\n';
+      break;
+    case TB_KEY_SPACE:
+      ch = ' ';
+      break;
+    default:
+      ch = ev->ch;
+  }
+  piece_table_insert(editor->piece_table, cursor->offset++, ch);
+  if (ch == '\n') {
+    cursor->x = 0;
+    cursor->y++;
+  } else {
+    cursor->x++;
+  }
 }
 
 editing_mode_t normal_mode = {normal_mode_key_pressed};
@@ -115,6 +146,9 @@ int main(int argc, char *argv[]) {
   }
 
   DEBUG_FP = fopen("log.txt", "w");
+
+  normal_mode.key_pressed = normal_mode_key_pressed;
+  insert_mode.key_pressed = insert_mode_key_pressed;
 
   editor_t editor;
   editor.file = argv[1];

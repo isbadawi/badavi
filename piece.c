@@ -120,3 +120,11 @@ void piece_table_dump(piece_table_t* table, FILE *fp) {
   }
   fflush(fp);
 }
+
+void piece_table_write(piece_table_t* table, char *filename) {
+  FILE *fp = fopen(filename, "w");
+  for (int i = 0; i < table->size; ++i) {
+    fputc(piece_table_get(table, i), fp);
+  }
+  fclose(fp);
+}

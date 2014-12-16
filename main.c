@@ -21,6 +21,7 @@ struct editing_mode_t;
 typedef struct editing_mode_t editing_mode_t;
 
 typedef struct {
+  char *file;
   editing_mode_t* mode;
   piece_table_t* piece_table;
   cursor_t cursor;
@@ -77,6 +78,9 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     case 'm':
       piece_table_dump(editor->piece_table, DEBUG_FP);
       break;
+    case 's':
+      piece_table_write(editor->piece_table, editor->file);
+      break;
   }
   editor_draw(editor);
 }
@@ -113,8 +117,9 @@ int main(int argc, char *argv[]) {
   DEBUG_FP = fopen("log.txt", "w");
 
   editor_t editor;
+  editor.file = argv[1];
   editor.mode = &normal_mode;
-  editor.piece_table = piece_table_new(argv[1]);
+  editor.piece_table = piece_table_new(editor.file);
   memset(&editor.cursor, 0, sizeof(cursor_t));
 
   int err = tb_init();

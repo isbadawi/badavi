@@ -1,11 +1,11 @@
-badavi: main.c piece.o
-	clang main.c piece.o -o badavi -ltermbox
+CC = clang
+CFLAGS = -Wall -g
 
-piece.o: piece.c piece.h
-	clang -c piece.c
+OBJECTS=piece.o
 
-hello: hello.c
-	clang hello.c -o hello -ltermbox
+badavi: main.c $(OBJECTS)
+	$(CC) main.c $(OBJECTS) -o badavi $(CFLAGS) -ltermbox
 
+.PHONY: clean
 clean:
 	rm -f *.o

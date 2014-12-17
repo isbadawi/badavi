@@ -24,6 +24,7 @@ typedef struct editing_mode_t editing_mode_t;
 
 typedef struct {
   char *file;
+  int scroll_offset;
   editing_mode_t* mode;
   piece_table_t* piece_table;
   cursor_t cursor;
@@ -35,14 +36,30 @@ struct editing_mode_t {
   mode_keypress_handler_t* key_pressed;
 };
 
-void editor_draw(editor_t*);
-void display_file(piece_table_t*);
-void draw_cursor(cursor_t);
-
 void editor_draw(editor_t *editor) {
   tb_clear();
-  display_file(editor->piece_table);
-  draw_cursor(editor->cursor);
+
+  int x = 0;
+  int y = 0;
+
+  int h = tb_height();
+  int len = editor->piece_table->size;
+  for (int i = editor->scroll_offset; y != h && i < len; ++i) {
+    char c = piece_table_get(editor->piece_table, i);
+    if (c == '\n') {
+      ++y;
+      x = 0;
+    } else {
+      tb_change_cell(x++, y, c, TB_WHITE, TB_DEFAULT);
+    }
+  }
+
+  struct tb_cell *cells = tb_cell_buffer();
+  int cell_index = editor->cursor.y * tb_width() + editor->cursor.x;
+  struct tb_cell *cell = &cells[cell_index];
+  cell->bg = TB_WHITE;
+  cell->fg = TB_DEFAULT;
+
   tb_present();
 }
 
@@ -81,6 +98,15 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
       cursor->y++;
       cursor->x = min(cursor->x, max(0, next_line_length - 1));
       cursor->offset = next_line + cursor->x + 1;
+
+      if (cursor->y == tb_height()) {
+        int next_top_line = piece_table_index_of(
+            editor->piece_table, '\n', editor->scroll_offset);
+        if (next_top_line != -1) {
+          editor->scroll_offset = 1 + next_top_line;
+          cursor->y--;
+        }
+      }
       break;
     }
     case 'k': {
@@ -95,6 +121,13 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
       cursor->y--;
       cursor->x = min(cursor->x, max(0, prev_line_length - 1));
       cursor->offset = prev_prev_line + cursor->x + 1;
+
+      if (cursor->y == -1) {
+        int prev_top_line = piece_table_last_index_of(
+            editor->piece_table, '\n', editor->scroll_offset - 2);
+        editor->scroll_offset = 1 + prev_top_line;
+        cursor->y++;
+      }
       break;
     }
     case 'l': {
@@ -146,29 +179,6 @@ void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   }
 }
 
-editing_mode_t normal_mode = {normal_mode_key_pressed};
-
-void display_file(piece_table_t *table) {
-  int x = 0;
-  int y = 0;
-  for (int i = 0; i < table->size; ++i) {
-    char c = piece_table_get(table, i);
-    if (c == '\n') {
-      ++y;
-      x = 0;
-    } else {
-      tb_change_cell(x++, y, c, TB_WHITE, TB_DEFAULT);
-    }
-  }
-}
-
-void draw_cursor(cursor_t cursor) {
-  struct tb_cell *cells = tb_cell_buffer();
-  struct tb_cell *cell = &cells[cursor.y * tb_width() + cursor.x];
-  cell->bg = TB_WHITE;
-  cell->fg = TB_DEFAULT;
-}
-
 int main(int argc, char *argv[]) {
   if (argc != 2) {
     fprintf(stderr, "usage: ./badavi file\n");
@@ -182,6 +192,7 @@ int main(int argc, char *argv[]) {
 
   editor_t editor;
   editor.file = argv[1];
+  editor.scroll_offset = 0;
   editor.mode = &normal_mode;
   editor.piece_table = piece_table_new(editor.file);
   memset(&editor.cursor, 0, sizeof(cursor_t));

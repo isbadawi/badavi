@@ -15,10 +15,14 @@
 #define ORIGINAL 0
 #define ADD 1
 
-typedef struct piece {
-  char which;
+typedef struct {
   int start;
   int length;
+} region_t;
+
+typedef struct piece {
+  char which;
+  region_t region;
   struct piece *prev;
   struct piece *next;
 } piece_t;

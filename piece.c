@@ -18,8 +18,8 @@ piece_t *piece_new(char which, int start, int length) {
     return NULL;
   }
   piece->which = which;
-  piece->start = start;
-  piece->length = length;
+  piece->region.start = start;
+  piece->region.length = length;
   piece->prev = piece->next = NULL;
   return piece;
 }
@@ -50,11 +50,12 @@ piece_table_t *piece_table_new(char *filename) {
 static piece_t *piece_find(piece_table_t *table, int pos, int *offset) {
   *offset = 0;
   for (piece_t *piece = table->head; piece != NULL; piece = piece->next) {
-    if (*offset + piece->length > pos) {
+    int len = piece->region.length;
+    if (*offset + len > pos) {
       *offset = pos - *offset;
       return piece;
     }
-    *offset += piece->length;
+    *offset += len;
   }
   return NULL;
 }
@@ -77,8 +78,10 @@ void piece_table_insert(piece_table_t *table, int pos, char c) {
 
   piece_t *new_piece = piece_new(ADD, table->add_pos, 1);
   piece_t *right_piece = piece_new(
-      piece->which, piece->start + offset, piece->length - offset + 1);
-  piece->length = offset;
+      piece->which,
+      piece->region.start + offset,
+      piece->region.length - offset + 1);
+  piece->region.length = offset;
 
   fseek(table->add_fp, table->add_pos++, SEEK_SET);
   fputc(c, table->add_fp);
@@ -98,8 +101,10 @@ void piece_table_delete(piece_table_t *table, int pos) {
   }
 
   piece_t* new_piece = piece_new(
-      piece->which, piece->start + offset + 1, piece->length - offset - 1);
-  piece->length = offset;
+      piece->which,
+      piece->region.start + offset + 1,
+      piece->region.length - offset - 1);
+  piece->region.length = offset;
 
   piece_link(new_piece, piece->next);
   piece_link(piece, new_piece);
@@ -114,7 +119,7 @@ char piece_table_get(piece_table_t *table, int pos) {
     return -1;
   }
   FILE *fp = piece->which == ADD ? table->add_fp : table->original_fp;
-  fseek(fp, piece->start + offset, SEEK_SET);
+  fseek(fp, piece->region.start + offset, SEEK_SET);
   return fgetc(fp);
 }
 
@@ -123,8 +128,9 @@ void piece_table_dump(piece_table_t* table, FILE *fp) {
   int offset = 0;
   for (piece_t* piece = table->head; piece != NULL; piece = piece->next) {
     fprintf(fp, "%s", piece->which == ADD ? "Add      " : "Original ");
-    fprintf(fp, "%-8d %-8d %-8d\n", piece->start, piece->length, offset);
-    offset += piece->length;
+    fprintf(fp, "%-8d %-8d %-8d\n",
+        piece->region.start, piece->region.length, offset);
+    offset += piece->region.length;
   }
   fflush(fp);
 }

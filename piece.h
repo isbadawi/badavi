@@ -40,4 +40,7 @@ char piece_table_get(piece_table_t *table, int pos);
 // Exposed for debugging purposes
 void piece_table_dump(piece_table_t *table, FILE* fp);
 
+int piece_table_index_of(piece_table_t *table, char c, int start);
+int piece_table_last_index_of(piece_table_t *table, char c, int start);
+
 #endif

@@ -6,6 +6,8 @@
 
 #include "piece.h"
 
+#define debug(...) fprintf(DEBUG_FP, __VA_ARGS__); fflush(DEBUG_FP);
+#define min(x, y) ((x) < (y) ? (x) : (y))
 #define max(x, y) ((x) > (y) ? (x) : (y))
 
 static FILE *DEBUG_FP;
@@ -67,17 +69,45 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
         cursor->offset--;
       }
       break;
-    // TODO(isbadawi): Keep track of offset across vertical moves.
-    case 'j':
+    case 'j': {
+      int next_line = piece_table_index_of(
+          editor->piece_table, '\n', cursor->offset);
+      int next_next_line = piece_table_index_of(
+          editor->piece_table, '\n', next_line + 1);
+      if (next_next_line == -1) {
+        break;
+      }
+      int next_line_length = next_next_line - next_line - 1;
       cursor->y++;
+      cursor->x = min(cursor->x, max(0, next_line_length - 1));
+      cursor->offset = next_line + cursor->x + 1;
       break;
-    case 'k':
-      cursor->y = max(cursor->y - 1, 0);
+    }
+    case 'k': {
+      int prev_line = piece_table_last_index_of(
+          editor->piece_table, '\n', cursor->offset - 1);
+      if (prev_line == -1) {
+        break;
+      }
+      int prev_prev_line = piece_table_last_index_of(
+          editor->piece_table, '\n', prev_line - 1);
+      int prev_line_length = prev_line - prev_prev_line - 1;
+      cursor->y--;
+      cursor->x = min(cursor->x, max(0, prev_line_length - 1));
+      cursor->offset = prev_prev_line + cursor->x + 1;
       break;
-    case 'l':
+    }
+    case 'l': {
+      int next_line = piece_table_index_of(
+          editor->piece_table, '\n', cursor->offset);
+      if (cursor->offset == next_line ||
+          cursor->offset + 1 == next_line) {
+        break;
+      }
       cursor->x++;
       cursor->offset++;
       break;
+    }
     case 'x':
       piece_table_delete(editor->piece_table, cursor->offset);
       break;

@@ -136,3 +136,21 @@ void piece_table_write(piece_table_t* table, char *filename) {
   }
   fclose(fp);
 }
+
+int piece_table_index_of(piece_table_t *table, char c, int start) {
+  for (int i = start; i < table->size; ++i) {
+    if (piece_table_get(table, i) == c) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+int piece_table_last_index_of(piece_table_t *table, char c, int start) {
+  for (int i = start; i >= 0; --i) {
+    if (piece_table_get(table, i) == c) {
+      return i;
+    }
+  }
+  return -1;
+}

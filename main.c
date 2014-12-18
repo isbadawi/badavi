@@ -5,12 +5,7 @@
 #include <termbox.h>
 
 #include "piece.h"
-
-#define debug(...) fprintf(DEBUG_FP, __VA_ARGS__); fflush(DEBUG_FP);
-#define min(x, y) ((x) < (y) ? (x) : (y))
-#define max(x, y) ((x) > (y) ? (x) : (y))
-
-static FILE *DEBUG_FP;
+#include "util.h"
 
 typedef struct {
   // x and y are the screen coordinates.
@@ -146,7 +141,7 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
       break;
     // Just for debugging
     case 'm':
-      piece_table_dump(editor->piece_table, DEBUG_FP);
+      piece_table_dump(editor->piece_table, debug_fp());
       break;
     case 's':
       piece_table_write(editor->piece_table, editor->file);
@@ -185,7 +180,7 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  DEBUG_FP = fopen("log.txt", "w");
+  debug_init();
 
   normal_mode.key_pressed = normal_mode_key_pressed;
   insert_mode.key_pressed = insert_mode_key_pressed;

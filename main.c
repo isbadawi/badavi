@@ -138,6 +138,18 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     case 'l': editor_move_right(editor); break;
     case 'j': editor_move_down(editor); break;
     case 'k': editor_move_up(editor); break;
+    case 'J':
+      if (!cursor->line->next) {
+        break;
+      }
+      buf_insert(cursor->line->buf, " ", cursor->line->buf->len);
+      cursor->offset = cursor->line->buf->len;
+      buf_insert(
+          cursor->line->buf,
+          cursor->line->next->buf->buf,
+          cursor->line->buf->len);
+      file_remove_line(editor->file, cursor->line->next);
+      break;
     case 'x':
       if (cursor->offset == cursor->line->buf->len) {
         break;

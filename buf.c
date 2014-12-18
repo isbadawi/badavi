@@ -58,3 +58,18 @@ int buf_append(buf_t *buf, const char *s) {
   buf->len += len;
   return 0;
 }
+
+int buf_delete(buf_t *buf, int pos, int len) {
+  if (pos < 0 || pos >= buf->len || pos + len >= buf->len) {
+    return -1;
+  }
+
+  memmove(
+      buf->buf + pos,
+      buf->buf + pos + len,
+      buf->len - (pos + len));
+
+  buf->len -= len;
+  buf->buf[buf->len] = '\0';
+  return 0;
+}

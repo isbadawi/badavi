@@ -106,7 +106,10 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
       // TODO(isbadawi): Scroll up
       break;
     case 'x':
-      // TODO(isbadawi): Delete char under cursor
+      if (cursor->offset == cursor->line->buf->len) {
+        break;
+      }
+      buf_delete(cursor->line->buf, cursor->offset, 1);
       break;
     // Just temporary until : commands are implemented
     case 's':

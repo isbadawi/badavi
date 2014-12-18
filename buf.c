@@ -37,11 +37,11 @@ buf_t *buf_from_cstr(const char *s) {
     return NULL;
   }
 
-  buf_append(buf, s);
+  buf_insert(buf, s, buf->len);
   return buf;
 }
 
-int buf_append(buf_t *buf, const char *s) {
+int buf_insert(buf_t *buf, const char *s, int pos) {
   int len = strlen(s);
   int new_len = buf->len + len;
 
@@ -54,8 +54,20 @@ int buf_append(buf_t *buf, const char *s) {
     }
   }
 
-  strcpy(buf->buf + buf->len, s);
+  // Move the bit after the insertion...
+  memmove(
+      buf->buf + pos + len,
+      buf->buf + pos,
+      buf->len - pos);
+
+  // Stitch the new part in.
+  memmove(
+      buf->buf + pos,
+      s,
+      len);
+
   buf->len += len;
+  buf->buf[buf->len] = '\0';
   return 0;
 }
 

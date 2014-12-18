@@ -43,7 +43,7 @@ file_t *file_read(char *path) {
         chunk[i] = '\0';
         debug("line: \"%s\"\n", start);
         if (last_line) {
-          buf_append(last_line->buf, start);
+          buf_insert(last_line->buf, start, last_line->buf->len);
           last_line = NULL;
         } else {
           file_insert_line(file, start, file->nlines);

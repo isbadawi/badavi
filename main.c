@@ -149,7 +149,8 @@ void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     default:
       ch = ev->ch;
   }
-  // TODO(isbadawi): Insert char before cursor
+  char s[2] = {ch, '\0'};
+  buf_insert(cursor->line->buf, s, cursor->offset++);
 }
 
 int main(int argc, char *argv[]) {

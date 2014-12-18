@@ -36,11 +36,11 @@ int file_write(file_t *file, char *path);
 
 // Inserts a line consisting of s at position pos (starting from 0).
 // Returns the newly created line, or NULL.
-line_t *file_insert_line(file_t *file, const char *s, int pos);
+line_t *file_insert_line(file_t *file, char *s, int pos);
 
 // Inserts a line consisting of s after line.
 // Returns the newly created line, or NULL.
-line_t *file_insert_line_after(file_t *file, const char *s, line_t *line);
+line_t *file_insert_line_after(file_t *file, char *s, line_t *line);
 
 // Removes the given line from the file.
 void file_remove_line(file_t *file, line_t *line);

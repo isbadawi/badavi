@@ -76,7 +76,7 @@ int file_write(file_t *file, char *path) {
   return 0;
 }
 
-static line_t *line_create(const char *s) {
+static line_t *line_create(char *s) {
   line_t *line = malloc(sizeof(line_t));
   if (!line) {
     return NULL;
@@ -93,7 +93,7 @@ static line_t *line_create(const char *s) {
   return line;
 }
 
-line_t *file_insert_line(file_t *file, const char *s, int pos) {
+line_t *file_insert_line(file_t *file, char *s, int pos) {
   if (pos < 0 || pos > file->nlines) {
     return NULL;
   }
@@ -106,7 +106,7 @@ line_t *file_insert_line(file_t *file, const char *s, int pos) {
   return file_insert_line_after(file, s, prev);
 }
 
-line_t *file_insert_line_after(file_t *file, const char *s, line_t *line) {
+line_t *file_insert_line_after(file_t *file, char *s, line_t *line) {
   line_t *new = line_create(s);
   if (!new) {
     return NULL;

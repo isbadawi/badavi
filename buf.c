@@ -76,7 +76,7 @@ int buf_insert(buf_t *buf, const char *s, int pos) {
 }
 
 int buf_delete(buf_t *buf, int pos, int len) {
-  if (pos < 0 || pos >= buf->len || pos + len >= buf->len) {
+  if (pos < 0 || pos >= buf->len || pos + len > buf->len) {
     return -1;
   }
 

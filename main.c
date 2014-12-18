@@ -178,8 +178,17 @@ void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
       }
       return;
     case TB_KEY_ENTER:
-      ch = '\n';
-      break;
+      file_insert_line_after(
+          editor->file,
+          cursor->line->buf->buf + cursor->offset,
+          cursor->line);
+      buf_delete(
+          cursor->line->buf,
+          cursor->offset,
+          cursor->line->buf->len - cursor->offset);
+      editor_move_down(editor);
+      cursor->offset = 0;
+      return;
     case TB_KEY_SPACE:
       ch = ' ';
       break;

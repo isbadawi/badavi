@@ -123,6 +123,16 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     case 'i':
       editor->mode = &insert_mode;
       break;
+    case '0': cursor->offset = 0; break;
+    case '$': cursor->offset = cursor->line->buf->len; break;
+    case 'I':
+      cursor->offset = 0;
+      editor->mode = &insert_mode;
+      break;
+    case 'A':
+      cursor->offset = cursor->line->buf->len;
+      editor->mode = &insert_mode;
+      break;
     // TODO(isbadawi): Scrolling left and right
     case 'h': editor_move_left(editor); break;
     case 'l': editor_move_right(editor); break;
@@ -133,6 +143,12 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
         break;
       }
       buf_delete(cursor->line->buf, cursor->offset, 1);
+      break;
+    case 'D':
+      buf_delete(
+          cursor->line->buf,
+          cursor->offset,
+          cursor->line->buf->len - cursor->offset);
       break;
     case 'o':
       file_insert_line_after(editor->file, "", cursor->line);

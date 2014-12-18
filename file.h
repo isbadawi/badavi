@@ -34,8 +34,12 @@ file_t *file_read(char *path);
 // existing file).
 int file_write(file_t *file, char *path);
 
-// Inserts a line consisting of the given s at position pos (starting from 0).
+// Inserts a line consisting of s at position pos (starting from 0).
 // Returns the newly created line, or NULL.
 line_t *file_insert_line(file_t *file, const char *s, int pos);
+
+// Inserts a line consisting of s after line.
+// Returns the newly created line, or NULL.
+line_t *file_insert_line_after(file_t *file, const char *s, line_t *line);
 
 #endif

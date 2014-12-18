@@ -98,22 +98,26 @@ line_t *file_insert_line(file_t *file, const char *s, int pos) {
     return NULL;
   }
 
-  line_t *new = line_create(s);
-  if (!new) {
-    return NULL;
-  }
-
   line_t *prev = file->head;
   for (int i = 0; i < pos; ++i) {
     prev = prev->next;
   }
 
-  new->next = prev->next;
+  return file_insert_line_after(file, s, prev);
+}
+
+line_t *file_insert_line_after(file_t *file, const char *s, line_t *line) {
+  line_t *new = line_create(s);
+  if (!new) {
+    return NULL;
+  }
+
+  new->next = line->next;
   if (new->next) {
     new->next->prev = new;
   }
-  prev->next = new;
-  new->prev = prev;
+  line->next = new;
+  new->prev = line;
 
   file->nlines++;
   file->size += strlen(s);

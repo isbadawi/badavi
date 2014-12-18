@@ -66,6 +66,45 @@ void editor_draw(editor_t *editor) {
   tb_present();
 }
 
+void editor_move_left(editor_t *editor) {
+  editor->cursor->offset = max(editor->cursor->offset - 1, 0);
+}
+
+void editor_move_right(editor_t *editor) {
+  int len = editor->cursor->line->buf->len;
+  editor->cursor->offset = min(editor->cursor->offset + 1, len);
+}
+
+void editor_move_up(editor_t *editor) {
+  cursor_t *cursor = editor->cursor;
+  if (!cursor->line->prev->buf) {
+    return;
+  }
+  cursor->line = cursor->line->prev;
+  cursor->offset = min(cursor->offset, cursor->line->buf->len);
+
+  if (cursor->y == 0) {
+    editor->top = editor->top->prev;
+  } else {
+    cursor->y--;
+  }
+}
+
+void editor_move_down(editor_t *editor) {
+  cursor_t *cursor = editor->cursor;
+  if (!cursor->line->next) {
+    return;
+  }
+  cursor->line = cursor->line->next;
+  cursor->offset = min(cursor->offset, cursor->line->buf->len);
+
+  if (cursor->y == tb_height() - 1) {
+    editor->top = editor->top->next;
+  } else {
+    cursor->y++;
+  }
+}
+
 // The editor handles key presses by delegating to its mode.
 void editor_handle_key_press(editor_t *editor, struct tb_event *ev) {
   editor->mode->key_pressed(editor, ev);
@@ -85,43 +124,30 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
       editor->mode = &insert_mode;
       break;
     // TODO(isbadawi): Scrolling left and right
-    case 'h':
-      cursor->offset = max(cursor->offset - 1, 0);
-      break;
-    case 'l':
-      cursor->offset = min(cursor->offset + 1, cursor->line->buf->len);
-      break;
-    case 'j':
-      if (!cursor->line->next) {
-        break;
-      }
-      cursor->line = cursor->line->next;
-      cursor->offset = min(cursor->offset, cursor->line->buf->len);
-
-      if (cursor->y == tb_height() - 1) {
-        editor->top = editor->top->next;
-      } else {
-        cursor->y++;
-      }
-      break;
-    case 'k':
-      if (!cursor->line->prev->buf) {
-        break;
-      }
-      cursor->line = cursor->line->prev;
-      cursor->offset = min(cursor->offset, cursor->line->buf->len);
-
-      if (cursor->y == 0) {
-        editor->top = editor->top->prev;
-      } else {
-        cursor->y--;
-      }
-      break;
+    case 'h': editor_move_left(editor); break;
+    case 'l': editor_move_right(editor); break;
+    case 'j': editor_move_down(editor); break;
+    case 'k': editor_move_up(editor); break;
     case 'x':
       if (cursor->offset == cursor->line->buf->len) {
         break;
       }
       buf_delete(cursor->line->buf, cursor->offset, 1);
+      break;
+    case 'o':
+      file_insert_line_after(editor->file, "", cursor->line);
+      editor_move_down(editor);
+      editor->mode = &insert_mode;
+      break;
+    case 'O':
+      file_insert_line_after(editor->file, "", cursor->line->prev);
+      if (cursor->y == 0) {
+        editor_move_up(editor);
+      } else {
+        cursor->line = cursor->line->prev;
+        cursor->offset = 0;
+      }
+      editor->mode = &insert_mode;
       break;
     // Just temporary until : commands are implemented
     case 's':

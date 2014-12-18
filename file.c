@@ -51,8 +51,11 @@ file_t *file_read(char *path) {
         start = chunk + i + 1;
       }
     }
+    // Add the rest of this chunk to a new line that we'll append to later.
     chunk[n] = '\0';
-    last_line = file_insert_line(file, start, file->nlines);
+    if (strlen(start) != 0) {
+      last_line = file_insert_line(file, start, file->nlines);
+    }
   }
 
   return file;

@@ -164,6 +164,20 @@ void piece_table_write(piece_table_t* table, char *filename) {
     fwrite(buf, 1, n, fp);
   }
   fclose(fp);
+
+  // The pieces are now stale -- free them and start fresh...
+  piece_t *piece = table->head;
+  while (piece != NULL) {
+    piece_t *temp = piece;
+    piece = piece->next;
+    free(temp);
+  }
+  table->head = piece_new(ORIGINAL, 0, table->size);
+  // Replace the original file pointer with a newly opened one.
+  // This seems to be required, because reads are cached or something.
+  FILE *copy = fdopen(dup(fileno(table->original_fp)), "r");
+  fclose(table->original_fp);
+  table->original_fp = copy;
 }
 
 int piece_table_index_of(piece_table_t *table, char c, int start) {

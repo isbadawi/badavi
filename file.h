@@ -20,8 +20,6 @@ typedef struct {
   line_t *head;
   // Number of lines in the file.
   int nlines;
-  // Number of characters in the file.
-  int size;
 } file_t;
 
 // All functions returns 0 on success, negative number on error.

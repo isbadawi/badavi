@@ -31,7 +31,6 @@ file_t *file_read(char *path) {
   file->head->next = NULL;
 
   file->nlines = 0;
-  file->size = 0;
 
   char chunk[1024 + 1];
   line_t *last_line = NULL;
@@ -120,7 +119,6 @@ line_t *file_insert_line_after(file_t *file, char *s, line_t *line) {
   new->prev = line;
 
   file->nlines++;
-  file->size += strlen(s);
 
   return new;
 }
@@ -132,4 +130,6 @@ void file_remove_line(file_t *file, line_t *line) {
   }
   buf_free(line->buf);
   free(line);
+
+  file->nlines--;
 }

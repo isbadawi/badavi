@@ -14,6 +14,10 @@ typedef struct {
   line_t *line;
   // The offset of the cursor within that line.
   int offset;
+
+  // y offset from the top of the screen.
+  // Used to implement scrolling -- not sure if this belongs here.
+  int y;
 } cursor_t;
 
 struct editing_mode_t;
@@ -94,7 +98,11 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
       cursor->line = cursor->line->next;
       cursor->offset = min(cursor->offset, cursor->line->buf->len);
 
-      // TODO(isbadawi): Scroll down
+      if (cursor->y == tb_height() - 1) {
+        editor->top = editor->top->next;
+      } else {
+        cursor->y++;
+      }
       break;
     case 'k':
       if (!cursor->line->prev->buf) {
@@ -103,7 +111,11 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
       cursor->line = cursor->line->prev;
       cursor->offset = min(cursor->offset, cursor->line->buf->len);
 
-      // TODO(isbadawi): Scroll up
+      if (cursor->y == 0) {
+        editor->top = editor->top->prev;
+      } else {
+        cursor->y--;
+      }
       break;
     case 'x':
       if (cursor->offset == cursor->line->buf->len) {
@@ -159,6 +171,7 @@ int main(int argc, char *argv[]) {
   cursor_t cursor;
   cursor.line = editor.top;
   cursor.offset = 0;
+  cursor.y = 0;
   editor.cursor = &cursor;
 
   int err = tb_init();

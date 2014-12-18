@@ -48,6 +48,16 @@ struct editing_mode_t {
 void editor_draw(editor_t *editor) {
   tb_clear();
 
+  while (editor->cursor->y >= tb_height()) {
+    editor->top = editor->top->next;
+    editor->cursor->y--;
+  }
+
+  while (editor->cursor->y < 0) {
+    editor->cursor->y++;
+    editor->top = editor->top->prev;
+  }
+
   int y = 0;
   int w = tb_width();
   int h = tb_height();
@@ -82,12 +92,7 @@ void editor_move_up(editor_t *editor) {
   }
   cursor->line = cursor->line->prev;
   cursor->offset = min(cursor->offset, cursor->line->buf->len);
-
-  if (cursor->y == 0) {
-    editor->top = editor->top->prev;
-  } else {
-    cursor->y--;
-  }
+  cursor->y--;
 }
 
 void editor_move_down(editor_t *editor) {
@@ -97,12 +102,7 @@ void editor_move_down(editor_t *editor) {
   }
   cursor->line = cursor->line->next;
   cursor->offset = min(cursor->offset, cursor->line->buf->len);
-
-  if (cursor->y == tb_height() - 1) {
-    editor->top = editor->top->next;
-  } else {
-    cursor->y++;
-  }
+  cursor->y++;
 }
 
 // The editor handles key presses by delegating to its mode.

@@ -4,62 +4,65 @@
 
 #include <termbox.h>
 
-#include "piece.h"
+#include "file.h"
+#include "buf.h"
+
 #include "util.h"
 
 typedef struct {
-  // x and y are the screen coordinates.
-  int x; int y;
-  // offset is the offset from the start of the file.
+  // The line the cursor is on.
+  line_t *line;
+  // The offset of the cursor within that line.
   int offset;
 } cursor_t;
 
 struct editing_mode_t;
 typedef struct editing_mode_t editing_mode_t;
 
+// The "editor" holds the main state of the program.
 typedef struct {
-  char *file;
-  int scroll_offset;
+  // The file being edited (only one file for now).
+  file_t *file;
+  // The path to the file being edited.
+  char *path;
+  // The top line visible on screen.
+  line_t *top;
+  // The editing mode (e.g. normal mode, insert mode, etc.)
   editing_mode_t* mode;
-  piece_table_t* piece_table;
-  cursor_t cursor;
+  // The cursor.
+  cursor_t* cursor;
 } editor_t;
 
+// The editing mode for now is just a function that handles key events.
 typedef void (mode_keypress_handler_t) (editor_t*, struct tb_event*);
 
 struct editing_mode_t {
   mode_keypress_handler_t* key_pressed;
 };
 
+// Draws the visible portion of the file to the screen.
 void editor_draw(editor_t *editor) {
   tb_clear();
 
-  char buf[1024 * 1024];
-  region_t region;
-  region.start = editor->scroll_offset;
-  region.length = min(
-      tb_height() * tb_width(),
-      editor->piece_table->size - editor->scroll_offset);
-  piece_table_get(editor->piece_table, region, buf);
-  buf[region.length] = '\0';
-  for (int i = 0, x = 0, y = 0; i < region.length && y != tb_height(); ++i) {
-    if (buf[i] == '\n') {
-      ++y;
-      x = 0;
-    } else {
-      tb_change_cell(x++, y, buf[i], TB_WHITE, TB_DEFAULT);
+  int y = 0;
+  int w = tb_width();
+  int h = tb_height();
+  for (line_t *line = editor->top; line && y < h; line = line->next) {
+    debug("y = %d\n", y);
+    for (int x = 0; x < line->buf->len && x < w; ++x) {
+      tb_change_cell(x, y, line->buf->buf[x], TB_WHITE, TB_DEFAULT);
     }
+    if (line == editor->cursor->line) {
+      int x = editor->cursor->offset;
+      tb_change_cell(x, y, line->buf->buf[x], TB_DEFAULT, TB_WHITE);
+    }
+    y++;
   }
-
-  struct tb_cell *cells = tb_cell_buffer();
-  int cell_index = editor->cursor.y * tb_width() + editor->cursor.x;
-  struct tb_cell *cell = &cells[cell_index];
-  cell->bg = TB_WHITE;
-  cell->fg = TB_DEFAULT;
 
   tb_present();
 }
 
+// The editor handles key presses by delegating to its mode.
 void editor_handle_key_press(editor_t *editor, struct tb_event *ev) {
   editor->mode->key_pressed(editor, ev);
   editor_draw(editor);
@@ -72,91 +75,55 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   if (ev->key & TB_KEY_ESC) {
     exit(0);
   }
-  cursor_t *cursor = &editor->cursor;
+  cursor_t *cursor = editor->cursor;
   switch (ev->ch) {
     case 'i':
       editor->mode = &insert_mode;
       break;
+    // TODO(isbadawi): Scrolling left and right
     case 'h':
-      if (cursor->x > 0) {
-        cursor->x--;
-        cursor->offset--;
-      }
+      cursor->offset = max(cursor->offset - 1, 0);
       break;
-    case 'j': {
-      int next_line = piece_table_index_of(
-          editor->piece_table, '\n', cursor->offset);
-      int next_next_line = piece_table_index_of(
-          editor->piece_table, '\n', next_line + 1);
-      if (next_next_line == -1) {
+    case 'l':
+      cursor->offset = min(cursor->offset + 1, cursor->line->buf->len);
+      break;
+    case 'j':
+      if (!cursor->line->next) {
         break;
       }
-      int next_line_length = next_next_line - next_line - 1;
-      cursor->y++;
-      cursor->x = min(cursor->x, max(0, next_line_length - 1));
-      cursor->offset = next_line + cursor->x + 1;
+      cursor->line = cursor->line->next;
+      cursor->offset = min(cursor->offset, cursor->line->buf->len);
 
-      if (cursor->y == tb_height()) {
-        int next_top_line = piece_table_index_of(
-            editor->piece_table, '\n', editor->scroll_offset);
-        if (next_top_line != -1) {
-          editor->scroll_offset = 1 + next_top_line;
-          cursor->y--;
-        }
-      }
+      // TODO(isbadawi): Scroll down
       break;
-    }
-    case 'k': {
-      int prev_line = piece_table_last_index_of(
-          editor->piece_table, '\n', cursor->offset - 1);
-      if (prev_line == -1) {
+    case 'k':
+      if (!cursor->line->prev->buf) {
         break;
       }
-      int prev_prev_line = piece_table_last_index_of(
-          editor->piece_table, '\n', prev_line - 1);
-      int prev_line_length = prev_line - prev_prev_line - 1;
-      cursor->y--;
-      cursor->x = min(cursor->x, max(0, prev_line_length - 1));
-      cursor->offset = prev_prev_line + cursor->x + 1;
+      cursor->line = cursor->line->prev;
+      cursor->offset = min(cursor->offset, cursor->line->buf->len);
 
-      if (cursor->y == -1) {
-        int prev_top_line = piece_table_last_index_of(
-            editor->piece_table, '\n', editor->scroll_offset - 2);
-        editor->scroll_offset = 1 + prev_top_line;
-        cursor->y++;
-      }
+      // TODO(isbadawi): Scroll up
       break;
-    }
-    case 'l': {
-      int next_line = piece_table_index_of(
-          editor->piece_table, '\n', cursor->offset);
-      if (cursor->offset == next_line ||
-          cursor->offset + 1 == next_line) {
-        break;
-      }
-      cursor->x++;
-      cursor->offset++;
-      break;
-    }
     case 'x':
-      piece_table_delete(editor->piece_table, cursor->offset);
+      // TODO(isbadawi): Delete char under cursor
       break;
-    // Just for debugging
-    case 'm':
-      piece_table_dump(editor->piece_table, debug_fp());
-      break;
+    // Just temporary until : commands are implemented
     case 's':
-      piece_table_write(editor->piece_table, editor->file);
+      file_write(editor->file, editor->path);
       break;
   }
 }
 
 void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
-  cursor_t *cursor = &editor->cursor;
+  cursor_t *cursor = editor->cursor;
   char ch;
   switch (ev->key) {
     case TB_KEY_ESC:
       editor->mode = &normal_mode;
+      return;
+    case TB_KEY_BACKSPACE2:
+      // TODO(isbadawi): Handle backspace (and find out why BACKSPACE2)
       return;
     case TB_KEY_ENTER:
       ch = '\n';
@@ -167,13 +134,7 @@ void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     default:
       ch = ev->ch;
   }
-  piece_table_insert(editor->piece_table, cursor->offset++, ch);
-  if (ch == '\n') {
-    cursor->x = 0;
-    cursor->y++;
-  } else {
-    cursor->x++;
-  }
+  // TODO(isbadawi): Insert char before cursor
 }
 
 int main(int argc, char *argv[]) {
@@ -188,11 +149,14 @@ int main(int argc, char *argv[]) {
   insert_mode.key_pressed = insert_mode_key_pressed;
 
   editor_t editor;
-  editor.file = argv[1];
-  editor.scroll_offset = 0;
+  editor.path = argv[1];
+  editor.file = file_read(editor.path);
+  editor.top = editor.file->head->next;
   editor.mode = &normal_mode;
-  editor.piece_table = piece_table_new(editor.file);
-  memset(&editor.cursor, 0, sizeof(cursor_t));
+  cursor_t cursor;
+  cursor.line = editor.top;
+  cursor.offset = 0;
+  editor.cursor = &cursor;
 
   int err = tb_init();
   if (err) {

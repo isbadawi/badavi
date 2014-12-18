@@ -41,6 +41,10 @@ buf_t *buf_from_cstr(const char *s) {
   return buf;
 }
 
+void buf_free(buf_t *buf) {
+  free(buf->buf);
+}
+
 int buf_insert(buf_t *buf, const char *s, int pos) {
   int len = strlen(s);
   int new_len = buf->len + len;

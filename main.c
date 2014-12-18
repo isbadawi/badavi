@@ -164,7 +164,18 @@ void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
       editor->mode = &normal_mode;
       return;
     case TB_KEY_BACKSPACE2:
-      // TODO(isbadawi): Handle backspace (and find out why BACKSPACE2)
+      if (cursor->offset > 0) {
+        buf_delete(cursor->line->buf, cursor->offset-- - 1, 1);
+      } else if (cursor->line->prev->buf) {
+        int prev_len = cursor->line->prev->buf->len;
+        buf_insert(
+            cursor->line->prev->buf,
+            cursor->line->buf->buf,
+            prev_len);
+        editor_move_up(editor);
+        file_remove_line(editor->file, cursor->line->next);
+        cursor->offset = prev_len;
+      }
       return;
     case TB_KEY_ENTER:
       ch = '\n';

@@ -124,3 +124,12 @@ line_t *file_insert_line_after(file_t *file, const char *s, line_t *line) {
 
   return new;
 }
+
+void file_remove_line(file_t *file, line_t *line) {
+  line->prev->next = line->next;
+  if (line->next) {
+    line->next->prev = line->prev;
+  }
+  buf_free(line->buf);
+  free(line);
+}

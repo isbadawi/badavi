@@ -42,4 +42,7 @@ line_t *file_insert_line(file_t *file, const char *s, int pos);
 // Returns the newly created line, or NULL.
 line_t *file_insert_line_after(file_t *file, const char *s, line_t *line);
 
+// Removes the given line from the file.
+void file_remove_line(file_t *file, line_t *line);
+
 #endif

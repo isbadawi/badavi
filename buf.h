@@ -11,8 +11,10 @@ typedef struct {
 
 buf_t *buf_create(int cap);
 buf_t *buf_from_cstr(const char *s);
+void buf_free(buf_t *buf);
 
 int buf_delete(buf_t *buf, int pos, int len);
 int buf_insert(buf_t *buf, const char *s, int pos);
+
 
 #endif

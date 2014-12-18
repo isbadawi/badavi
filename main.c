@@ -34,18 +34,20 @@ struct editing_mode_t {
 void editor_draw(editor_t *editor) {
   tb_clear();
 
-  int x = 0;
-  int y = 0;
-
-  int h = tb_height();
-  int len = editor->piece_table->size;
-  for (int i = editor->scroll_offset; y != h && i < len; ++i) {
-    char c = piece_table_get(editor->piece_table, i);
-    if (c == '\n') {
+  char buf[1024 * 1024];
+  region_t region;
+  region.start = editor->scroll_offset;
+  region.length = min(
+      tb_height() * tb_width(),
+      editor->piece_table->size - editor->scroll_offset);
+  piece_table_get(editor->piece_table, region, buf);
+  buf[region.length] = '\0';
+  for (int i = 0, x = 0, y = 0; i < region.length && y != tb_height(); ++i) {
+    if (buf[i] == '\n') {
       ++y;
       x = 0;
     } else {
-      tb_change_cell(x++, y, c, TB_WHITE, TB_DEFAULT);
+      tb_change_cell(x++, y, buf[i], TB_WHITE, TB_DEFAULT);
     }
   }
 

@@ -38,8 +38,14 @@ typedef struct {
 piece_table_t *piece_table_new(char *filename);
 void piece_table_write(piece_table_t* table, char *filename);
 void piece_table_insert(piece_table_t *table, int pos, char c);
+
 void piece_table_delete(piece_table_t *table, int pos);
-char piece_table_get(piece_table_t *table, int pos);
+// Read the text in the given region into buf.
+//
+// The following preconditions must hold:
+// * buf must have at least region.length bytes available.
+// * region.start + region.length < table->size
+void piece_table_get(piece_table_t *table, region_t region, char* buf);
 
 // Exposed for debugging purposes
 void piece_table_dump(piece_table_t *table, FILE* fp);

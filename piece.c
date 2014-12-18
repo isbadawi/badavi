@@ -6,6 +6,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "util.h"
+
 static off_t file_size(FILE *fp) {
   struct stat info;
   fstat(fileno(fp), &info);
@@ -112,15 +114,33 @@ void piece_table_delete(piece_table_t *table, int pos) {
   table->size--;
 }
 
-char piece_table_get(piece_table_t *table, int pos) {
-  int offset;
-  piece_t *piece = piece_find(table, pos, &offset);
-  if (!piece) {
-    return -1;
-  }
+static int piece_read(
+    piece_table_t *table,
+    piece_t *piece,
+    region_t region,
+    char *buf) {
+  int readmax = piece->region.length - region.start;
+  int n = region.length;
+  n = n < 0 ? readmax : min(readmax, n);
+
   FILE *fp = piece->which == ADD ? table->add_fp : table->original_fp;
-  fseek(fp, piece->region.start + offset, SEEK_SET);
-  return fgetc(fp);
+  fseek(fp, piece->region.start + region.start, SEEK_SET);
+  return fread(buf, 1, n, fp);
+}
+
+void piece_table_get(piece_table_t *table, region_t region, char *buf) {
+  int offset;
+  piece_t *piece = piece_find(table, region.start, &offset);
+  region.start = offset;
+  while (region.length != 0) {
+    int bytes_read = piece_read(table, piece, region, buf);
+
+    buf += bytes_read;
+
+    piece = piece->next;
+    region.start = 0;
+    region.length -= bytes_read;
+  }
 }
 
 void piece_table_dump(piece_table_t* table, FILE *fp) {
@@ -136,27 +156,48 @@ void piece_table_dump(piece_table_t* table, FILE *fp) {
 }
 
 void piece_table_write(piece_table_t* table, char *filename) {
+  char buf[1024 * 1024];
   FILE *fp = fopen(filename, "w");
-  for (int i = 0; i < table->size; ++i) {
-    fputc(piece_table_get(table, i), fp);
+  for (piece_t *piece = table->head; piece != NULL; piece = piece->next) {
+    region_t region = {0, -1};
+    int n = piece_read(table, piece, region, buf);
+    fwrite(buf, 1, n, fp);
   }
   fclose(fp);
 }
 
 int piece_table_index_of(piece_table_t *table, char c, int start) {
-  for (int i = start; i < table->size; ++i) {
-    if (piece_table_get(table, i) == c) {
-      return i;
+  region_t region;
+  region.start = start;
+  region.length = min(1024, table->size - start);
+  while (region.length > 0) {
+    char buf[1024];
+    piece_table_get(table, region, buf);
+    for (int i = 0; i < region.length; ++i) {
+      if (buf[i] == c) {
+        return region.start + i;
+      }
     }
+    region.start += region.length;
+    region.length = min(1024, table->size - region.start);
   }
   return -1;
 }
 
 int piece_table_last_index_of(piece_table_t *table, char c, int start) {
-  for (int i = start; i >= 0; --i) {
-    if (piece_table_get(table, i) == c) {
-      return i;
+  region_t region;
+  region.start = max(0, start - 1024);
+  region.length = min(1024, start + 1);
+  while (region.length > 0) {
+    char buf[1024];
+    piece_table_get(table, region, buf);
+    for (int i = region.length - 1; i >= 0; --i) {
+      if (buf[i] == c) {
+        return region.start + i;
+      }
     }
+    region.start -= region.length;
+    region.length = min(1024, region.start);
   }
   return -1;
 }

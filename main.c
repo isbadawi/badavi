@@ -33,6 +33,8 @@ typedef struct {
   editing_mode_t* mode;
   // The cursor.
   cursor_t* cursor;
+  // What's written to the status bar.
+  buf_t* status;
 } editor_t;
 
 // The editing mode for now is just a function that handles key events.
@@ -86,6 +88,10 @@ void editor_draw(editor_t *editor) {
       tb_change_cell(x - editor->left, y, line->buf->buf[x], TB_DEFAULT, TB_WHITE);
     }
     y++;
+  }
+
+  for (int x = 0; x < editor->status->len; ++x) {
+    tb_change_cell(x, h - 1, editor->status->buf[x], TB_WHITE, TB_DEFAULT);
   }
 
   tb_present();
@@ -168,7 +174,10 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   }
   cursor_t *cursor = editor->cursor;
   switch (ev->ch) {
-    case 'i': editor->mode = &insert_mode; break;
+    case 'i':
+      buf_printf(editor->status, "-- INSERT --");
+      editor->mode = &insert_mode;
+      break;
     case '0': cursor->offset = 0; break;
     case '$': cursor->offset = cursor->line->buf->len; break;
     case 'h': editor_move_left(editor); break;
@@ -204,6 +213,7 @@ void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   char ch;
   switch (ev->key) {
     case TB_KEY_ESC:
+      buf_printf(editor->status, "");
       editor->mode = &normal_mode;
       return;
     case TB_KEY_BACKSPACE2:
@@ -254,6 +264,7 @@ int main(int argc, char *argv[]) {
   insert_mode.key_pressed = insert_mode_key_pressed;
 
   editor_t editor;
+  editor.status = buf_create(tb_width() / 2);
   editor.path = argv[1];
   editor.file = file_read(editor.path);
   editor.top = editor.file->head->next;

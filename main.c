@@ -122,6 +122,41 @@ void editor_handle_key_press(editor_t *editor, struct tb_event *ev) {
   editor_draw(editor);
 }
 
+static void editor_send_keys(editor_t *editor, const char *keys) {
+  int len = strlen(keys);
+  struct tb_event ev;
+  for (int i = 0; i < len; ++i) {
+    ev.key = 0;
+    switch (keys[i]) {
+    case '<': {
+      char key[10];
+      int key_len = strcspn(keys + i + 1, ">");
+      strncpy(key, keys + i + 1, key_len);
+      key[key_len] = '\0';
+      if (!strcmp("cr", key)) {
+        ev.key = TB_KEY_ENTER;
+      } else if (!strcmp("bs", key)) {
+        ev.key = TB_KEY_BACKSPACE2;
+      } else if (!strcmp("esc", key)) {
+        ev.key = TB_KEY_ESC;
+      } else {
+        debug("BUG: editor_send_keys got <%s>\n", key);
+        exit(1);
+      }
+      i += key_len + 1;
+      break;
+    }
+    case ' ':
+      ev.key = TB_KEY_SPACE;
+      break;
+    default:
+      ev.ch = keys[i];
+      break;
+    }
+    editor_handle_key_press(editor, &ev);
+  }
+}
+
 editing_mode_t normal_mode;
 editing_mode_t insert_mode;
 
@@ -131,57 +166,29 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   }
   cursor_t *cursor = editor->cursor;
   switch (ev->ch) {
-    case 'i':
-      editor->mode = &insert_mode;
-      break;
+    case 'i': editor->mode = &insert_mode; break;
     case '0': cursor->offset = 0; break;
     case '$': cursor->offset = cursor->line->buf->len; break;
-    case 'I':
-      cursor->offset = 0;
-      editor->mode = &insert_mode;
-      break;
-    case 'A':
-      cursor->offset = cursor->line->buf->len;
-      editor->mode = &insert_mode;
-      break;
     case 'h': editor_move_left(editor); break;
     case 'l': editor_move_right(editor); break;
     case 'j': editor_move_down(editor); break;
     case 'k': editor_move_up(editor); break;
+    case 'a': editor_send_keys(editor, "li"); break;
+    case 'I': editor_send_keys(editor, "0i"); break;
+    case 'A': editor_send_keys(editor, "$i"); break;
+    case 'o': editor_send_keys(editor, "A<cr>"); break;
+    case 'O': editor_send_keys(editor, "0i<cr><esc>ki"); break;
+    case 'x': editor_send_keys(editor, "a<bs><esc>"); break;
     case 'J':
-      if (!cursor->line->next) {
-        break;
+      if (cursor->line->next) {
+        editor_send_keys(editor, "A <esc>jI<bs><esc>");
       }
-      buf_insert(cursor->line->buf, " ", cursor->line->buf->len);
-      cursor->offset = cursor->line->buf->len;
-      buf_insert(
-          cursor->line->buf,
-          cursor->line->next->buf->buf,
-          cursor->line->buf->len);
-      file_remove_line(editor->file, cursor->line->next);
-      break;
-    case 'x':
-      if (cursor->offset == cursor->line->buf->len) {
-        break;
-      }
-      buf_delete(cursor->line->buf, cursor->offset, 1);
       break;
     case 'D':
       buf_delete(
           cursor->line->buf,
           cursor->offset,
           cursor->line->buf->len - cursor->offset);
-      break;
-    case 'o':
-      file_insert_line_after(editor->file, "", cursor->line);
-      editor_move_down(editor);
-      editor->mode = &insert_mode;
-      break;
-    case 'O':
-      file_insert_line_after(editor->file, "", cursor->line->prev);
-      cursor->line = cursor->line->prev;
-      cursor->offset = 0;
-      editor->mode = &insert_mode;
       break;
     // Just temporary until : commands are implemented
     case 's':

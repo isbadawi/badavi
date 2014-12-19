@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <unistd.h>
+
 #include <termbox.h>
 
 #include "file.h"
@@ -266,7 +268,16 @@ int main(int argc, char *argv[]) {
   editor_t editor;
   editor.status = buf_create(tb_width() / 2);
   editor.path = argv[1];
-  editor.file = file_read(editor.path);
+
+  if (access(editor.path, F_OK) < 0) {
+    editor.file = file_create();
+    buf_printf(editor.status, "\"%s\" [New File]", editor.path);
+  } else {
+    editor.file = file_open(editor.path);
+    buf_printf(editor.status, "\"%s\" %dL, %dC",
+        editor.path, editor.file->nlines, file_size(editor.file));
+  }
+
   editor.top = editor.file->head->next;
   editor.left = 0;
   editor.mode = &normal_mode;

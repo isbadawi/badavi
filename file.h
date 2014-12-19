@@ -24,9 +24,15 @@ typedef struct {
 
 // All functions returns 0 on success, negative number on error.
 
-// Reads the given path into a file_t object.
+// Reads the given path into a file_t object. The path must exist.
 // Returns NULL if file can't be opened or we're out of memory.
-file_t *file_read(char *path);
+file_t *file_open(char *path);
+
+// Returns an empty file (i.e. with a single empty line).
+file_t *file_create(void);
+
+// Returns the size of the file (by adding up the sizes of the lines).
+int file_size(file_t *file);
 
 // Writes the contents of the given file to the path (replacing any
 // existing file).

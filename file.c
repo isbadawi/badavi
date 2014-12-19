@@ -4,12 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <unistd.h>
-
 #include "buf.h"
 #include "util.h"
 
-file_t *file_read(char *path) {
+file_t *file_create(void) {
   file_t *file = malloc(sizeof(file_t));
   if (!file) {
     return NULL;
@@ -26,10 +24,17 @@ file_t *file_read(char *path) {
   file->head->next = NULL;
   file->nlines = 0;
 
-  if (access(path, F_OK) < 0) {
-    file_insert_line(file, "", 0);
-    return file;
+  file_insert_line(file, "", 0);
+
+  return file;
+}
+
+file_t *file_open(char *path) {
+  file_t *file = file_create();
+  if (!file) {
+    return NULL;
   }
+  file_remove_line(file, file->head->next);
 
   FILE *fp = fopen(path, "r");
   if (!fp) {
@@ -64,6 +69,14 @@ file_t *file_read(char *path) {
   }
 
   return file;
+}
+
+int file_size(file_t *file) {
+  int size = 0;
+  for (line_t *line = file->head->next; line != NULL; line = line->next) {
+    size += line->buf->len + 1;
+  }
+  return size;
 }
 
 int file_write(file_t *file, char *path) {

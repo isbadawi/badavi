@@ -16,5 +16,8 @@ void buf_free(buf_t *buf);
 int buf_delete(buf_t *buf, int pos, int len);
 int buf_insert(buf_t *buf, const char *s, int pos);
 
+// Write the formatted data to buf (overwriting what was there),
+// automatically growing it if needed.
+void buf_printf(buf_t *buf, const char *format, ...);
 
 #endif

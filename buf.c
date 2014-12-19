@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "util.h"
 
@@ -88,4 +89,24 @@ int buf_delete(buf_t *buf, int pos, int len) {
   buf->len -= len;
   buf->buf[buf->len] = '\0';
   return 0;
+}
+
+void buf_printf(buf_t *buf, const char *format, ...) {
+  // Try once...
+  va_list args;
+  va_start(args, format);
+  int n = vsnprintf(buf->buf, buf->cap, format, args);
+  va_end(args);
+
+  // vsnprintf returns the required size if it wasn't enough, so grow to that
+  // size and try again.
+  if (n >= buf->cap) {
+    buf_grow(buf, n + 1);
+
+    va_start(args, format);
+    n = vsnprintf(buf->buf, buf->cap, format, args);
+    va_end(args);
+  }
+
+  buf->len = n;
 }

@@ -4,33 +4,39 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <unistd.h>
+
 #include "buf.h"
 #include "util.h"
 
 file_t *file_read(char *path) {
-  FILE *fp = fopen(path, "r");
-  if (!fp) {
-    return NULL;
-  }
-
   file_t *file = malloc(sizeof(file_t));
   if (!file) {
-    fclose(fp);
     return NULL;
   }
 
   file->head = malloc(sizeof(line_t));
   if (!file->head) {
-    fclose(fp);
     free(file);
-
     return NULL;
   }
+
   file->head->buf = NULL;
   file->head->prev = NULL;
   file->head->next = NULL;
-
   file->nlines = 0;
+
+  if (access(path, F_OK) < 0) {
+    file_insert_line(file, "", 0);
+    return file;
+  }
+
+  FILE *fp = fopen(path, "r");
+  if (!fp) {
+    free(file->head);
+    free(file);
+    return NULL;
+  }
 
   char chunk[1024 + 1];
   line_t *last_line = NULL;

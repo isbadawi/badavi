@@ -43,4 +43,6 @@ line_t *file_insert_line_after(file_t *file, char *s, line_t *line);
 // Removes the given line from the file.
 void file_remove_line(file_t *file, line_t *line);
 
+int file_index_of_line(file_t *file, line_t *line);
+
 #endif

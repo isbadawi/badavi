@@ -14,10 +14,6 @@ typedef struct {
   line_t *line;
   // The offset of the cursor within that line.
   int offset;
-
-  // y offset from the top of the screen.
-  // Used to implement scrolling -- not sure if this belongs here.
-  int y;
 } cursor_t;
 
 struct editing_mode_t;
@@ -31,6 +27,8 @@ typedef struct {
   char *path;
   // The top line visible on screen.
   line_t *top;
+  // The leftmost column visible on screen.
+  int left;
   // The editing mode (e.g. normal mode, insert mode, etc.)
   editing_mode_t* mode;
   // The cursor.
@@ -44,31 +42,46 @@ struct editing_mode_t {
   mode_keypress_handler_t* key_pressed;
 };
 
+static void editor_ensure_cursor_visible(editor_t *editor) {
+  int x = editor->cursor->offset - editor->left;
+  // TODO(isbadawi): This might be expensive for files with many lines.
+  int y = file_index_of_line(editor->file, editor->cursor->line) -
+    file_index_of_line(editor->file, editor->top);
+
+  if (x < 0) {
+    editor->left += x;
+  } else if (x >= tb_width()) {
+    editor->left -= (tb_width() - x - 1);
+  }
+
+  while (y >= tb_height()) {
+    editor->top = editor->top->next;
+    y--;
+  }
+
+  while (y < 0) {
+    editor->top = editor->top->prev;
+    y++;
+  }
+}
+
 // Draws the visible portion of the file to the screen.
 void editor_draw(editor_t *editor) {
   tb_clear();
 
-  while (editor->cursor->y >= tb_height()) {
-    editor->top = editor->top->next;
-    editor->cursor->y--;
-  }
-
-  while (editor->cursor->y < 0) {
-    editor->cursor->y++;
-    editor->top = editor->top->prev;
-  }
+  editor_ensure_cursor_visible(editor);
 
   int y = 0;
   int w = tb_width();
   int h = tb_height();
   for (line_t *line = editor->top; line && y < h; line = line->next) {
-    debug("y = %d\n", y);
-    for (int x = 0; x < line->buf->len && x < w; ++x) {
-      tb_change_cell(x, y, line->buf->buf[x], TB_WHITE, TB_DEFAULT);
+    int x = 0;
+    for (int i = editor->left; i < line->buf->len && x < w; ++i) {
+      tb_change_cell(x++, y, line->buf->buf[i], TB_WHITE, TB_DEFAULT);
     }
     if (line == editor->cursor->line) {
       int x = editor->cursor->offset;
-      tb_change_cell(x, y, line->buf->buf[x], TB_DEFAULT, TB_WHITE);
+      tb_change_cell(x - editor->left, y, line->buf->buf[x], TB_DEFAULT, TB_WHITE);
     }
     y++;
   }
@@ -92,7 +105,6 @@ void editor_move_up(editor_t *editor) {
   }
   cursor->line = cursor->line->prev;
   cursor->offset = min(cursor->offset, cursor->line->buf->len);
-  cursor->y--;
 }
 
 void editor_move_down(editor_t *editor) {
@@ -102,7 +114,6 @@ void editor_move_down(editor_t *editor) {
   }
   cursor->line = cursor->line->next;
   cursor->offset = min(cursor->offset, cursor->line->buf->len);
-  cursor->y++;
 }
 
 // The editor handles key presses by delegating to its mode.
@@ -133,7 +144,6 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
       cursor->offset = cursor->line->buf->len;
       editor->mode = &insert_mode;
       break;
-    // TODO(isbadawi): Scrolling left and right
     case 'h': editor_move_left(editor); break;
     case 'l': editor_move_right(editor); break;
     case 'j': editor_move_down(editor); break;
@@ -169,12 +179,8 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
       break;
     case 'O':
       file_insert_line_after(editor->file, "", cursor->line->prev);
-      if (cursor->y == 0) {
-        editor_move_up(editor);
-      } else {
-        cursor->line = cursor->line->prev;
-        cursor->offset = 0;
-      }
+      cursor->line = cursor->line->prev;
+      cursor->offset = 0;
       editor->mode = &insert_mode;
       break;
     // Just temporary until : commands are implemented
@@ -242,11 +248,11 @@ int main(int argc, char *argv[]) {
   editor.path = argv[1];
   editor.file = file_read(editor.path);
   editor.top = editor.file->head->next;
+  editor.left = 0;
   editor.mode = &normal_mode;
   cursor_t cursor;
   cursor.line = editor.top;
   cursor.offset = 0;
-  cursor.y = 0;
   editor.cursor = &cursor;
 
   int err = tb_init();

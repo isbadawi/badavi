@@ -133,3 +133,13 @@ void file_remove_line(file_t *file, line_t *line) {
 
   file->nlines--;
 }
+
+int file_index_of_line(file_t *file, line_t *line) {
+  line_t *l = file->head->next;
+  for (int i = 0; l != NULL; i++, l = l->next) {
+    if (l == line) {
+      return i;
+    }
+  }
+  return -1;
+}

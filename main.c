@@ -46,6 +46,10 @@ struct editing_mode_t {
   mode_keypress_handler_t* key_pressed;
 };
 
+static void editor_execute_command(editor_t *editor, char *command) {
+  buf_printf(editor->status, "Got command: %s\n", command);
+}
+
 static void editor_ensure_cursor_visible(editor_t *editor) {
   int w = tb_width();
   int h = tb_height();
@@ -169,6 +173,7 @@ static void editor_send_keys(editor_t *editor, const char *keys) {
 
 editing_mode_t normal_mode;
 editing_mode_t insert_mode;
+editing_mode_t command_mode;
 
 void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   if (ev->key & TB_KEY_ESC) {
@@ -179,6 +184,10 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     case 'i':
       buf_printf(editor->status, "-- INSERT --");
       editor->mode = &insert_mode;
+      break;
+    case ':':
+      buf_printf(editor->status, ":");
+      editor->mode = &command_mode;
       break;
     case '0': cursor->offset = 0; break;
     case '$': cursor->offset = cursor->line->buf->len; break;
@@ -254,6 +263,35 @@ void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   buf_insert(cursor->line->buf, s, cursor->offset++);
 }
 
+void command_mode_key_pressed(editor_t *editor, struct tb_event *ev) {
+  char ch;
+  switch (ev->key) {
+    case TB_KEY_ESC:
+      buf_printf(editor->status, "");
+      editor->mode = &normal_mode;
+      return;
+    case TB_KEY_BACKSPACE2:
+      if (editor->status->len > 1) {
+        buf_delete(editor->status, editor->status->len - 1, 1);
+      }
+      return;
+    case TB_KEY_ENTER: {
+      char *command = strdup(editor->status->buf + 1);
+      editor_execute_command(editor, command);
+      free(command);
+      editor->mode = &normal_mode;
+      return;
+    }
+    case TB_KEY_SPACE:
+      ch = ' ';
+      break;
+    default:
+      ch = ev->ch;
+  }
+  char s[2] = {ch, '\0'};
+  buf_insert(editor->status, s, editor->status->len);
+}
+
 int main(int argc, char *argv[]) {
   if (argc != 2) {
     fprintf(stderr, "usage: ./badavi file\n");
@@ -264,6 +302,7 @@ int main(int argc, char *argv[]) {
 
   normal_mode.key_pressed = normal_mode_key_pressed;
   insert_mode.key_pressed = insert_mode_key_pressed;
+  command_mode.key_pressed = command_mode_key_pressed;
 
   editor_t editor;
   editor.status = buf_create(tb_width() / 2);

@@ -43,6 +43,8 @@ struct editing_mode_t {
 };
 
 static void editor_ensure_cursor_visible(editor_t *editor) {
+  int w = tb_width();
+  int h = tb_height();
   int x = editor->cursor->offset - editor->left;
   // TODO(isbadawi): This might be expensive for files with many lines.
   int y = file_index_of_line(editor->file, editor->cursor->line) -
@@ -50,11 +52,11 @@ static void editor_ensure_cursor_visible(editor_t *editor) {
 
   if (x < 0) {
     editor->left += x;
-  } else if (x >= tb_width()) {
-    editor->left -= (tb_width() - x - 1);
+  } else if (x >= w) {
+    editor->left -= w - x - 1;
   }
 
-  while (y >= tb_height()) {
+  while (y >= h - 1) {
     editor->top = editor->top->next;
     y--;
   }
@@ -74,7 +76,7 @@ void editor_draw(editor_t *editor) {
   int y = 0;
   int w = tb_width();
   int h = tb_height();
-  for (line_t *line = editor->top; line && y < h; line = line->next) {
+  for (line_t *line = editor->top; line && y < h - 1; line = line->next) {
     int x = 0;
     for (int i = editor->left; i < line->buf->len && x < w; ++i) {
       tb_change_cell(x++, y, line->buf->buf[i], TB_WHITE, TB_DEFAULT);

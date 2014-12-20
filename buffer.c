@@ -19,6 +19,7 @@ buffer_t *buffer_create(void) {
     return NULL;
   }
 
+  buffer->name = NULL;
   buffer->head->buf = NULL;
   buffer->head->prev = NULL;
   buffer->head->next = NULL;
@@ -42,6 +43,7 @@ buffer_t *buffer_open(char *path) {
     free(buffer);
     return NULL;
   }
+  buffer->name = path;
 
   char chunk[1024 + 1];
   line_t *last_line = NULL;
@@ -79,10 +81,22 @@ int buffer_size(buffer_t *buffer) {
   return size;
 }
 
-int buffer_write(buffer_t *buffer, char *path) {
+
+int buffer_write(buffer_t *buffer) {
+  if (!buffer->name) {
+    return -1;
+  }
+  return buffer_saveas(buffer, buffer->name);
+}
+
+int buffer_saveas(buffer_t *buffer, char *path) {
   FILE *fp = fopen(path, "w");
   if (!fp) {
     return -1;
+  }
+
+  if (!buffer->name) {
+    buffer->name = path;
   }
 
   for (line_t *line = buffer->head->next; line != NULL; line = line->next) {

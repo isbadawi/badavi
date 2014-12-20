@@ -18,8 +18,6 @@ typedef struct editing_mode_t editing_mode_t;
 typedef struct {
   // The buffer being edited (only one buffer for now).
   buffer_t *buffer;
-  // The path to the buffer being edited.
-  char *path;
   // The top line visible on screen.
   line_t *top;
   // The leftmost column visible on screen.

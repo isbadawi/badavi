@@ -15,17 +15,16 @@
 
 void editor_init(editor_t *editor, cursor_t *cursor, char *path) {
   editor->status = buf_create(tb_width() / 2);
-  editor->path = path;
 
-  if (!editor->path) {
+  if (!path) {
     editor->buffer = buffer_create();
-  } else if (access(editor->path, F_OK) < 0) {
+  } else if (access(path, F_OK) < 0) {
     editor->buffer = buffer_create();
-    editor_status_msg(editor, "\"%s\" [New File]", editor->path);
+    editor_status_msg(editor, "\"%s\" [New File]", path);
   } else {
-    editor->buffer = buffer_open(editor->path);
+    editor->buffer = buffer_open(path);
     editor_status_msg(editor, "\"%s\" %dL, %dC",
-        editor->path, editor->buffer->nlines, buffer_size(editor->buffer));
+        path, editor->buffer->nlines, buffer_size(editor->buffer));
   }
 
   editor->top = editor->buffer->head->next;
@@ -38,13 +37,18 @@ void editor_init(editor_t *editor, cursor_t *cursor, char *path) {
 }
 
 void editor_save_buffer(editor_t *editor, char *path) {
+  char *name;
+  int rc;
   if (path) {
-    buffer_write(editor->buffer, path);
+    rc = buffer_saveas(editor->buffer, path);
+    name = path;
+  } else {
+    rc = buffer_write(editor->buffer);
+    name = editor->buffer->name;
+  }
+  if (!rc) {
     editor_status_msg(editor, "\"%s\" %dL, %dC written",
-        path, editor->buffer->nlines, buffer_size(editor->buffer));
-    if (!editor->path) {
-      editor->path = path;
-    }
+        name, editor->buffer->nlines, buffer_size(editor->buffer));
   } else {
     editor_status_err(editor, "No file name");
   }
@@ -57,10 +61,9 @@ void editor_execute_command(editor_t *editor, char *command) {
     // TODO(isbadawi): Error if buffer has unsaved changes.
     exit(0);
   } else if (!strcmp(cmd, "w")) {
-    char *path = arg ? arg : editor->path;
-    editor_save_buffer(editor, path);
+    editor_save_buffer(editor, arg);
   } else if (!strcmp(cmd, "wq")) {
-    editor_save_buffer(editor, editor->path);
+    editor_save_buffer(editor, NULL);
     exit(0);
   } else {
     editor_status_err(editor, "Not an editor command: %s", command);

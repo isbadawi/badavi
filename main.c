@@ -32,8 +32,13 @@ int main(int argc, char *argv[]) {
   debug_init();
 
   editor_t editor;
-  cursor_t cursor;
-  editor_init(&editor, &cursor, argc > 1 ? argv[1] : NULL);
+  editor_init(&editor);
+
+  if (argc > 1) {
+    editor_open(&editor, argv[1]);
+  } else {
+    editor_open_empty(&editor);
+  }
 
   int err = tb_init();
   if (err) {

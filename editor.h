@@ -3,29 +3,23 @@
 
 #include "buf.h"
 #include "buffer.h"
-
-typedef struct {
-  // The line the cursor is on.
-  line_t *line;
-  // The offset of the cursor within that line.
-  int offset;
-} cursor_t;
+#include "window.h"
 
 struct editing_mode_t;
 typedef struct editing_mode_t editing_mode_t;
 
 // The "editor" holds the main state of the program.
 typedef struct {
-  // The buffer being edited (only one buffer for now).
-  buffer_t *buffer;
-  // The top line visible on screen.
-  line_t *top;
-  // The leftmost column visible on screen.
-  int left;
+  // The loaded buffers.
+  buffer_t *buffers;
+
+  // The open windows.
+  window_t *windows;
+  // The "selected" window -- the one being edited. An element of windows.
+  window_t *window;
+
   // The editing mode (e.g. normal mode, insert mode, etc.)
   editing_mode_t* mode;
-  // The cursor.
-  cursor_t* cursor;
 
   // What's written to the status bar.
   buf_t* status;
@@ -33,7 +27,10 @@ typedef struct {
   int status_error;
 } editor_t;
 
-void editor_init(editor_t *editor, cursor_t *cursor, char *path);
+void editor_init(editor_t *editor);
+
+void editor_open(editor_t *editor, char *path);
+void editor_open_empty(editor_t *editor);
 
 void editor_save_buffer(editor_t *editor, char *path);
 void editor_execute_command(editor_t *editor, char *command);

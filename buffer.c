@@ -24,6 +24,7 @@ buffer_t *buffer_create(void) {
   buffer->head->prev = NULL;
   buffer->head->next = NULL;
   buffer->nlines = 0;
+  buffer->next = NULL;
 
   buffer_insert_line(buffer, "", 0);
 

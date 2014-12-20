@@ -6,7 +6,7 @@
 #include <termbox.h>
 
 static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
-  cursor_t *cursor = editor->cursor;
+  pos_t *cursor = &editor->window->cursor;
   switch (ev->ch) {
     case 'i':
       editor_status_msg(editor, "-- INSERT --");

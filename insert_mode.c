@@ -7,7 +7,8 @@
 #include "editor.h"
 
 static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
-  cursor_t *cursor = editor->cursor;
+  pos_t *cursor = &editor->window->cursor;
+  buffer_t *buffer = editor->window->buffer;
   char ch;
   switch (ev->key) {
     case TB_KEY_ESC:
@@ -24,13 +25,13 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
             cursor->line->buf->buf,
             prev_len);
         editor_move_up(editor);
-        buffer_remove_line(editor->buffer, cursor->line->next);
+        buffer_remove_line(buffer, cursor->line->next);
         cursor->offset = prev_len;
       }
       return;
     case TB_KEY_ENTER:
       buffer_insert_line_after(
-          editor->buffer,
+          buffer,
           cursor->line->buf->buf + cursor->offset,
           cursor->line);
       buf_delete(

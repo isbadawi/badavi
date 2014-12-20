@@ -14,7 +14,7 @@ typedef struct line_t {
 } line_t;
 
 // buffer_t is the in-memory text of a file.
-typedef struct {
+typedef struct buffer_t {
   // The name of the file this buffer was loaded from, or NULL.
   char *name;
   // Doubly linked list of lines.
@@ -22,6 +22,8 @@ typedef struct {
   line_t *head;
   // Number of lines in the buffer.
   int nlines;
+
+  struct buffer_t *next;
 } buffer_t;
 
 // All functions returns 0 on success, negative number on error.

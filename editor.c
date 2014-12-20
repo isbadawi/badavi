@@ -13,42 +13,78 @@
 #include "mode.h"
 #include "util.h"
 
-void editor_init(editor_t *editor, cursor_t *cursor, char *path) {
+void editor_init(editor_t *editor) {
   editor->status = buf_create(tb_width() / 2);
+  editor->buffers = buffer_create();
+  editor->windows = window_create(NULL);
+  editor->window = NULL;
+  editor->mode = &normal_mode;
+}
 
-  if (!path) {
-    editor->buffer = buffer_create();
-  } else if (access(path, F_OK) < 0) {
-    editor->buffer = buffer_create();
-    editor_status_msg(editor, "\"%s\" [New File]", path);
-  } else {
-    editor->buffer = buffer_open(path);
-    editor_status_msg(editor, "\"%s\" %dL, %dC",
-        path, editor->buffer->nlines, buffer_size(editor->buffer));
+static void editor_add_buffer(editor_t *editor, buffer_t *buffer) {
+  buffer_t *b = editor->buffers;
+  for (; b->next; b = b->next);
+  b->next = buffer;
+}
+
+static void editor_add_window(editor_t *editor, window_t *window) {
+  window_t *w = editor->windows;
+  for (; w->next; w = w->next);
+  w->next = window;
+}
+
+static buffer_t *editor_get_buffer_by_name(editor_t* editor, char *name) {
+  for (buffer_t *b = editor->buffers->next; b; b = b->next) {
+    if (b->name && !strcmp(b->name, name)) {
+      return b;
+    }
+  }
+  return NULL;
+}
+
+void editor_open(editor_t *editor, char *path) {
+  buffer_t *buffer = editor_get_buffer_by_name(editor, path);
+
+  if (!buffer) {
+    if (access(path, F_OK) < 0) {
+      buffer = buffer_create();
+      buffer->name = path;
+      editor_status_msg(editor, "\"%s\" [New File]", path);
+    } else {
+      buffer = buffer_open(path);
+      editor_status_msg(editor, "\"%s\" %dL, %dC",
+          path, buffer->nlines, buffer_size(buffer));
+    }
+    editor_add_buffer(editor, buffer);
   }
 
-  editor->top = editor->buffer->head->next;
-  editor->left = 0;
-  editor->mode = &normal_mode;
-  editor->cursor = cursor;
+  window_t *window = window_create(buffer);
+  editor_add_window(editor, window);
+  editor->window = window;
+}
 
-  cursor->line = editor->top;
-  cursor->offset = 0;
+void editor_open_empty(editor_t *editor) {
+  buffer_t *buffer = buffer_create();
+  editor_add_buffer(editor, buffer);
+  window_t *window = window_create(buffer);
+  editor_add_window(editor, window);
+  editor->window = window;
 }
 
 void editor_save_buffer(editor_t *editor, char *path) {
+  buffer_t *buffer = editor->window->buffer;
   char *name;
   int rc;
   if (path) {
-    rc = buffer_saveas(editor->buffer, path);
+    rc = buffer_saveas(buffer, path);
     name = path;
   } else {
-    rc = buffer_write(editor->buffer);
-    name = editor->buffer->name;
+    rc = buffer_write(buffer);
+    name = buffer->name;
   }
   if (!rc) {
     editor_status_msg(editor, "\"%s\" %dL, %dC written",
-        name, editor->buffer->nlines, buffer_size(editor->buffer));
+        name, buffer->nlines, buffer_size(buffer));
   } else {
     editor_status_err(editor, "No file name");
   }
@@ -70,53 +106,15 @@ void editor_execute_command(editor_t *editor, char *command) {
   }
 }
 
-static void editor_ensure_cursor_visible(editor_t *editor) {
-  int w = tb_width();
-  int h = tb_height();
-  int x = editor->cursor->offset - editor->left;
-  // TODO(isbadawi): This might be expensive for buffers with many lines.
-  int y = buffer_index_of_line(editor->buffer, editor->cursor->line) -
-    buffer_index_of_line(editor->buffer, editor->top);
-
-  if (x < 0) {
-    editor->left += x;
-  } else if (x >= w) {
-    editor->left -= w - x - 1;
-  }
-
-  while (y >= h - 1) {
-    editor->top = editor->top->next;
-    y--;
-  }
-
-  while (y < 0) {
-    editor->top = editor->top->prev;
-    y++;
-  }
-}
 
 void editor_draw(editor_t *editor) {
   tb_clear();
 
-  editor_ensure_cursor_visible(editor);
-
-  int y = 0;
-  int w = tb_width();
-  int h = tb_height();
-  for (line_t *line = editor->top; line && y < h - 1; line = line->next) {
-    int x = 0;
-    for (int i = editor->left; i < line->buf->len && x < w; ++i) {
-      tb_change_cell(x++, y, line->buf->buf[i], TB_WHITE, TB_DEFAULT);
-    }
-    if (line == editor->cursor->line) {
-      int x = editor->cursor->offset;
-      tb_change_cell(x - editor->left, y, line->buf->buf[x], TB_DEFAULT, TB_WHITE);
-    }
-    y++;
-  }
+  // TODO(isbadawi): Multiple windows at the same time.
+  window_draw(editor->window);
 
   for (int x = 0; x < editor->status->len; ++x) {
-    tb_change_cell(x, h - 1, editor->status->buf[x],
+    tb_change_cell(x, tb_height() - 1, editor->status->buf[x],
         editor->status_error ? TB_DEFAULT : TB_WHITE,
         editor->status_error ? TB_RED : TB_DEFAULT);
   }
@@ -131,16 +129,18 @@ void editor_handle_key_press(editor_t *editor, struct tb_event *ev) {
 }
 
 void editor_move_left(editor_t *editor) {
-  editor->cursor->offset = max(editor->cursor->offset - 1, 0);
+  pos_t *cursor = &editor->window->cursor;
+  cursor->offset = max(cursor->offset - 1, 0);
 }
 
 void editor_move_right(editor_t *editor) {
-  int len = editor->cursor->line->buf->len;
-  editor->cursor->offset = min(editor->cursor->offset + 1, len);
+  pos_t *cursor = &editor->window->cursor;
+  int len = cursor->line->buf->len;
+  cursor->offset = min(cursor->offset + 1, len);
 }
 
 void editor_move_up(editor_t *editor) {
-  cursor_t *cursor = editor->cursor;
+  pos_t *cursor = &editor->window->cursor;
   if (!cursor->line->prev->buf) {
     return;
   }
@@ -149,7 +149,7 @@ void editor_move_up(editor_t *editor) {
 }
 
 void editor_move_down(editor_t *editor) {
-  cursor_t *cursor = editor->cursor;
+  pos_t *cursor = &editor->window->cursor;
   if (!cursor->line->next) {
     return;
   }

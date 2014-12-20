@@ -35,7 +35,9 @@ int main(int argc, char *argv[]) {
   editor_init(&editor);
 
   if (argc > 1) {
-    editor_open(&editor, argv[1]);
+    for (int i = 1; i < argc; ++i) {
+      editor_open(&editor, argv[i]);
+    }
   } else {
     editor_open_empty(&editor);
   }

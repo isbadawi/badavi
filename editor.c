@@ -33,19 +33,20 @@ static void editor_add_window(editor_t *editor, window_t *window) {
   w->next = window;
 }
 
-static buffer_t *editor_get_buffer_by_name(editor_t* editor, char *name) {
-  for (buffer_t *b = editor->buffers->next; b; b = b->next) {
-    if (b->name && !strcmp(b->name, name)) {
-      return b;
+static window_t *editor_get_window_by_name(editor_t* editor, char *name) {
+  for (window_t *w = editor->windows->next; w; w = w->next) {
+    if (w->buffer && w->buffer->name && !strcmp(w->buffer->name, name)) {
+      return w;
     }
   }
   return NULL;
 }
 
 void editor_open(editor_t *editor, char *path) {
-  buffer_t *buffer = editor_get_buffer_by_name(editor, path);
+  window_t *window = editor_get_window_by_name(editor, path);
 
-  if (!buffer) {
+  if (!window) {
+    buffer_t *buffer;
     if (access(path, F_OK) < 0) {
       buffer = buffer_create();
       buffer->name = path;
@@ -56,10 +57,10 @@ void editor_open(editor_t *editor, char *path) {
           path, buffer->nlines, buffer_size(buffer));
     }
     editor_add_buffer(editor, buffer);
+    window = window_create(buffer);
+    editor_add_window(editor, window);
   }
 
-  window_t *window = window_create(buffer);
-  editor_add_window(editor, window);
   editor->window = window;
 }
 
@@ -101,6 +102,12 @@ void editor_execute_command(editor_t *editor, char *command) {
   } else if (!strcmp(cmd, "wq")) {
     editor_save_buffer(editor, NULL);
     exit(0);
+  } else if (!strcmp(cmd, "e")) {
+    if (arg) {
+      editor_open(editor, arg);
+    } else {
+      editor_status_err(editor, "No file name");
+    }
   } else {
     editor_status_err(editor, "Not an editor command: %s", command);
   }

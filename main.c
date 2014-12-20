@@ -7,16 +7,11 @@
 #include "util.h"
 
 int main(int argc, char *argv[]) {
-  if (argc != 2) {
-    fprintf(stderr, "usage: ./badavi file\n");
-    return -1;
-  }
-
   debug_init();
 
   editor_t editor;
   cursor_t cursor;
-  editor_init(&editor, &cursor, argv[1]);
+  editor_init(&editor, &cursor, argc > 1 ? argv[1] : NULL);
 
   int err = tb_init();
   if (err) {

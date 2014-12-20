@@ -16,7 +16,9 @@ void editor_init(editor_t *editor, cursor_t *cursor, char *path) {
   editor->status = buf_create(tb_width() / 2);
   editor->path = path;
 
-  if (access(editor->path, F_OK) < 0) {
+  if (!editor->path) {
+    editor->file = file_create();
+  } else if (access(editor->path, F_OK) < 0) {
     editor->file = file_create();
     buf_printf(editor->status, "\"%s\" [New File]", editor->path);
   } else {
@@ -35,9 +37,16 @@ void editor_init(editor_t *editor, cursor_t *cursor, char *path) {
 }
 
 void editor_save_file(editor_t *editor, char *path) {
-  file_write(editor->file, path);
-  buf_printf(editor->status, "\"%s\" %dL, %dC written",
-      path, editor->file->nlines, file_size(editor->file));
+  if (path) {
+    file_write(editor->file, path);
+    buf_printf(editor->status, "\"%s\" %dL, %dC written",
+        path, editor->file->nlines, file_size(editor->file));
+    if (!editor->path) {
+      editor->path = path;
+    }
+  } else {
+    buf_printf(editor->status, "No file name");
+  }
 }
 
 void editor_execute_command(editor_t *editor, char *command) {

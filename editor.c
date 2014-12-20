@@ -53,7 +53,7 @@ void editor_execute_command(editor_t *editor, char *command) {
   char *cmd = strtok(command, " ");
   char *arg = strtok(NULL, " ");
   if (!strcmp(cmd, "q")) {
-    // TODO(isbdawi): Error if file has unsaved changes.
+    // TODO(isbadawi): Error if file has unsaved changes.
     exit(0);
   } else if (!strcmp(cmd, "w")) {
     char *path = arg ? arg : editor->path;

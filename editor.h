@@ -33,7 +33,6 @@ typedef struct {
 } editor_t;
 
 void editor_init(editor_t *editor, cursor_t *cursor, char *path);
-void editor_open(char *path);
 
 void editor_save_file(editor_t *editor, char *path);
 void editor_execute_command(editor_t *editor, char *command);

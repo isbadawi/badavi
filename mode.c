@@ -98,8 +98,10 @@ static void command_mode_key_pressed(editor_t *editor, struct tb_event *ev) {
       editor->mode = &normal_mode;
       return;
     case TB_KEY_BACKSPACE2:
-      if (editor->status->len > 1) {
-        buf_delete(editor->status, editor->status->len - 1, 1);
+      buf_delete(editor->status, editor->status->len - 1, 1);
+      if (editor->status->len == 0) {
+        editor->mode = &normal_mode;
+        return;
       }
       return;
     case TB_KEY_ENTER: {

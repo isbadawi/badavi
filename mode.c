@@ -10,9 +10,6 @@
 #include "file.h"
 
 static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
-  if (ev->key == TB_KEY_ESC) {
-    exit(0);
-  }
   cursor_t *cursor = editor->cursor;
   switch (ev->ch) {
     case 'i':

@@ -46,8 +46,27 @@ struct editing_mode_t {
   mode_keypress_handler_t* key_pressed;
 };
 
+static void editor_save_file(editor_t *editor, char *path) {
+  file_write(editor->file, path);
+  buf_printf(editor->status, "\"%s\" %dL, %dC written",
+      path, editor->file->nlines, file_size(editor->file));
+}
+
 static void editor_execute_command(editor_t *editor, char *command) {
-  buf_printf(editor->status, "Got command: %s\n", command);
+  char *cmd = strtok(command, " ");
+  char *arg = strtok(NULL, " ");
+  if (!strcmp(cmd, "q")) {
+    // TODO(isbdawi): Error if file has unsaved changes.
+    exit(0);
+  } else if (!strcmp(cmd, "w")) {
+    char *path = arg ? arg : editor->path;
+    editor_save_file(editor, path);
+  } else if (!strcmp(cmd, "wq")) {
+    editor_save_file(editor, editor->path);
+    exit(0);
+  } else {
+    buf_printf(editor->status, "Not an editor command: %s", command);
+  }
 }
 
 static void editor_ensure_cursor_visible(editor_t *editor) {
@@ -211,10 +230,6 @@ void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
           cursor->line->buf,
           cursor->offset,
           cursor->line->buf->len - cursor->offset);
-      break;
-    // Just temporary until : commands are implemented
-    case 's':
-      file_write(editor->file, editor->path);
       break;
   }
 }

@@ -176,7 +176,7 @@ editing_mode_t insert_mode;
 editing_mode_t command_mode;
 
 void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
-  if (ev->key & TB_KEY_ESC) {
+  if (ev->key == TB_KEY_ESC) {
     exit(0);
   }
   cursor_t *cursor = editor->cursor;

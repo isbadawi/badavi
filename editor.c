@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include <unistd.h>
 
@@ -20,10 +21,10 @@ void editor_init(editor_t *editor, cursor_t *cursor, char *path) {
     editor->file = file_create();
   } else if (access(editor->path, F_OK) < 0) {
     editor->file = file_create();
-    buf_printf(editor->status, "\"%s\" [New File]", editor->path);
+    editor_status_msg(editor, "\"%s\" [New File]", editor->path);
   } else {
     editor->file = file_open(editor->path);
-    buf_printf(editor->status, "\"%s\" %dL, %dC",
+    editor_status_msg(editor, "\"%s\" %dL, %dC",
         editor->path, editor->file->nlines, file_size(editor->file));
   }
 
@@ -39,13 +40,13 @@ void editor_init(editor_t *editor, cursor_t *cursor, char *path) {
 void editor_save_file(editor_t *editor, char *path) {
   if (path) {
     file_write(editor->file, path);
-    buf_printf(editor->status, "\"%s\" %dL, %dC written",
+    editor_status_msg(editor, "\"%s\" %dL, %dC written",
         path, editor->file->nlines, file_size(editor->file));
     if (!editor->path) {
       editor->path = path;
     }
   } else {
-    buf_printf(editor->status, "No file name");
+    editor_status_err(editor, "No file name");
   }
 }
 
@@ -62,7 +63,7 @@ void editor_execute_command(editor_t *editor, char *command) {
     editor_save_file(editor, editor->path);
     exit(0);
   } else {
-    buf_printf(editor->status, "Not an editor command: %s", command);
+    editor_status_err(editor, "Not an editor command: %s", command);
   }
 }
 
@@ -112,7 +113,9 @@ void editor_draw(editor_t *editor) {
   }
 
   for (int x = 0; x < editor->status->len; ++x) {
-    tb_change_cell(x, h - 1, editor->status->buf[x], TB_WHITE, TB_DEFAULT);
+    tb_change_cell(x, h - 1, editor->status->buf[x],
+        editor->status_error ? TB_DEFAULT : TB_WHITE,
+        editor->status_error ? TB_RED : TB_DEFAULT);
   }
 
   tb_present();
@@ -184,4 +187,20 @@ void editor_send_keys(editor_t *editor, const char *keys) {
     }
     editor_handle_key_press(editor, &ev);
   }
+}
+
+void editor_status_msg(editor_t *editor, const char *format, ...) {
+  va_list args;
+  va_start(args, format);
+  buf_vprintf(editor->status, format, args);
+  va_end(args);
+  editor->status_error = 0;
+}
+
+void editor_status_err(editor_t *editor, const char *format, ...) {
+  va_list args;
+  va_start(args, format);
+  buf_vprintf(editor->status, format, args);
+  va_end(args);
+  editor->status_error = 1;
 }

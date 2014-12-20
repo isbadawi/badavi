@@ -28,8 +28,11 @@ typedef struct {
   editing_mode_t* mode;
   // The cursor.
   cursor_t* cursor;
+
   // What's written to the status bar.
   buf_t* status;
+  // Whether the status is an error.
+  int status_error;
 } editor_t;
 
 void editor_init(editor_t *editor, cursor_t *cursor, char *path);
@@ -40,6 +43,9 @@ void editor_draw(editor_t *editor);
 
 struct tb_event;
 void editor_handle_key_press(editor_t *editor, struct tb_event *ev);
+
+void editor_status_msg(editor_t *editor, const char *format, ...);
+void editor_status_err(editor_t *editor, const char *format, ...);
 
 void editor_move_left(editor_t *editor);
 void editor_move_right(editor_t *editor);

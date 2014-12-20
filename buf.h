@@ -1,6 +1,8 @@
 #ifndef _buf_h_included
 #define _buf_h_included
 
+#include <stdarg.h>
+
 // buf_t is a simple growable array.
 
 typedef struct {
@@ -19,5 +21,6 @@ int buf_insert(buf_t *buf, const char *s, int pos);
 // Write the formatted data to buf (overwriting what was there),
 // automatically growing it if needed.
 void buf_printf(buf_t *buf, const char *format, ...);
+void buf_vprintf(buf_t *buf, const char *format, va_list args);
 
 #endif

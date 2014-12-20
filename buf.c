@@ -92,9 +92,16 @@ int buf_delete(buf_t *buf, int pos, int len) {
 }
 
 void buf_printf(buf_t *buf, const char *format, ...) {
-  // Try once...
   va_list args;
   va_start(args, format);
+  buf_vprintf(buf, format, args);
+  va_end(args);
+}
+
+void buf_vprintf(buf_t *buf, const char *format, va_list args) {
+  va_list args_copy;
+  va_copy(args_copy, args);
+  // Try once...
   int n = vsnprintf(buf->buf, buf->cap, format, args);
   va_end(args);
 
@@ -102,10 +109,8 @@ void buf_printf(buf_t *buf, const char *format, ...) {
   // size and try again.
   if (n >= buf->cap) {
     buf_grow(buf, n + 1);
-
-    va_start(args, format);
-    n = vsnprintf(buf->buf, buf->cap, format, args);
-    va_end(args);
+    n = vsnprintf(buf->buf, buf->cap, format, args_copy);
+    va_end(args_copy);
   }
 
   buf->len = n;

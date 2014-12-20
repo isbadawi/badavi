@@ -13,11 +13,11 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   cursor_t *cursor = editor->cursor;
   switch (ev->ch) {
     case 'i':
-      buf_printf(editor->status, "-- INSERT --");
+      editor_status_msg(editor, "-- INSERT --");
       editor->mode = &insert_mode;
       break;
     case ':':
-      buf_printf(editor->status, ":");
+      editor_status_msg(editor, ":");
       editor->mode = &command_mode;
       break;
     case '0': cursor->offset = 0; break;
@@ -51,7 +51,7 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   char ch;
   switch (ev->key) {
     case TB_KEY_ESC:
-      buf_printf(editor->status, "");
+      editor_status_msg(editor, "");
       editor->mode = &normal_mode;
       return;
     case TB_KEY_BACKSPACE2:

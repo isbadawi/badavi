@@ -1,4 +1,4 @@
-#include "file.h"
+#include "buffer.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,39 +7,39 @@
 #include "buf.h"
 #include "util.h"
 
-file_t *file_create(void) {
-  file_t *file = malloc(sizeof(file_t));
-  if (!file) {
+buffer_t *buffer_create(void) {
+  buffer_t *buffer = malloc(sizeof(buffer_t));
+  if (!buffer) {
     return NULL;
   }
 
-  file->head = malloc(sizeof(line_t));
-  if (!file->head) {
-    free(file);
+  buffer->head = malloc(sizeof(line_t));
+  if (!buffer->head) {
+    free(buffer);
     return NULL;
   }
 
-  file->head->buf = NULL;
-  file->head->prev = NULL;
-  file->head->next = NULL;
-  file->nlines = 0;
+  buffer->head->buf = NULL;
+  buffer->head->prev = NULL;
+  buffer->head->next = NULL;
+  buffer->nlines = 0;
 
-  file_insert_line(file, "", 0);
+  buffer_insert_line(buffer, "", 0);
 
-  return file;
+  return buffer;
 }
 
-file_t *file_open(char *path) {
-  file_t *file = file_create();
-  if (!file) {
+buffer_t *buffer_open(char *path) {
+  buffer_t *buffer = buffer_create();
+  if (!buffer) {
     return NULL;
   }
-  file_remove_line(file, file->head->next);
+  buffer_remove_line(buffer, buffer->head->next);
 
   FILE *fp = fopen(path, "r");
   if (!fp) {
-    free(file->head);
-    free(file);
+    free(buffer->head);
+    free(buffer);
     return NULL;
   }
 
@@ -56,7 +56,7 @@ file_t *file_open(char *path) {
           buf_insert(last_line->buf, start, last_line->buf->len);
           last_line = NULL;
         } else {
-          file_insert_line(file, start, file->nlines);
+          buffer_insert_line(buffer, start, buffer->nlines);
         }
         start = chunk + i + 1;
       }
@@ -64,28 +64,28 @@ file_t *file_open(char *path) {
     // Add the rest of this chunk to a new line that we'll append to later.
     chunk[n] = '\0';
     if (strlen(start) != 0) {
-      last_line = file_insert_line(file, start, file->nlines);
+      last_line = buffer_insert_line(buffer, start, buffer->nlines);
     }
   }
 
-  return file;
+  return buffer;
 }
 
-int file_size(file_t *file) {
+int buffer_size(buffer_t *buffer) {
   int size = 0;
-  for (line_t *line = file->head->next; line != NULL; line = line->next) {
+  for (line_t *line = buffer->head->next; line != NULL; line = line->next) {
     size += line->buf->len + 1;
   }
   return size;
 }
 
-int file_write(file_t *file, char *path) {
+int buffer_write(buffer_t *buffer, char *path) {
   FILE *fp = fopen(path, "w");
   if (!fp) {
     return -1;
   }
 
-  for (line_t *line = file->head->next; line != NULL; line = line->next) {
+  for (line_t *line = buffer->head->next; line != NULL; line = line->next) {
     fwrite(line->buf->buf, 1, line->buf->len, fp);
     fputc('\n', fp);
   }
@@ -111,20 +111,20 @@ static line_t *line_create(char *s) {
   return line;
 }
 
-line_t *file_insert_line(file_t *file, char *s, int pos) {
-  if (pos < 0 || pos > file->nlines) {
+line_t *buffer_insert_line(buffer_t *buffer, char *s, int pos) {
+  if (pos < 0 || pos > buffer->nlines) {
     return NULL;
   }
 
-  line_t *prev = file->head;
+  line_t *prev = buffer->head;
   for (int i = 0; i < pos; ++i) {
     prev = prev->next;
   }
 
-  return file_insert_line_after(file, s, prev);
+  return buffer_insert_line_after(buffer, s, prev);
 }
 
-line_t *file_insert_line_after(file_t *file, char *s, line_t *line) {
+line_t *buffer_insert_line_after(buffer_t *buffer, char *s, line_t *line) {
   line_t *new = line_create(s);
   if (!new) {
     return NULL;
@@ -137,12 +137,12 @@ line_t *file_insert_line_after(file_t *file, char *s, line_t *line) {
   line->next = new;
   new->prev = line;
 
-  file->nlines++;
+  buffer->nlines++;
 
   return new;
 }
 
-void file_remove_line(file_t *file, line_t *line) {
+void buffer_remove_line(buffer_t *buffer, line_t *line) {
   line->prev->next = line->next;
   if (line->next) {
     line->next->prev = line->prev;
@@ -150,11 +150,11 @@ void file_remove_line(file_t *file, line_t *line) {
   buf_free(line->buf);
   free(line);
 
-  file->nlines--;
+  buffer->nlines--;
 }
 
-int file_index_of_line(file_t *file, line_t *line) {
-  line_t *l = file->head->next;
+int buffer_index_of_line(buffer_t *buffer, line_t *line) {
+  line_t *l = buffer->head->next;
   for (int i = 0; l != NULL; i++, l = l->next) {
     if (l == line) {
       return i;

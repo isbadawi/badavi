@@ -3,8 +3,8 @@
 #include <termbox.h>
 
 #include "buf.h"
+#include "buffer.h"
 #include "editor.h"
-#include "file.h"
 
 static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   cursor_t *cursor = editor->cursor;
@@ -24,13 +24,13 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
             cursor->line->buf->buf,
             prev_len);
         editor_move_up(editor);
-        file_remove_line(editor->file, cursor->line->next);
+        buffer_remove_line(editor->buffer, cursor->line->next);
         cursor->offset = prev_len;
       }
       return;
     case TB_KEY_ENTER:
-      file_insert_line_after(
-          editor->file,
+      buffer_insert_line_after(
+          editor->buffer,
           cursor->line->buf->buf + cursor->offset,
           cursor->line);
       buf_delete(

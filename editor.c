@@ -9,7 +9,7 @@
 #include <termbox.h>
 
 #include "buf.h"
-#include "file.h"
+#include "buffer.h"
 #include "mode.h"
 #include "util.h"
 
@@ -18,17 +18,17 @@ void editor_init(editor_t *editor, cursor_t *cursor, char *path) {
   editor->path = path;
 
   if (!editor->path) {
-    editor->file = file_create();
+    editor->buffer = buffer_create();
   } else if (access(editor->path, F_OK) < 0) {
-    editor->file = file_create();
+    editor->buffer = buffer_create();
     editor_status_msg(editor, "\"%s\" [New File]", editor->path);
   } else {
-    editor->file = file_open(editor->path);
+    editor->buffer = buffer_open(editor->path);
     editor_status_msg(editor, "\"%s\" %dL, %dC",
-        editor->path, editor->file->nlines, file_size(editor->file));
+        editor->path, editor->buffer->nlines, buffer_size(editor->buffer));
   }
 
-  editor->top = editor->file->head->next;
+  editor->top = editor->buffer->head->next;
   editor->left = 0;
   editor->mode = &normal_mode;
   editor->cursor = cursor;
@@ -37,11 +37,11 @@ void editor_init(editor_t *editor, cursor_t *cursor, char *path) {
   cursor->offset = 0;
 }
 
-void editor_save_file(editor_t *editor, char *path) {
+void editor_save_buffer(editor_t *editor, char *path) {
   if (path) {
-    file_write(editor->file, path);
+    buffer_write(editor->buffer, path);
     editor_status_msg(editor, "\"%s\" %dL, %dC written",
-        path, editor->file->nlines, file_size(editor->file));
+        path, editor->buffer->nlines, buffer_size(editor->buffer));
     if (!editor->path) {
       editor->path = path;
     }
@@ -54,13 +54,13 @@ void editor_execute_command(editor_t *editor, char *command) {
   char *cmd = strtok(command, " ");
   char *arg = strtok(NULL, " ");
   if (!strcmp(cmd, "q")) {
-    // TODO(isbadawi): Error if file has unsaved changes.
+    // TODO(isbadawi): Error if buffer has unsaved changes.
     exit(0);
   } else if (!strcmp(cmd, "w")) {
     char *path = arg ? arg : editor->path;
-    editor_save_file(editor, path);
+    editor_save_buffer(editor, path);
   } else if (!strcmp(cmd, "wq")) {
-    editor_save_file(editor, editor->path);
+    editor_save_buffer(editor, editor->path);
     exit(0);
   } else {
     editor_status_err(editor, "Not an editor command: %s", command);
@@ -71,9 +71,9 @@ static void editor_ensure_cursor_visible(editor_t *editor) {
   int w = tb_width();
   int h = tb_height();
   int x = editor->cursor->offset - editor->left;
-  // TODO(isbadawi): This might be expensive for files with many lines.
-  int y = file_index_of_line(editor->file, editor->cursor->line) -
-    file_index_of_line(editor->file, editor->top);
+  // TODO(isbadawi): This might be expensive for buffers with many lines.
+  int y = buffer_index_of_line(editor->buffer, editor->cursor->line) -
+    buffer_index_of_line(editor->buffer, editor->top);
 
   if (x < 0) {
     editor->left += x;

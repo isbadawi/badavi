@@ -2,7 +2,7 @@
 #define _editor_h_included
 
 #include "buf.h"
-#include "file.h"
+#include "buffer.h"
 
 typedef struct {
   // The line the cursor is on.
@@ -16,9 +16,9 @@ typedef struct editing_mode_t editing_mode_t;
 
 // The "editor" holds the main state of the program.
 typedef struct {
-  // The file being edited (only one file for now).
-  file_t *file;
-  // The path to the file being edited.
+  // The buffer being edited (only one buffer for now).
+  buffer_t *buffer;
+  // The path to the buffer being edited.
   char *path;
   // The top line visible on screen.
   line_t *top;
@@ -37,7 +37,7 @@ typedef struct {
 
 void editor_init(editor_t *editor, cursor_t *cursor, char *path);
 
-void editor_save_file(editor_t *editor, char *path);
+void editor_save_buffer(editor_t *editor, char *path);
 void editor_execute_command(editor_t *editor, char *command);
 void editor_draw(editor_t *editor);
 

@@ -1,5 +1,7 @@
 #include "mode.h"
 
+#include <ctype.h>
+
 #include "buf.h"
 #include "editor.h"
 
@@ -17,6 +19,11 @@ static void repeat(int *count, editor_command_t* cmd, editor_t *editor) {
 static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   static int count = 0;
   static char last = 0;
+
+  if (!isdigit(last)) {
+    count = 0;
+  }
+
   pos_t *cursor = &editor->window->cursor;
   switch (ev->ch) {
     case 'i':

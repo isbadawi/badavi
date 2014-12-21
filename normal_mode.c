@@ -16,6 +16,7 @@ static void repeat(int *count, editor_command_t* cmd, editor_t *editor) {
 
 static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   static int count = 0;
+  static char last = 0;
   pos_t *cursor = &editor->window->cursor;
   switch (ev->ch) {
     case 'i':
@@ -42,6 +43,17 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     case 'l': repeat(&count, editor_move_right, editor); break;
     case 'j': repeat(&count, editor_move_down, editor); break;
     case 'k': repeat(&count, editor_move_up, editor); break;
+    case 'g':
+      if (last == 'g') {
+        cursor->line = editor->window->buffer->head->next;
+        cursor->offset = 0;
+      }
+      break;
+    case 'G': {
+      int n = editor->window->buffer->nlines;
+      repeat(&n, editor_move_down, editor);
+      break;
+    }
     case 'a': editor_send_keys(editor, "li"); break;
     case 'I': editor_send_keys(editor, "0i"); break;
     case 'A': editor_send_keys(editor, "$i"); break;
@@ -60,6 +72,7 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
           cursor->line->buf->len - cursor->offset);
       break;
   }
+  last = ev->ch;
 }
 
 editing_mode_t normal_mode = {normal_mode_key_pressed};

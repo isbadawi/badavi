@@ -13,7 +13,7 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   switch (ev->key) {
   case TB_KEY_ESC:
     editor_status_msg(editor, "");
-    editor->mode = &normal_mode;
+    editor->mode = normal_mode();
     return;
   case TB_KEY_BACKSPACE2:
     if (cursor->offset > 0) {
@@ -51,4 +51,8 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   buf_insert(cursor->line->buf, s, cursor->offset++);
 }
 
-editing_mode_t insert_mode = {insert_mode_key_pressed};
+editing_mode_t impl = {insert_mode_key_pressed};
+
+editing_mode_t *insert_mode(void) {
+  return &impl;
+}

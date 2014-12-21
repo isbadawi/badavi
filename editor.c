@@ -18,7 +18,7 @@ void editor_init(editor_t *editor) {
   editor->buffers = buffer_create(NULL);
   editor->windows = window_create(NULL);
   editor->window = NULL;
-  editor->mode = &normal_mode;
+  editor->mode = normal_mode();
 }
 
 static void editor_add_buffer(editor_t *editor, buffer_t *buffer) {

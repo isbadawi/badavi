@@ -23,11 +23,11 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   switch (ev->ch) {
   case 'i':
     editor_status_msg(editor, "-- INSERT --");
-    editor->mode = &insert_mode;
+    editor->mode = insert_mode();
     break;
   case ':':
     editor_status_msg(editor, ":");
-    editor->mode = &command_mode;
+    editor->mode = command_mode();
     break;
   case 'a': editor_send_keys(editor, "li"); break;
   case 'I': editor_send_keys(editor, "0i"); break;
@@ -49,4 +49,8 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   }
 }
 
-editing_mode_t normal_mode = {normal_mode_key_pressed};
+static editing_mode_t impl = {normal_mode_key_pressed};
+
+editing_mode_t *normal_mode(void) {
+  return &impl;
+}

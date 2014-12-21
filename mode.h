@@ -12,8 +12,8 @@ struct editing_mode_t {
   mode_keypress_handler_t* key_pressed;
 };
 
-extern editing_mode_t normal_mode;
-extern editing_mode_t insert_mode;
-extern editing_mode_t command_mode;
+editing_mode_t *normal_mode(void);
+editing_mode_t *insert_mode(void);
+editing_mode_t *command_mode(void);
 
 #endif

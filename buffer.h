@@ -15,8 +15,8 @@ typedef struct line_t {
 
 // buffer_t is the in-memory text of a file.
 typedef struct buffer_t {
-  // The name of the file this buffer was loaded from, or NULL.
-  char *name;
+  // The name of the file this buffer was loaded from (possibly empty).
+  buf_t *name;
   // Doubly linked list of lines.
   // The first node is always dummy node with buf == NULL.
   line_t *head;
@@ -33,7 +33,7 @@ typedef struct buffer_t {
 buffer_t *buffer_open(char *path);
 
 // Returns an empty buffer (i.e. with a single empty line).
-buffer_t *buffer_create(void);
+buffer_t *buffer_create(char *path);
 
 // Returns the size of the buffer (by adding up the sizes of the lines).
 int buffer_size(buffer_t *buffer);

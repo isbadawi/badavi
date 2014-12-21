@@ -15,7 +15,7 @@
 
 void editor_init(editor_t *editor) {
   editor->status = buf_create(tb_width() / 2);
-  editor->buffers = buffer_create();
+  editor->buffers = buffer_create(NULL);
   editor->windows = window_create(NULL);
   editor->window = NULL;
   editor->mode = &normal_mode;
@@ -35,7 +35,7 @@ static void editor_add_window(editor_t *editor, window_t *window) {
 
 static window_t *editor_get_window_by_name(editor_t* editor, char *name) {
   for (window_t *w = editor->windows->next; w; w = w->next) {
-    if (w->buffer && w->buffer->name && !strcmp(w->buffer->name, name)) {
+    if (w->buffer && !strcmp(w->buffer->name->buf, name)) {
       return w;
     }
   }
@@ -48,8 +48,7 @@ void editor_open(editor_t *editor, char *path) {
   if (!window) {
     buffer_t *buffer;
     if (access(path, F_OK) < 0) {
-      buffer = buffer_create();
-      buffer->name = path;
+      buffer = buffer_create(path);
       editor_status_msg(editor, "\"%s\" [New File]", path);
     } else {
       buffer = buffer_open(path);
@@ -60,12 +59,11 @@ void editor_open(editor_t *editor, char *path) {
     window = window_create(buffer);
     editor_add_window(editor, window);
   }
-
   editor->window = window;
 }
 
 void editor_open_empty(editor_t *editor) {
-  buffer_t *buffer = buffer_create();
+  buffer_t *buffer = buffer_create(NULL);
   editor_add_buffer(editor, buffer);
   window_t *window = window_create(buffer);
   editor_add_window(editor, window);
@@ -81,7 +79,7 @@ void editor_save_buffer(editor_t *editor, char *path) {
     name = path;
   } else {
     rc = buffer_write(buffer);
-    name = buffer->name;
+    name = buffer->name->buf;
   }
   if (!rc) {
     editor_status_msg(editor, "\"%s\" %dL, %dC written",

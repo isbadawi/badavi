@@ -18,7 +18,6 @@ window_t *window_create(buffer_t *buffer) {
     window->top.offset = 0;
     window->cursor.line = window->top.line;
     window->cursor.offset = 0;
-    window->next = NULL;
   }
 
   return window;

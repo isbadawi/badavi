@@ -7,7 +7,7 @@
 #include "buf.h"
 #include "util.h"
 
-buffer_t *buffer_create(void) {
+buffer_t *buffer_create(char *path) {
   buffer_t *buffer = malloc(sizeof(buffer_t));
   if (!buffer) {
     return NULL;
@@ -19,7 +19,8 @@ buffer_t *buffer_create(void) {
     return NULL;
   }
 
-  buffer->name = NULL;
+  path = path ? path : "";
+  buffer->name = buf_from_cstr(path);
   buffer->head->buf = NULL;
   buffer->head->prev = NULL;
   buffer->head->next = NULL;
@@ -32,7 +33,7 @@ buffer_t *buffer_create(void) {
 }
 
 buffer_t *buffer_open(char *path) {
-  buffer_t *buffer = buffer_create();
+  buffer_t *buffer = buffer_create(path);
   if (!buffer) {
     return NULL;
   }
@@ -44,7 +45,6 @@ buffer_t *buffer_open(char *path) {
     free(buffer);
     return NULL;
   }
-  buffer->name = path;
 
   char chunk[1024 + 1];
   line_t *last_line = NULL;
@@ -83,10 +83,10 @@ int buffer_size(buffer_t *buffer) {
 
 
 int buffer_write(buffer_t *buffer) {
-  if (!buffer->name) {
+  if (!buffer->name->len) {
     return -1;
   }
-  return buffer_saveas(buffer, buffer->name);
+  return buffer_saveas(buffer, buffer->name->buf);
 }
 
 int buffer_saveas(buffer_t *buffer, char *path) {
@@ -95,8 +95,8 @@ int buffer_saveas(buffer_t *buffer, char *path) {
     return -1;
   }
 
-  if (!buffer->name) {
-    buffer->name = path;
+  if (!buffer->name->len) {
+    buf_printf(buffer->name, "%s", path);
   }
 
   for (line_t *line = buffer->head->next; line != NULL; line = line->next) {

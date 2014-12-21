@@ -5,7 +5,17 @@
 
 #include <termbox.h>
 
+typedef void (editor_command_t) (editor_t*);
+static void repeat(int *count, editor_command_t* cmd, editor_t *editor) {
+  int n = *count ? *count : 1;
+  for (int i = 0; i < n; ++i) {
+    cmd(editor);
+  }
+  *count = 0;
+}
+
 static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
+  static int count = 0;
   pos_t *cursor = &editor->window->cursor;
   switch (ev->ch) {
     case 'i':
@@ -16,12 +26,22 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
       editor_status_msg(editor, ":");
       editor->mode = &command_mode;
       break;
-    case '0': cursor->offset = 0; break;
+    case '0':
+      if (count > 0) {
+        count = 10 * count;
+      } else {
+        cursor->offset = 0;
+      }
+      break;
+    case '1': case '2': case '3': case '4': case '5':
+    case '6': case '7': case '8': case '9':
+      count = 10 * count + ev->ch - '0';
+      break;
     case '$': cursor->offset = cursor->line->buf->len; break;
-    case 'h': editor_move_left(editor); break;
-    case 'l': editor_move_right(editor); break;
-    case 'j': editor_move_down(editor); break;
-    case 'k': editor_move_up(editor); break;
+    case 'h': repeat(&count, editor_move_left, editor); break;
+    case 'l': repeat(&count, editor_move_right, editor); break;
+    case 'j': repeat(&count, editor_move_down, editor); break;
+    case 'k': repeat(&count, editor_move_up, editor); break;
     case 'a': editor_send_keys(editor, "li"); break;
     case 'I': editor_send_keys(editor, "0i"); break;
     case 'A': editor_send_keys(editor, "$i"); break;

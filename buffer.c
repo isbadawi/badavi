@@ -54,7 +54,6 @@ buffer_t *buffer_open(char *path) {
     for (int i = 0; i < n; ++i) {
       if (chunk[i] == '\n') {
         chunk[i] = '\0';
-        debug("line: \"%s\"\n", start);
         if (last_line) {
           buf_insert(last_line->buf, start, last_line->buf->len);
           last_line = NULL;

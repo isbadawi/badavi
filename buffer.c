@@ -176,3 +176,14 @@ int buffer_index_of_line(buffer_t *buffer, line_t *line) {
   }
   return -1;
 }
+
+line_t *buffer_get_line(buffer_t *buffer, int pos) {
+  if (pos < 0 || pos >= buffer->nlines) {
+    return NULL;
+  }
+  line_t *l = buffer->head->next;
+  for (int i = 0; i < pos; ++i) {
+    l = l->next;
+  }
+  return l;
+}

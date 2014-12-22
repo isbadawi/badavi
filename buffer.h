@@ -58,4 +58,6 @@ void buffer_remove_line(buffer_t *buffer, line_t *line);
 
 int buffer_index_of_line(buffer_t *buffer, line_t *line);
 
+line_t *buffer_get_line(buffer_t *buffer, int pos);
+
 #endif

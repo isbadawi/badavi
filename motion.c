@@ -81,6 +81,7 @@ int motion_key(motion_t *motion, struct tb_event *ev) {
   case 'j': motion->op = down; break;
   case 'k': motion->op = up; break;
   case 'l': motion->op = right; break;
+  // TODO(isbadawi): G should jump to line "count", but ops can't access that.
   case 'G': motion->op = buffer_bottom; break;
   case 'g':
     if (motion->last == 'g') {

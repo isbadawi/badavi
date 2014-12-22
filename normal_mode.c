@@ -29,22 +29,20 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     editor_status_msg(editor, ":");
     editor->mode = command_mode();
     break;
+  case 'd':
+    editor->mode = operator_pending_mode('d');
+    break;
   case 'a': editor_send_keys(editor, "li"); break;
   case 'I': editor_send_keys(editor, "0i"); break;
   case 'A': editor_send_keys(editor, "$i"); break;
   case 'o': editor_send_keys(editor, "A<cr>"); break;
   case 'O': editor_send_keys(editor, "0i<cr><esc>ki"); break;
-  case 'x': editor_send_keys(editor, "a<bs><esc>"); break;
+  case 'x': editor_send_keys(editor, "dl"); break;
+  case 'D': editor_send_keys(editor, "d$"); break;
   case 'J':
     if (cursor->line->next) {
       editor_send_keys(editor, "A <esc>jI<bs><esc>");
     }
-    break;
-  case 'D':
-    buf_delete(
-        cursor->line->buf,
-        cursor->offset,
-        cursor->line->buf->len - cursor->offset);
     break;
   }
 }

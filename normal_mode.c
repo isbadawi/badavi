@@ -29,9 +29,6 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     editor_status_msg(editor, ":");
     editor->mode = command_mode();
     break;
-  case 'd':
-    editor->mode = operator_pending_mode('d');
-    break;
   case 'a': editor_send_keys(editor, "li"); break;
   case 'I': editor_send_keys(editor, "0i"); break;
   case 'A': editor_send_keys(editor, "$i"); break;
@@ -39,11 +36,18 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   case 'O': editor_send_keys(editor, "0i<cr><esc>ki"); break;
   case 'x': editor_send_keys(editor, "dl"); break;
   case 'D': editor_send_keys(editor, "d$"); break;
+  case 'C': editor_send_keys(editor, "c$"); break;
   case 'J':
     if (cursor->line->next) {
       editor_send_keys(editor, "A <esc>jI<bs><esc>");
     }
     break;
+  default: {
+    editing_mode_t *mode = operator_pending_mode(ev->ch);
+    if (mode) {
+      editor->mode = mode;
+    }
+  }
   }
 }
 

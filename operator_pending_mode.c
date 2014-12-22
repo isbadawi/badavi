@@ -71,6 +71,14 @@ static void delete_op(editor_t *editor, region_t region) {
         start_line->buf->len);
     buffer_remove_line(editor->window->buffer, end_line);
   }
+  editor->mode = normal_mode();
+}
+
+static void change_op(editor_t *editor, region_t region) {
+  delete_op(editor, region);
+  // TODO(isbadawi): This is duplicated between normal mode and here.
+  editor_status_msg(editor, "-- INSERT --");
+  editor->mode = insert_mode();
 }
 
 typedef struct {
@@ -80,6 +88,7 @@ typedef struct {
 
 static op_table_entry_t op_table[] = {
   {'d', delete_op},
+  {'c', change_op},
   {-1, NULL}
 };
 
@@ -104,7 +113,6 @@ static void key_pressed(editor_t *editor, struct tb_event *ev) {
         motion_apply(&motion, editor->window));
     editor->window->cursor = region.start;
     mode->op(editor, region);
-    editor->mode = normal_mode();
   } else if (rc < 0) {
     // If the character doesn't make sense, go back to normal mode
     editor->mode = normal_mode();

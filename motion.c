@@ -62,6 +62,17 @@ static char char_at(pos_t pos) {
   return pos.line->buf->buf[pos.offset];
 }
 
+static pos_t prev_char(pos_t pos) {
+  if (pos.offset > 0) {
+    pos.offset--;
+  } else if (pos.line->prev->buf != NULL) {
+    pos.line = pos.line->prev;
+    int len = pos.line->buf->len;
+    pos.offset = len ? len - 1 : 0;
+  }
+  return pos;
+}
+
 static pos_t next_char(pos_t pos) {
   int len = pos.line->buf->len;
   if (pos.offset < len - 1 || (pos.offset == len - 1 && !pos.line->next)) {
@@ -93,6 +104,10 @@ static int is_word_start(pos_t pos) {
   return is_word_char(c) + is_word_char(last) == 1;
 }
 
+static int first_char(pos_t pos) {
+  return pos.offset == 0 && pos.line->prev->buf == NULL;
+}
+
 static int last_char(pos_t pos) {
   return pos.offset == pos.line->buf->len && !pos.line->next;
 }
@@ -101,6 +116,13 @@ static pos_t next_word_start(pos_t pos, window_t *window) {
   do {
     pos = next_char(pos);
   } while (!is_word_start(pos) && !last_char(pos));
+  return pos;
+}
+
+static pos_t prev_word_start(pos_t pos, window_t *window) {
+  do {
+    pos = prev_char(pos);
+  } while (!is_word_start(pos) && !first_char(pos));
   return pos;
 }
 
@@ -127,6 +149,7 @@ int motion_key(motion_t *motion, struct tb_event *ev) {
   case 'j': motion->op = down; break;
   case 'k': motion->op = up; break;
   case 'l': motion->op = right; break;
+  case 'b': motion->op = prev_word_start; break;
   case 'w': motion->op = next_word_start; break;
   // TODO(isbadawi): G should jump to line "count", but ops can't access that.
   case 'G': motion->op = buffer_bottom; break;

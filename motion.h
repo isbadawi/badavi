@@ -6,6 +6,7 @@
 typedef pos_t (motion_op_t) (pos_t, window_t*);
 
 typedef struct {
+  char *name;
   motion_op_t *op;
   char last;
   int count;

@@ -1,6 +1,7 @@
 #include "motion.h"
 
 #include <ctype.h>
+#include <string.h>
 
 #include <termbox.h>
 
@@ -208,62 +209,80 @@ static pos_t prev_WORD_end(pos_t pos, window_t *window) {
   return pos;
 }
 
+static motion_t motion_table[] = {
+  {"h", left},
+  {"j", down},
+  {"k", up},
+  {"l", right},
+  {"0", line_start},
+  {"$", line_end},
+  {"b", prev_word_start},
+  {"B", prev_WORD_start},
+  {"w", next_word_start},
+  {"W", next_WORD_start},
+  {"e", next_word_end},
+  {"E", next_WORD_end},
+  {"ge", prev_word_end},
+  {"gE", prev_WORD_end},
+  // TODO(isbadawi): G should jump to line "count", but ops can't access that.
+  {"G", buffer_bottom},
+  {"gg", buffer_top},
+  {NULL, NULL}
+};
+
+static motion_t *motion_find(char *name) {
+  for (int i = 0; motion_table[i].name != NULL; ++i) {
+    if (!strcmp(motion_table[i].name, name)) {
+      return &motion_table[i];
+    }
+  }
+  return NULL;
+}
+
+static int motion_exists_with_prefix(char *name) {
+  for (int i = 0; motion_table[i].name != NULL; ++i) {
+    if (!strncmp(motion_table[i].name, name, strlen(name))) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 int motion_key(motion_t *motion, struct tb_event *ev) {
   if (!isdigit(motion->last)) {
     motion->count = 0;
   }
 
-  switch (ev->ch) {
-  case '$': motion->op = line_end; break;
-  case '0':
-    if (motion->count > 0) {
-      motion->count *= 10;
-    } else {
-      motion->op = line_start;
-    }
-    break;
-  case '1': case '2': case '3': case '4': case '5':
-  case '6': case '7': case '8': case '9':
+  if (isdigit(ev->ch) && !(motion->count == 0 && ev->ch == '0')) {
     motion->count *= 10;
     motion->count += ev->ch - '0';
-    break;
-  case 'h': motion->op = left; break;
-  case 'j': motion->op = down; break;
-  case 'k': motion->op = up; break;
-  case 'l': motion->op = right; break;
-  case 'b': motion->op = prev_word_start; break;
-  case 'B': motion->op = prev_WORD_start; break;
-  case 'w': motion->op = next_word_start; break;
-  case 'W': motion->op = next_WORD_start; break;
-  case 'e':
-    if (motion->last == 'g') {
-      motion->op = prev_word_end;
-    } else {
-      motion->op = next_word_end;
-    }
-    break;
-  case 'E':
-    if (motion->last == 'g') {
-      motion->op = prev_WORD_end;
-    } else {
-      motion->op = next_WORD_end;
-    }
-    break;
-  // TODO(isbadawi): G should jump to line "count", but ops can't access that.
-  case 'G': motion->op = buffer_bottom; break;
-  case 'g':
-    if (motion->last == 'g') {
-      motion->op = buffer_top;
-    }
-    break;
-  default:
-    motion->op = NULL;
-    motion->count = 0;
-    motion->last = 0;
-    return -1;
+    motion->last = ev->ch;
+    return 0;
   }
-  motion->last = ev->ch;
-  return motion->op != NULL;
+
+  motion_t *m = NULL;
+  char name[3];
+  if (motion->last) {
+    name[0] = motion->last;
+    name[1] = ev->ch;
+    name[2] = '\0';
+    m = motion_find(name);
+  }
+  if (!m) {
+    name[0] = ev->ch;
+    name[1] = '\0';
+    m = motion_find(name);
+  }
+  if (m) {
+    motion->name = m->name;
+    motion->op = m->op;
+    return 1;
+  }
+  if (motion_exists_with_prefix(name)) {
+    motion->last = ev->ch;
+    return 0;
+  }
+  return -1;
 }
 
 pos_t motion_apply(motion_t *motion, window_t *window) {

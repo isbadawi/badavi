@@ -8,6 +8,7 @@
 #include "buf.h"
 #include "editor.h"
 
+// TODO(isbadawi): Command mode needs a cursor, but modes don't affect drawing.
 static void command_mode_key_pressed(editor_t *editor, struct tb_event *ev) {
   char ch;
   switch (ev->key) {

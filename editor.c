@@ -133,35 +133,6 @@ void editor_handle_key_press(editor_t *editor, struct tb_event *ev) {
   editor_draw(editor);
 }
 
-void editor_move_left(editor_t *editor) {
-  pos_t *cursor = &editor->window->cursor;
-  cursor->offset = max(cursor->offset - 1, 0);
-}
-
-void editor_move_right(editor_t *editor) {
-  pos_t *cursor = &editor->window->cursor;
-  int len = cursor->line->buf->len;
-  cursor->offset = min(cursor->offset + 1, len);
-}
-
-void editor_move_up(editor_t *editor) {
-  pos_t *cursor = &editor->window->cursor;
-  if (!cursor->line->prev->buf) {
-    return;
-  }
-  cursor->line = cursor->line->prev;
-  cursor->offset = min(cursor->offset, cursor->line->buf->len);
-}
-
-void editor_move_down(editor_t *editor) {
-  pos_t *cursor = &editor->window->cursor;
-  if (!cursor->line->next) {
-    return;
-  }
-  cursor->line = cursor->line->next;
-  cursor->offset = min(cursor->offset, cursor->line->buf->len);
-}
-
 void editor_send_keys(editor_t *editor, const char *keys) {
   int len = strlen(keys);
   struct tb_event ev;

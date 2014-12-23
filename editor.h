@@ -42,11 +42,6 @@ void editor_handle_key_press(editor_t *editor, struct tb_event *ev);
 void editor_status_msg(editor_t *editor, const char *format, ...);
 void editor_status_err(editor_t *editor, const char *format, ...);
 
-void editor_move_left(editor_t *editor);
-void editor_move_right(editor_t *editor);
-void editor_move_down(editor_t *editor);
-void editor_move_up(editor_t *editor);
-
 void editor_send_keys(editor_t *editor, const char *keys);
 
 #endif

@@ -37,7 +37,7 @@ static void command_mode_key_pressed(editor_t *editor, struct tb_event *ev) {
     ch = ev->ch;
   }
   char s[2] = {ch, '\0'};
-  buf_insert(editor->status, s, editor->status->len);
+  buf_append(editor->status, s);
 }
 
 static editing_mode_t impl = {command_mode_key_pressed};

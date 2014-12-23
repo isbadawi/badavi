@@ -55,7 +55,7 @@ buffer_t *buffer_open(char *path) {
       if (chunk[i] == '\n') {
         chunk[i] = '\0';
         if (last_line) {
-          buf_insert(last_line->buf, start, last_line->buf->len);
+          buf_append(last_line->buf, start);
           last_line = NULL;
         } else {
           buffer_insert_line(buffer, start, buffer->nlines);

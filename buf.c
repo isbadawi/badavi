@@ -38,7 +38,7 @@ buf_t *buf_from_cstr(const char *s) {
     return NULL;
   }
 
-  buf_insert(buf, s, buf->len);
+  buf_append(buf, s);
   return buf;
 }
 
@@ -74,6 +74,10 @@ int buf_insert(buf_t *buf, const char *s, int pos) {
   buf->len += len;
   buf->buf[buf->len] = '\0';
   return 0;
+}
+
+int buf_append(buf_t *buf, const char *s) {
+  return buf_insert(buf, s, buf->len);
 }
 
 int buf_delete(buf_t *buf, int pos, int len) {

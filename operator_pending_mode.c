@@ -62,10 +62,7 @@ static void delete_op(editor_t *editor, region_t region) {
     // Delete from start of end line to end offset.
     buf_delete(end_line->buf, 0, end);
     // Join the two remaining lines.
-    buf_insert(
-        start_line->buf,
-        end_line->buf->buf,
-        start_line->buf->len);
+    buf_append(start_line->buf, end_line->buf->buf);
     buffer_remove_line(editor->window->buffer, end_line);
   }
   editor->mode = normal_mode();

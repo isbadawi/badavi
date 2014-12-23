@@ -19,14 +19,10 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     if (cursor->offset > 0) {
       buf_delete(cursor->line->buf, cursor->offset-- - 1, 1);
     } else if (cursor->line->prev->buf) {
-      int prev_len = cursor->line->prev->buf->len;
-      buf_insert(
-          cursor->line->prev->buf,
-          cursor->line->buf->buf,
-          prev_len);
-      editor_move_up(editor);
+      cursor->line = cursor->line->prev;
+      cursor->offset = cursor->line->buf->len;
+      buf_append(cursor->line->buf, cursor->line->next->buf->buf);
       buffer_remove_line(buffer, cursor->line->next);
-      cursor->offset = prev_len;
     }
     return;
   case TB_KEY_ENTER:

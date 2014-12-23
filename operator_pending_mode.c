@@ -1,10 +1,11 @@
 #include "mode.h"
 
+#include <stdlib.h>
+
 #include "buf.h"
 #include "buffer.h"
 #include "editor.h"
 #include "motion.h"
-#include "util.h"
 
 typedef struct {
   pos_t start;
@@ -44,15 +45,13 @@ typedef struct {
 static void delete_op(editor_t *editor, region_t region) {
   line_t *start_line = region.start.line;
   line_t *end_line = region.end.line;
+  int start = region.start.offset;
+  int end = region.end.offset;
   if (start_line == end_line) {
-    int start = min(region.start.offset, region.end.offset);
-    int end = max(region.start.offset, region.end.offset);
     buf_delete(start_line->buf, start, end - start);
   } else {
     // Delete from start offset to end of start line.
-    buf_t *buf = start_line->buf;
-    int offset = region.start.offset;
-    buf_delete(buf, offset, buf->len - offset);
+    buf_delete(start_line->buf, start, start_line->buf->len - start);
     // Remove any intermediate lines.
     line_t *line = start_line->next;
     while (line != end_line) {
@@ -61,9 +60,7 @@ static void delete_op(editor_t *editor, region_t region) {
       line = next;
     }
     // Delete from start of end line to end offset.
-    buf = end_line->buf;
-    offset = region.end.offset;
-    buf_delete(buf, 0, offset);
+    buf_delete(end_line->buf, 0, end);
     // Join the two remaining lines.
     buf_insert(
         start_line->buf,

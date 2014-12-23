@@ -104,6 +104,18 @@ static int is_word_start(pos_t pos) {
   return is_word_char(c) + is_word_char(last) == 1;
 }
 
+static int is_WORD_start(pos_t pos) {
+  char c = char_at(pos);
+  if (isspace(c)) {
+    return 0;
+  }
+  if (pos.offset == 0) {
+    return 1;
+  }
+  pos.offset--;
+  return isspace(char_at(pos));
+}
+
 static int is_word_end(pos_t pos) {
   char c = char_at(pos);
   if (isspace(c)) {
@@ -118,6 +130,18 @@ static int is_word_end(pos_t pos) {
     return 1;
   }
   return is_word_char(c) + is_word_char(next) == 1;
+}
+
+static int is_WORD_end(pos_t pos) {
+  char c = char_at(pos);
+  if (isspace(c)) {
+    return 0;
+  }
+  if (pos.offset == pos.line->buf->len - 1) {
+    return 1;
+  }
+  pos.offset++;
+  return isspace(char_at(pos));
 }
 
 static int first_char(pos_t pos) {
@@ -135,10 +159,24 @@ static pos_t next_word_start(pos_t pos, window_t *window) {
   return pos;
 }
 
+static pos_t next_WORD_start(pos_t pos, window_t *window) {
+  do {
+    pos = next_char(pos);
+  } while (!is_WORD_start(pos) && !last_char(pos));
+  return pos;
+}
+
 static pos_t prev_word_start(pos_t pos, window_t *window) {
   do {
     pos = prev_char(pos);
   } while (!is_word_start(pos) && !first_char(pos));
+  return pos;
+}
+
+static pos_t prev_WORD_start(pos_t pos, window_t *window) {
+  do {
+    pos = prev_char(pos);
+  } while (!is_WORD_start(pos) && !first_char(pos));
   return pos;
 }
 
@@ -149,10 +187,24 @@ static pos_t next_word_end(pos_t pos, window_t *window) {
   return pos;
 }
 
+static pos_t next_WORD_end(pos_t pos, window_t *window) {
+  do {
+    pos = next_char(pos);
+  } while (!is_WORD_end(pos) && !last_char(pos));
+  return pos;
+}
+
 static pos_t prev_word_end(pos_t pos, window_t *window) {
   do {
     pos = prev_char(pos);
   } while (!is_word_end(pos) && !first_char(pos));
+  return pos;
+}
+
+static pos_t prev_WORD_end(pos_t pos, window_t *window) {
+  do {
+    pos = prev_char(pos);
+  } while (!is_WORD_end(pos) && !first_char(pos));
   return pos;
 }
 
@@ -180,12 +232,21 @@ int motion_key(motion_t *motion, struct tb_event *ev) {
   case 'k': motion->op = up; break;
   case 'l': motion->op = right; break;
   case 'b': motion->op = prev_word_start; break;
+  case 'B': motion->op = prev_WORD_start; break;
   case 'w': motion->op = next_word_start; break;
+  case 'W': motion->op = next_WORD_start; break;
   case 'e':
     if (motion->last == 'g') {
       motion->op = prev_word_end;
     } else {
       motion->op = next_word_end;
+    }
+    break;
+  case 'E':
+    if (motion->last == 'g') {
+      motion->op = prev_WORD_end;
+    } else {
+      motion->op = next_WORD_end;
     }
     break;
   // TODO(isbadawi): G should jump to line "count", but ops can't access that.

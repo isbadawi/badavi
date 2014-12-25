@@ -56,6 +56,25 @@ static char char_at(pos_t pos) {
   return pos.line->buf->buf[pos.offset];
 }
 
+static pos_t first_non_blank(pos_t pos, window_t *window) {
+  pos.offset = 0;
+  while (pos.offset < pos.line->buf->len - 1 && isspace(char_at(pos))) {
+    pos.offset++;
+  }
+  return pos;
+}
+
+static pos_t last_non_blank(pos_t pos, window_t *window) {
+  if (pos.line->buf->len == 0) {
+    return pos;
+  }
+  pos.offset = pos.line->buf->len - 1;
+  while (pos.offset > 0 && isspace(char_at(pos))) {
+    pos.offset--;
+  }
+  return pos;
+}
+
 static pos_t prev_char(pos_t pos) {
   if (pos.offset > 0) {
     pos.offset--;
@@ -241,6 +260,8 @@ static motion_t motion_table[] = {
   {"l", right},
   {"0", line_start},
   {"$", line_end},
+  {"^", first_non_blank},
+  {"g_", last_non_blank},
   {"{", paragraph_start},
   {"}", paragraph_end},
   {"b", prev_word_start},

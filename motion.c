@@ -209,6 +209,38 @@ static pos_t prev_WORD_end(pos_t pos, window_t *window) {
   return pos;
 }
 
+static int is_paragraph_start(line_t *line) {
+  return line->prev->buf == NULL ||
+    (!line->buf->len && line->next && line->next->buf->len);
+}
+
+static int is_paragraph_end(line_t *line) {
+  return line->next == NULL ||
+    (!line->buf->len && line->prev && line->prev->buf->len);
+}
+
+static pos_t paragraph_start(pos_t pos, window_t *window) {
+  pos.offset = 0;
+  if (pos.line->prev->buf) {
+    do {
+      pos.line = pos.line->prev;
+    } while (!is_paragraph_start(pos.line));
+  }
+  return pos;
+}
+
+static pos_t paragraph_end(pos_t pos, window_t *window) {
+  if (!pos.line->next) {
+    pos.offset = pos.line->buf->len - 1;
+  } else {
+    do {
+      pos.line = pos.line->next;
+    } while (!is_paragraph_end(pos.line));
+    pos.offset = 0;
+  }
+  return pos;
+}
+
 static motion_t motion_table[] = {
   {"h", left},
   {"j", down},
@@ -216,6 +248,8 @@ static motion_t motion_table[] = {
   {"l", right},
   {"0", line_start},
   {"$", line_end},
+  {"{", paragraph_start},
+  {"}", paragraph_end},
   {"b", prev_word_start},
   {"B", prev_WORD_start},
   {"w", next_word_start},
@@ -227,6 +261,7 @@ static motion_t motion_table[] = {
   // TODO(isbadawi): G should jump to line "count", but ops can't access that.
   {"G", buffer_bottom},
   {"gg", buffer_top},
+  // TODO(isbadawi): What about {t,f,T,F}{char}?
   {NULL, NULL}
 };
 

@@ -22,6 +22,8 @@ typedef struct buffer_t {
   line_t *head;
   // Number of lines in the buffer.
   int nlines;
+  // True if this buffer has unsaved changes.
+  int dirty;
 
   struct buffer_t *next;
 } buffer_t;

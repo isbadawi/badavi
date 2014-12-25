@@ -25,6 +25,7 @@ buffer_t *buffer_create(char *path) {
   buffer->head->prev = NULL;
   buffer->head->next = NULL;
   buffer->nlines = 0;
+  buffer->dirty = 0;
   buffer->next = NULL;
 
   buffer_insert_line(buffer, "", 0);
@@ -103,6 +104,8 @@ int buffer_saveas(buffer_t *buffer, char *path) {
     fwrite(line->buf->buf, 1, line->buf->len, fp);
     fputc('\n', fp);
   }
+
+  buffer->dirty = 0;
 
   fclose(fp);
   return 0;

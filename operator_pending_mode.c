@@ -65,6 +65,7 @@ static void delete_op(editor_t *editor, region_t region) {
     buf_append(start_line->buf, end_line->buf->buf);
     buffer_remove_line(editor->window->buffer, end_line);
   }
+  editor->window->buffer->dirty = 1;
   editor->mode = normal_mode();
 }
 

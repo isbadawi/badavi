@@ -93,7 +93,16 @@ void editor_execute_command(editor_t *editor, char *command) {
   char *cmd = strtok(command, " ");
   char *arg = strtok(NULL, " ");
   if (!strcmp(cmd, "q")) {
-    // TODO(isbadawi): Error if buffer has unsaved changes.
+    for (buffer_t *b = editor->buffers->next; b != NULL; b = b->next) {
+      if (b->dirty) {
+        editor_status_err(editor,
+            "No write since last change for buffer \"%s\"",
+             b->name->len ? b->name->buf : "[No Name]");
+        return;
+      }
+    }
+    exit(0);
+  } else if (!strcmp(cmd, "q!")) {
     exit(0);
   } else if (!strcmp(cmd, "w")) {
     editor_save_buffer(editor, arg);

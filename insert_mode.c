@@ -24,6 +24,7 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
       buf_append(cursor->line->buf, cursor->line->next->buf->buf);
       buffer_remove_line(buffer, cursor->line->next);
     }
+    buffer->dirty = 1;
     return;
   case TB_KEY_ENTER:
     buffer_insert_line_after(
@@ -36,6 +37,7 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
         cursor->line->buf->len - cursor->offset);
     cursor->line = cursor->line->next;
     cursor->offset = 0;
+    buffer->dirty = 1;
     return;
   case TB_KEY_SPACE:
     ch = ' ';
@@ -45,6 +47,7 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   }
   char s[2] = {ch, '\0'};
   buf_insert(cursor->line->buf, s, cursor->offset++);
+  buffer->dirty = 1;
 }
 
 editing_mode_t impl = {insert_mode_key_pressed};

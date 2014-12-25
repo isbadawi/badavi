@@ -12,7 +12,7 @@ static int is_line_start(gapbuf_t *gb, int pos) {
 }
 
 static int is_line_end(gapbuf_t *gb, int pos) {
-  return pos == gb_size(gb) - 1 || gb_getchar(gb, pos + 1) == '\n';
+  return pos == gb_size(gb) - 1 || gb_getchar(gb, pos) == '\n';
 }
 
 static int is_first_line(gapbuf_t *gb, int pos) {
@@ -20,7 +20,7 @@ static int is_first_line(gapbuf_t *gb, int pos) {
 }
 
 static int is_last_line(gapbuf_t *gb, int pos) {
-  return pos > gb_size(gb) - gb->lines->buf[gb->lines->len - 1];
+  return pos >= gb_size(gb) - 1 - gb->lines->buf[gb->lines->len - 1];
 }
 
 static int left(int pos, window_t *window) {
@@ -38,7 +38,7 @@ static int up(int pos, window_t *window) {
   gapbuf_t *gb = window->buffer->text;
   int x, y;
   gb_pos_to_linecol(gb, pos, &y, &x);
-  return gb_linecol_to_pos(gb, y - 1, min(x, gb->lines->buf[y - 2]));
+  return gb_linecol_to_pos(gb, y - 1, min(x, gb->lines->buf[y - 1]));
 }
 
 static int down(int pos, window_t *window) {
@@ -48,17 +48,23 @@ static int down(int pos, window_t *window) {
   gapbuf_t *gb = window->buffer->text;
   int x, y;
   gb_pos_to_linecol(gb, pos, &y, &x);
-  return gb_linecol_to_pos(gb, y + 1, min(x, gb->lines->buf[y]));
+  return gb_linecol_to_pos(gb, y + 1, min(x, gb->lines->buf[y + 1]));
 }
 
 static int line_start(int pos, window_t *window) {
   gapbuf_t *gb = window->buffer->text;
-  return gb_lastindexof(gb, '\n', pos) + 1;
+  if (is_line_start(gb, pos)) {
+    return pos;
+  }
+  return gb_lastindexof(gb, '\n', pos - 1) + 1;
 }
 
 static int line_end(int pos, window_t *window) {
   gapbuf_t *gb = window->buffer->text;
-  return gb_indexof(gb, '\n', pos) - 1;
+  if (is_line_end(gb, pos)) {
+    return pos;
+  }
+  return gb_indexof(gb, '\n', pos);
 }
 
 static int buffer_top(int pos, window_t *window) {

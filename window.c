@@ -46,7 +46,7 @@ static void window_ensure_cursor_visible(window_t *window) {
     topy += h - y - 2;
   }
 
-  window->top = gb_linecol_to_pos(gb, topx, topy);
+  window->top = gb_linecol_to_pos(gb, topy, topx);
 }
 
 void window_draw(window_t *window) {
@@ -60,14 +60,13 @@ void window_draw(window_t *window) {
   // TODO(isbadawi): Each linecol_to_pos call is a loop.
   for (int y = topy; y <= gb->lines->len && y - topy < h - 1; ++y) {
     for (int x = topx; x < gb->lines->buf[y] && x - topx < w; ++x) {
-      debug("coord: (%d, %d)\n", y, x);
-      debug("pos: %d\n", gb_linecol_to_pos(gb, y, x));
       char c = gb_getchar(gb, gb_linecol_to_pos(gb, y, x));
       tb_change_cell(x - topx, y - topy, c, TB_WHITE, TB_DEFAULT);
     }
   }
 
   char c = gb_getchar(gb, window->cursor);
+  c = c == '\n' ? ' ' : c;
   int cursorx, cursory;
   gb_pos_to_linecol(gb, window->cursor, &cursory, &cursorx);
   tb_change_cell(cursorx - topx, cursory - topy, c, TB_DEFAULT, TB_WHITE);

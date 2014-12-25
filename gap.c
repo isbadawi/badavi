@@ -172,7 +172,7 @@ void gb_pos_to_linecol(gapbuf_t *gb, int pos, int *line, int *column) {
   int offset = 0;
   for (int i = 0; i < gb->lines->len; ++i) {
     int len = gb->lines->buf[i];
-    if (offset <= pos && pos < offset + len) {
+    if (offset <= pos && pos <= offset + len) {
       *line = i;
       *column = pos - offset;
       return;

@@ -52,13 +52,6 @@ static pos_t buffer_top(pos_t pos, window_t *window) {
   return pos;
 }
 
-static pos_t buffer_bottom(pos_t pos, window_t *window) {
-  pos.line = buffer_get_line(
-      window->buffer, window->buffer->nlines - 1);
-  pos.offset = 0;
-  return pos;
-}
-
 static char char_at(pos_t pos) {
   return pos.line->buf->buf[pos.offset];
 }
@@ -258,8 +251,7 @@ static motion_t motion_table[] = {
   {"E", next_WORD_end},
   {"ge", prev_word_end},
   {"gE", prev_WORD_end},
-  // TODO(isbadawi): G should jump to line "count", but ops can't access that.
-  {"G", buffer_bottom},
+  {"G", down}, // See motion_apply...
   {"gg", buffer_top},
   // TODO(isbadawi): What about {t,f,T,F}{char}?
   {NULL, NULL}
@@ -323,6 +315,13 @@ int motion_key(motion_t *motion, struct tb_event *ev) {
 pos_t motion_apply(motion_t *motion, window_t *window) {
   pos_t result = window->cursor;
   int n = motion->count ? motion->count : 1;
+
+  // TODO(isbadawi): This is a hack to make G work correctly.
+  if (!strcmp(motion->name, "G")) {
+    n = motion->count ? motion->count - 1 : window->buffer->nlines - 1;
+    result = buffer_top(result, window);
+  }
+
   for (int i = 0; i < n; ++i) {
     result = motion->op(result, window);
   }

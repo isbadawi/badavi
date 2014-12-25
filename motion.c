@@ -23,6 +23,11 @@ static int is_last_line(gapbuf_t *gb, int pos) {
   return pos >= gb_size(gb) - 1 - gb->lines->buf[gb->lines->len - 1];
 }
 
+static int is_blank_line(gapbuf_t *gb, int pos) {
+  return gb_getchar(gb, pos) == '\n' &&
+    (pos == 0 || gb_getchar(gb, pos - 1) == '\n');
+}
+
 static int left(int pos, window_t *window) {
   return is_line_start(window->buffer->text, pos) ? pos : pos - 1;
 }
@@ -96,13 +101,13 @@ static int is_word_char(char c) {
 }
 
 static int is_word_start(int pos, window_t *window) {
-  if (pos == 0) {
+  gapbuf_t *gb = window->buffer->text;
+  if (is_line_start(gb, pos)) {
     return 1;
   }
-  gapbuf_t *gb = window->buffer->text;
   char this = gb_getchar(gb, pos);
   char last = gb_getchar(gb, pos - 1);
-  return !isspace(this) && is_word_char(this) + is_word_char(last) == 1;
+  return !isspace(this) && (is_word_char(this) + is_word_char(last) == 1);
 }
 
 static int is_WORD_start(int pos, window_t *window) {
@@ -117,12 +122,12 @@ static int is_WORD_start(int pos, window_t *window) {
 
 static int is_word_end(int pos, window_t *window) {
   gapbuf_t *gb = window->buffer->text;
-  if (pos == gb_size(gb)) {
+  if (pos == gb_size(gb) - 1 || is_blank_line(gb, pos)) {
     return 1;
   }
   char this = gb_getchar(gb, pos);
   char next = gb_getchar(gb, pos + 1);
-  return !isspace(this) && is_word_char(this) + is_word_char(next) == 1;
+  return !isspace(this) && (is_word_char(this) + is_word_char(next) == 1);
 }
 
 static int is_WORD_end(int pos, window_t *window) {
@@ -146,10 +151,10 @@ static int prev_until(int pos, window_t *window, motion_op_t *pred) {
 
 static int next_until(int pos, window_t *window, motion_op_t *pred) {
   int size = gb_size(window->buffer->text);
-  if (pos < size) {
+  if (pos < size - 1) {
     do {
       ++pos;
-    } while (!pred(pos, window) && pos < size);
+    } while (!pred(pos, window) && pos < size - 1);
   }
   return pos;
 }

@@ -127,6 +127,10 @@ void editor_draw(editor_t *editor) {
   // TODO(isbadawi): Multiple windows at the same time.
   window_draw(editor->window);
 
+  for (int y = editor->window->buffer->nlines; y < tb_height() - 1; ++y) {
+    tb_change_cell(0, y, '~', TB_BLUE, TB_DEFAULT);
+  }
+
   for (int x = 0; x < editor->status->len; ++x) {
     tb_change_cell(x, tb_height() - 1, editor->status->buf[x],
         editor->status_error ? TB_DEFAULT : TB_WHITE,

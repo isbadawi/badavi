@@ -44,16 +44,17 @@ gapbuf_t *gb_load(FILE *fp) {
     return NULL;
   }
 
+  gb->gapstart = gb->bufstart;
   gb->gapend = gb->bufstart + GAPSIZE;
   gb->bufend = gb->bufstart + bufsize;
 
   fread(gb->gapend, 1, filesize, fp);
 
   gb->lines = intbuf_create(10);
-  int last = 0;
+  int last = -1;
   for (int i = 0; i < filesize; ++i) {
     if (gb->gapend[i] == '\n') {
-      intbuf_add(gb->lines, i - last);
+      intbuf_add(gb->lines, i - last - 1);
       last = i;
     }
   }
@@ -172,8 +173,9 @@ void gb_pos_to_linecol(gapbuf_t *gb, int pos, int *line, int *column) {
   for (int i = 0; i < gb->lines->len; ++i) {
     int len = gb->lines->buf[i];
     if (offset <= pos && pos < offset + len) {
-      *line = i + 1;
+      *line = i;
       *column = pos - offset;
+      return;
     }
     offset += len + 1;
   }

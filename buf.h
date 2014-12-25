@@ -4,7 +4,6 @@
 #include <stdarg.h>
 
 // buf_t is a simple growable array.
-
 typedef struct {
   char *buf;
   int len;
@@ -23,5 +22,19 @@ int buf_append(buf_t *buf, const char *s);
 // automatically growing it if needed.
 void buf_printf(buf_t *buf, const char *format, ...);
 void buf_vprintf(buf_t *buf, const char *format, va_list args);
+
+// Similar to buf_t but for ints.
+typedef struct {
+  int *buf;
+  int len;
+  int cap;
+} intbuf_t;
+
+intbuf_t *intbuf_create(int cap);
+void intbuf_free(intbuf_t *buf);
+
+void intbuf_insert(intbuf_t *buf, int i, int pos);
+void intbuf_add(intbuf_t *buf, int i);
+void intbuf_remove(intbuf_t *buf, int pos);
 
 #endif

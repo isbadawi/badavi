@@ -8,6 +8,10 @@
 #include "editor.h"
 #include "motion.h"
 
+static int is_last_line(gapbuf_t *gb, int pos) {
+  return pos > gb_size(gb) - gb->lines->buf[gb->lines->len - 1];
+}
+
 static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   static motion_t motion = {NULL, 0, 0};
 
@@ -19,7 +23,6 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     return;
   }
 
-  pos_t *cursor = &editor->window->cursor;
   switch (ev->ch) {
   case 'i':
     editor_status_msg(editor, "-- INSERT --");
@@ -38,7 +41,7 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   case 'D': editor_send_keys(editor, "d$"); break;
   case 'C': editor_send_keys(editor, "c$"); break;
   case 'J':
-    if (cursor->line->next) {
+    if (!is_last_line(editor->window->buffer->text, editor->window->cursor)) {
       editor_send_keys(editor, "A <esc>jI<bs><esc>");
     }
     break;

@@ -22,6 +22,8 @@ gapbuf_t *gb_create(void) {
 
   gb->gapstart = gb->bufstart;
   gb->gapend = gb->bufend = gb->bufstart + GAPSIZE;
+
+  gb->lines = intbuf_create(10);
   return gb;
 }
 
@@ -46,11 +48,30 @@ gapbuf_t *gb_load(FILE *fp) {
   gb->bufend = gb->bufstart + bufsize;
 
   fread(gb->gapend, 1, filesize, fp);
+
+  gb->lines = intbuf_create(10);
+  int last = 0;
+  for (int i = 0; i < filesize; ++i) {
+    if (gb->gapend[i] == '\n') {
+      intbuf_add(gb->lines, i - last);
+      last = i;
+    }
+  }
+
   return gb;
+}
+
+void gb_free(gapbuf_t *gb) {
+  free(gb->bufstart);
+  intbuf_free(gb->lines);
 }
 
 int gb_size(gapbuf_t *gb) {
   return (gb->gapstart - gb->bufstart) + (gb->bufend - gb->gapend);
+}
+
+int gb_nlines(gapbuf_t *gb) {
+  return gb->lines->len;
 }
 
 void gb_save(gapbuf_t *gb, FILE *fp) {
@@ -117,10 +138,51 @@ void gb_putstring(gapbuf_t *gb, char *buf, int n, int pos) {
   gb_growgap(gb, n);
   gb_mvgap(gb, pos);
   memcpy(gb->gapstart, buf, n);
+  // TODO(isbadawi): update line lengths
   gb->gapstart += n;
 }
 
 void gb_del(gapbuf_t *gb, int n, int pos) {
   gb_mvgap(gb, pos);
+  // TODO(isbadawi): udpate line lengths
   gb->gapstart -= n;
+}
+
+int gb_indexof(gapbuf_t *gb, char c, int start) {
+  int size = gb_size(gb);
+  for (int i = start; i < size; ++i) {
+    if (gb_getchar(gb, i) == c) {
+      return i;
+    }
+  }
+  return size;
+}
+
+int gb_lastindexof(gapbuf_t *gb, char c, int start) {
+  for (int i = start; i >= 0; --i) {
+    if (gb_getchar(gb, i) == c) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+void gb_pos_to_linecol(gapbuf_t *gb, int pos, int *line, int *column) {
+  int offset = 0;
+  for (int i = 0; i < gb->lines->len; ++i) {
+    int len = gb->lines->buf[i];
+    if (offset <= pos && pos < offset + len) {
+      *line = i + 1;
+      *column = pos - offset;
+    }
+    offset += len + 1;
+  }
+}
+
+int gb_linecol_to_pos(gapbuf_t *gb, int line, int column) {
+  int offset = 0;
+  for (int i = 0; i < line; ++i) {
+    offset += gb->lines->buf[i] + 1;
+  }
+  return offset + column;
 }

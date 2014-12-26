@@ -14,16 +14,19 @@ gapbuf_t *gb_create(void) {
     return NULL;
   }
 
-  gb->bufstart = malloc(GAPSIZE);
+  gb->bufstart = malloc(1 + GAPSIZE);
   if (!gb->bufstart) {
     free(gb);
     return NULL;
   }
 
   gb->gapstart = gb->bufstart;
-  gb->gapend = gb->bufend = gb->bufstart + GAPSIZE;
+  gb->gapend = gb->gapstart + GAPSIZE;
+  gb->bufend = gb->bufstart + GAPSIZE + 1;
+  gb->bufend[-1] = '\n';
 
   gb->lines = intbuf_create(10);
+  intbuf_add(gb->lines, 0);
   return gb;
 }
 

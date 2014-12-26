@@ -15,6 +15,7 @@ window_t *window_create(buffer_t *buffer) {
   window->next = NULL;
   window->buffer = buffer;
   window->top = 0;
+  window->left = 0;
   window->cursor = 0;
 
   return window;
@@ -27,26 +28,19 @@ static void window_ensure_cursor_visible(window_t *window) {
 
   // TODO(isbadawi): This might be expensive for buffers with many lines.
   int cursorx, cursory;
-  int topx, topy;
   gb_pos_to_linecol(gb, window->cursor, &cursory, &cursorx);
-  gb_pos_to_linecol(gb, window->top, &topy, &topx);
 
-  int x = cursorx - topx;
-  int y = cursory - topy;
-
-  if (x < 0) {
-    topx += x;
-  } else if (x >= w) {
-    topx -= w - x - 1;
+  if (cursorx < window->left) {
+    window->left = cursorx;
+  } else if (cursorx - window->left >= w) {
+    window->left = cursorx - w + 1;
   }
 
-  if (y < 0) {
-    topy -= y;
-  } else if (y >= h - 1) {
-    topy += h - y - 2;
+  if (cursory < window->top) {
+    window->top = cursory;
+  } else if (cursory - window->top >= h - 1) {
+    window->top = cursory - h + 2;
   }
-
-  window->top = gb_linecol_to_pos(gb, topy, topx);
 }
 
 void window_draw(window_t *window) {
@@ -55,8 +49,8 @@ void window_draw(window_t *window) {
 
   int w = tb_width();
   int h = tb_height();
-  int topx, topy;
-  gb_pos_to_linecol(gb, window->top, &topy, &topx);
+  int topy = window->top;
+  int topx = window->left;
   // TODO(isbadawi): Each linecol_to_pos call is a loop.
   for (int y = topy; y <= gb->lines->len && y - topy < h - 1; ++y) {
     for (int x = topx; x < gb->lines->buf[y] && x - topx < w; ++x) {

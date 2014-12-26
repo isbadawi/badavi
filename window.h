@@ -6,8 +6,9 @@
 typedef struct window_t {
   // The buffer being edited.
   buffer_t *buffer;
-  // The offset of the first character visible on screen.
+  // The coordinates of the top left cell visible on screen.
   int top;
+  int left;
   // The offset of the cursor.
   int cursor;
   // The next window, or NULL.

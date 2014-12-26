@@ -73,7 +73,7 @@ static int line_end(int pos, window_t *window) {
 }
 
 static int buffer_top(int pos, window_t *window) {
-  return line_start(window->top, window);
+  return 0;
 }
 
 static int first_non_blank(int pos, window_t *window) {

@@ -155,7 +155,8 @@ void intbuf_insert(intbuf_t *buf, int i, int pos) {
   if (buf->len == buf->cap) {
     intbuf_grow(buf, 2 * buf->cap);
   }
-  memmove(buf->buf + pos + 1, buf->buf + pos, buf->len++ - pos);
+
+  memmove(buf->buf + pos + 1, buf->buf + pos, (buf->len++ - pos) * sizeof(int));
   buf->buf[pos] = i;
 }
 
@@ -164,5 +165,5 @@ void intbuf_add(intbuf_t *buf, int i) {
 }
 
 void intbuf_remove(intbuf_t *buf, int i) {
-  memmove(buf->buf + i, buf->buf + i + 1, buf->len-- - i);
+  memmove(buf->buf + i, buf->buf + i + 1, (buf->len-- - i) * sizeof(int));
 }

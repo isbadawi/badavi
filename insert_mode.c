@@ -9,7 +9,7 @@
 static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   buffer_t *buffer = editor->window->buffer;
   gapbuf_t *gb = buffer->text;
-  int cursor = editor->window->cursor;
+  int *cursor = &editor->window->cursor;
   char ch;
   switch (ev->key) {
   case TB_KEY_ESC:
@@ -18,7 +18,7 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     return;
   case TB_KEY_BACKSPACE2:
     if (cursor > 0) {
-      gb_del(gb, 1, cursor--);
+      gb_del(gb, 1, (*cursor)--);
       buffer->dirty = 1;
     }
     return;
@@ -26,7 +26,7 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   case TB_KEY_SPACE: ch = ' '; break;
   default: ch = ev->ch; break;
   }
-  gb_putchar(gb, ch, cursor++);
+  gb_putchar(gb, ch, (*cursor)++);
   buffer->dirty = 1;
 }
 

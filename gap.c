@@ -139,13 +139,41 @@ void gb_putstring(gapbuf_t *gb, char *buf, int n, int pos) {
   gb_growgap(gb, n);
   gb_mvgap(gb, pos);
   memcpy(gb->gapstart, buf, n);
-  // TODO(isbadawi): update line lengths
+
+  int line, col;
+  gb_pos_to_linecol(gb, pos, &line, &col);
+
+  // TODO(isbadawi): Revisit this with n > 1...
+  for (int i = 0; i < n; ++i) {
+    if (gb->gapstart[i] == '\n') {
+      int oldlen = gb->lines->buf[line];
+      gb->lines->buf[line] = col + i;
+      intbuf_insert(gb->lines, oldlen - col, ++line);
+      col = 0;
+    } else {
+      gb->lines->buf[line]++;
+    }
+  }
+
   gb->gapstart += n;
 }
 
 void gb_del(gapbuf_t *gb, int n, int pos) {
   gb_mvgap(gb, pos);
-  // TODO(isbadawi): udpate line lengths
+
+  int line, col;
+  gb_pos_to_linecol(gb, pos, &line, &col);
+
+  for (int i = 0; i < n; ++i) {
+    if (gb->gapstart[-i - 1] == '\n') {
+      gb->lines->buf[line - 1] += gb->lines->buf[line];
+      intbuf_remove(gb->lines, line);
+      line--;
+    } else {
+      gb->lines->buf[line]--;
+    }
+  }
+
   gb->gapstart -= n;
 }
 

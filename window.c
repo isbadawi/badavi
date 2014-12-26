@@ -4,6 +4,8 @@
 
 #include <termbox.h>
 
+#include "util.h"
+
 window_t *window_create(buffer_t *buffer) {
   window_t *window = malloc(sizeof(window_t));
   if (!window) {
@@ -12,13 +14,9 @@ window_t *window_create(buffer_t *buffer) {
 
   window->next = NULL;
   window->buffer = buffer;
-
-  if (buffer) {
-    window->top.line = buffer->head->next;
-    window->top.offset = 0;
-    window->cursor.line = window->top.line;
-    window->cursor.offset = 0;
-  }
+  window->top = 0;
+  window->left = 0;
+  window->cursor = 0;
 
   return window;
 }
@@ -26,43 +24,44 @@ window_t *window_create(buffer_t *buffer) {
 static void window_ensure_cursor_visible(window_t *window) {
   int w = tb_width();
   int h = tb_height();
-  int x = window->cursor.offset - window->top.offset;
+  gapbuf_t *gb = window->buffer->text;
+
   // TODO(isbadawi): This might be expensive for buffers with many lines.
-  int y = buffer_index_of_line(window->buffer, window->cursor.line) -
-    buffer_index_of_line(window->buffer, window->top.line);
+  int cursorx, cursory;
+  gb_pos_to_linecol(gb, window->cursor, &cursory, &cursorx);
 
-  if (x < 0) {
-    window->top.offset += x;
-  } else if (x >= w) {
-    window->top.offset -= w - x - 1;
+  if (cursorx < window->left) {
+    window->left = cursorx;
+  } else if (cursorx - window->left >= w) {
+    window->left = cursorx - w + 1;
   }
 
-  while (y >= h - 1) {
-    window->top.line = window->top.line->next;
-    y--;
-  }
-
-  while (y < 0) {
-    window->top.line = window->top.line->prev;
-    y++;
+  if (cursory < window->top) {
+    window->top = cursory;
+  } else if (cursory - window->top >= h - 1) {
+    window->top = cursory - h + 2;
   }
 }
 
 void window_draw(window_t *window) {
   window_ensure_cursor_visible(window);
+  gapbuf_t *gb = window->buffer->text;
 
-  int y = 0;
   int w = tb_width();
   int h = tb_height();
-  for (line_t *line = window->top.line; line && y < h - 1; line = line->next) {
-    int x = 0;
-    for (int i = window->top.offset; i < line->buf->len && x < w; ++i) {
-      tb_change_cell(x++, y, line->buf->buf[i], TB_WHITE, TB_DEFAULT);
+  int topy = window->top;
+  int topx = window->left;
+  // TODO(isbadawi): Each linecol_to_pos call is a loop.
+  for (int y = topy; y <= gb->lines->len && y - topy < h - 1; ++y) {
+    for (int x = topx; x < gb->lines->buf[y] && x - topx < w; ++x) {
+      char c = gb_getchar(gb, gb_linecol_to_pos(gb, y, x));
+      tb_change_cell(x - topx, y - topy, c, TB_WHITE, TB_DEFAULT);
     }
-    if (line == window->cursor.line) {
-      int x = window->cursor.offset - window->top.offset;
-      tb_change_cell(x, y, line->buf->buf[x], TB_DEFAULT, TB_WHITE);
-    }
-    y++;
   }
+
+  char c = gb_getchar(gb, window->cursor);
+  c = c == '\n' ? ' ' : c;
+  int cursorx, cursory;
+  gb_pos_to_linecol(gb, window->cursor, &cursory, &cursorx);
+  tb_change_cell(cursorx - topx, cursory - topy, c, TB_DEFAULT, TB_WHITE);
 }

@@ -2,37 +2,20 @@
 
 #include <stdlib.h>
 
-#include "buf.h"
 #include "buffer.h"
 #include "editor.h"
+#include "gap.h"
 #include "motion.h"
+#include "util.h"
 
 typedef struct {
-  pos_t start;
-  pos_t end;
+  int start;
+  int end;
 } region_t;
 
-// Create a region from the two endpoints, which can be in either order --
-// they'll be swapped if necessary so that start occurs before end.
-region_t region_create(buffer_t *buffer, pos_t a, pos_t b) {
-  int start_line = buffer_index_of_line(buffer, a.line);
-  int end_line = buffer_index_of_line(buffer, b.line);
-
-  region_t result;
-  if (start_line < end_line) {
-    result.start = a;
-    result.end = b;
-  } else if (start_line > end_line) {
-    result.start = b;
-    result.end = a;
-  } else if (a.offset < b.offset) {
-    result.start = a;
-    result.end = b;
-  } else {
-    result.start = b;
-    result.end = a;
-  }
-  return result;
+region_t region_create(int start, int end) {
+  region_t region = {min(start, end), max(start, end)};
+  return region;
 }
 
 typedef void (op_t) (editor_t *editor, region_t);
@@ -43,28 +26,8 @@ typedef struct {
 } operator_pending_mode_t;
 
 static void delete_op(editor_t *editor, region_t region) {
-  line_t *start_line = region.start.line;
-  line_t *end_line = region.end.line;
-  int start = region.start.offset;
-  int end = region.end.offset;
-  if (start_line == end_line) {
-    buf_delete(start_line->buf, start, end - start);
-  } else {
-    // Delete from start offset to end of start line.
-    buf_delete(start_line->buf, start, start_line->buf->len - start);
-    // Remove any intermediate lines.
-    line_t *line = start_line->next;
-    while (line != end_line) {
-      line_t *next = line->next;
-      buffer_remove_line(editor->window->buffer, line);
-      line = next;
-    }
-    // Delete from start of end line to end offset.
-    buf_delete(end_line->buf, 0, end);
-    // Join the two remaining lines.
-    buf_append(start_line->buf, end_line->buf->buf);
-    buffer_remove_line(editor->window->buffer, end_line);
-  }
+  gapbuf_t *gb = editor->window->buffer->text;
+  gb_del(gb, region.end - region.start, region.end);
   editor->window->buffer->dirty = 1;
   editor->mode = normal_mode();
 }
@@ -103,7 +66,6 @@ static void key_pressed(editor_t *editor, struct tb_event *ev) {
   int rc = motion_key(&motion, ev);
   if (rc == 1) {
     region_t region = region_create(
-        editor->window->buffer,
         editor->window->cursor,
         motion_apply(&motion, editor->window));
     editor->window->cursor = region.start;

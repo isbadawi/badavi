@@ -119,3 +119,51 @@ void buf_vprintf(buf_t *buf, const char *format, va_list args) {
 
   buf->len = n;
 }
+
+
+static int intbuf_grow(intbuf_t *buf, int cap) {
+  buf->buf = realloc(buf->buf, cap * sizeof(int));
+  if (!buf->buf) {
+    return -1;
+  }
+  buf->cap = cap;
+  return 0;
+}
+
+intbuf_t *intbuf_create(int cap) {
+  intbuf_t *buf = malloc(sizeof(intbuf_t));
+  if (!buf) {
+    return NULL;
+  }
+  buf->buf = NULL;
+
+  if (intbuf_grow(buf, cap) < 0) {
+    free(buf);
+    return NULL;
+  }
+
+  buf->len = 0;
+  buf->cap = cap;
+  return buf;
+}
+
+void intbuf_free(intbuf_t *buf) {
+  free(buf->buf);
+}
+
+void intbuf_insert(intbuf_t *buf, int i, int pos) {
+  if (buf->len == buf->cap) {
+    intbuf_grow(buf, 2 * buf->cap);
+  }
+
+  memmove(buf->buf + pos + 1, buf->buf + pos, (buf->len++ - pos) * sizeof(int));
+  buf->buf[pos] = i;
+}
+
+void intbuf_add(intbuf_t *buf, int i) {
+  intbuf_insert(buf, i, buf->len);
+}
+
+void intbuf_remove(intbuf_t *buf, int i) {
+  memmove(buf->buf + i, buf->buf + i + 1, (buf->len-- - i) * sizeof(int));
+}

@@ -7,250 +7,212 @@
 
 #include "util.h"
 
-static pos_t left(pos_t pos, window_t *window) {
-  pos.offset = max(pos.offset - 1, 0);
-  return pos;
+static int is_line_start(gapbuf_t *gb, int pos) {
+  return pos == 0 || gb_getchar(gb, pos - 1) == '\n';
 }
 
-static pos_t right(pos_t pos, window_t *window) {
-  int len = pos.line->buf->len;
-  pos.offset = min(pos.offset + 1, len);
-  return pos;
+static int is_line_end(gapbuf_t *gb, int pos) {
+  return pos == gb_size(gb) - 1 || gb_getchar(gb, pos) == '\n';
 }
 
-static pos_t up(pos_t pos, window_t *window) {
-  if (!pos.line->prev->buf) {
+static int is_first_line(gapbuf_t *gb, int pos) {
+  return pos < gb->lines->buf[0];
+}
+
+static int is_last_line(gapbuf_t *gb, int pos) {
+  return pos >= gb_size(gb) - 1 - gb->lines->buf[gb->lines->len - 1];
+}
+
+static int is_blank_line(gapbuf_t *gb, int pos) {
+  return gb_getchar(gb, pos) == '\n' &&
+    (pos == 0 || gb_getchar(gb, pos - 1) == '\n');
+}
+
+static int left(int pos, window_t *window) {
+  return is_line_start(window->buffer->text, pos) ? pos : pos - 1;
+}
+
+static int right(int pos, window_t *window) {
+  return is_line_end(window->buffer->text, pos) ? pos : pos + 1;
+}
+
+static int up(int pos, window_t *window) {
+  if (is_first_line(window->buffer->text, pos)) {
     return pos;
   }
-  pos.line = pos.line->prev;
-  pos.offset = min(pos.offset, pos.line->buf->len);
-  return pos;
+  gapbuf_t *gb = window->buffer->text;
+  int x, y;
+  gb_pos_to_linecol(gb, pos, &y, &x);
+  return gb_linecol_to_pos(gb, y - 1, min(x, gb->lines->buf[y - 1]));
 }
 
-static pos_t down(pos_t pos, window_t *window) {
-  if (!pos.line->next) {
+static int down(int pos, window_t *window) {
+  if (is_last_line(window->buffer->text, pos)) {
     return pos;
   }
-  pos.line = pos.line->next;
-  pos.offset = min(pos.offset, pos.line->buf->len);
-  return pos;
+  gapbuf_t *gb = window->buffer->text;
+  int x, y;
+  gb_pos_to_linecol(gb, pos, &y, &x);
+  return gb_linecol_to_pos(gb, y + 1, min(x, gb->lines->buf[y + 1]));
 }
 
-static pos_t line_start(pos_t pos, window_t *window) {
-  pos.offset = 0;
-  return pos;
-}
-
-static pos_t line_end(pos_t pos, window_t *window) {
-  pos.offset = pos.line->buf->len;
-  return pos;
-}
-
-static pos_t buffer_top(pos_t pos, window_t *window) {
-  pos.line = window->buffer->head->next;
-  pos.offset = 0;
-  return pos;
-}
-
-static char char_at(pos_t pos) {
-  return pos.line->buf->buf[pos.offset];
-}
-
-static pos_t first_non_blank(pos_t pos, window_t *window) {
-  pos.offset = 0;
-  while (pos.offset < pos.line->buf->len - 1 && isspace(char_at(pos))) {
-    pos.offset++;
-  }
-  return pos;
-}
-
-static pos_t last_non_blank(pos_t pos, window_t *window) {
-  if (pos.line->buf->len == 0) {
+static int line_start(int pos, window_t *window) {
+  gapbuf_t *gb = window->buffer->text;
+  if (is_line_start(gb, pos)) {
     return pos;
   }
-  pos.offset = pos.line->buf->len - 1;
-  while (pos.offset > 0 && isspace(char_at(pos))) {
-    pos.offset--;
-  }
-  return pos;
+  return gb_lastindexof(gb, '\n', pos - 1) + 1;
 }
 
-static pos_t prev_char(pos_t pos) {
-  if (pos.offset > 0) {
-    pos.offset--;
-  } else if (pos.line->prev->buf != NULL) {
-    pos.line = pos.line->prev;
-    int len = pos.line->buf->len;
-    pos.offset = len ? len - 1 : 0;
+static int line_end(int pos, window_t *window) {
+  gapbuf_t *gb = window->buffer->text;
+  if (is_line_end(gb, pos)) {
+    return pos;
   }
-  return pos;
+  return gb_indexof(gb, '\n', pos);
 }
 
-static pos_t next_char(pos_t pos) {
-  int len = pos.line->buf->len;
-  if (pos.offset < len - 1 || (pos.offset == len - 1 && !pos.line->next)) {
-    pos.offset++;
-  } else if (pos.line->next) {
-    pos.line = pos.line->next;
-    pos.offset = 0;
+static int buffer_top(int pos, window_t *window) {
+  return 0;
+}
+
+static int first_non_blank(int pos, window_t *window) {
+  int start = line_start(pos, window);
+  int end = line_end(pos, window);
+  gapbuf_t *gb = window->buffer->text;
+  while (start < end && isspace(gb_getchar(gb, start))) {
+    start++;
   }
-  return pos;
+  return start;
+}
+
+static int last_non_blank(int pos, window_t *window) {
+  int start = line_start(pos, window);
+  int end = line_end(pos, window);
+  gapbuf_t *gb = window->buffer->text;
+  while (end > start && isspace(gb_getchar(gb, end))) {
+    end--;
+  }
+  return end;
 }
 
 static int is_word_char(char c) {
   return isalnum(c) || c == '_';
 }
 
-static int is_word_start(pos_t pos) {
-  char c = char_at(pos);
-  if (isspace(c)) {
-    return 0;
-  }
-  if (pos.offset == 0) {
+static int is_word_start(int pos, window_t *window) {
+  gapbuf_t *gb = window->buffer->text;
+  if (is_line_start(gb, pos)) {
     return 1;
   }
-  pos.offset--;
-  char last = char_at(pos);
-  if (isspace(last)) {
+  char this = gb_getchar(gb, pos);
+  char last = gb_getchar(gb, pos - 1);
+  return !isspace(this) && (is_word_char(this) + is_word_char(last) == 1);
+}
+
+static int is_WORD_start(int pos, window_t *window) {
+  if (pos == 0) {
     return 1;
   }
-  return is_word_char(c) + is_word_char(last) == 1;
+  gapbuf_t *gb = window->buffer->text;
+  char this = gb_getchar(gb, pos);
+  char last = gb_getchar(gb, pos - 1);
+  return !isspace(this) && isspace(last);
 }
 
-static int is_WORD_start(pos_t pos) {
-  char c = char_at(pos);
-  if (isspace(c)) {
-    return 0;
-  }
-  if (pos.offset == 0) {
+static int is_word_end(int pos, window_t *window) {
+  gapbuf_t *gb = window->buffer->text;
+  if (pos == gb_size(gb) - 1 || is_blank_line(gb, pos)) {
     return 1;
   }
-  pos.offset--;
-  return isspace(char_at(pos));
+  char this = gb_getchar(gb, pos);
+  char next = gb_getchar(gb, pos + 1);
+  return !isspace(this) && (is_word_char(this) + is_word_char(next) == 1);
 }
 
-static int is_word_end(pos_t pos) {
-  char c = char_at(pos);
-  if (isspace(c)) {
-    return 0;
-  }
-  if (pos.offset == pos.line->buf->len - 1) {
+static int is_WORD_end(int pos, window_t *window) {
+  gapbuf_t *gb = window->buffer->text;
+  if (pos == gb_size(gb)) {
     return 1;
   }
-  pos.offset++;
-  char next = char_at(pos);
-  if (isspace(next)) {
-    return 1;
-  }
-  return is_word_char(c) + is_word_char(next) == 1;
+  char this = gb_getchar(gb, pos);
+  char next = gb_getchar(gb, pos + 1);
+  return !isspace(this) && isspace(next);
 }
 
-static int is_WORD_end(pos_t pos) {
-  char c = char_at(pos);
-  if (isspace(c)) {
-    return 0;
-  }
-  if (pos.offset == pos.line->buf->len - 1) {
-    return 1;
-  }
-  pos.offset++;
-  return isspace(char_at(pos));
-}
-
-static int first_char(pos_t pos) {
-  return pos.offset == 0 && pos.line->prev->buf == NULL;
-}
-
-static int last_char(pos_t pos) {
-  return pos.offset == pos.line->buf->len && !pos.line->next;
-}
-
-static pos_t next_word_start(pos_t pos, window_t *window) {
-  do {
-    pos = next_char(pos);
-  } while (!is_word_start(pos) && !last_char(pos));
-  return pos;
-}
-
-static pos_t next_WORD_start(pos_t pos, window_t *window) {
-  do {
-    pos = next_char(pos);
-  } while (!is_WORD_start(pos) && !last_char(pos));
-  return pos;
-}
-
-static pos_t prev_word_start(pos_t pos, window_t *window) {
-  do {
-    pos = prev_char(pos);
-  } while (!is_word_start(pos) && !first_char(pos));
-  return pos;
-}
-
-static pos_t prev_WORD_start(pos_t pos, window_t *window) {
-  do {
-    pos = prev_char(pos);
-  } while (!is_WORD_start(pos) && !first_char(pos));
-  return pos;
-}
-
-static pos_t next_word_end(pos_t pos, window_t *window) {
-  do {
-    pos = next_char(pos);
-  } while (!is_word_end(pos) && !last_char(pos));
-  return pos;
-}
-
-static pos_t next_WORD_end(pos_t pos, window_t *window) {
-  do {
-    pos = next_char(pos);
-  } while (!is_WORD_end(pos) && !last_char(pos));
-  return pos;
-}
-
-static pos_t prev_word_end(pos_t pos, window_t *window) {
-  do {
-    pos = prev_char(pos);
-  } while (!is_word_end(pos) && !first_char(pos));
-  return pos;
-}
-
-static pos_t prev_WORD_end(pos_t pos, window_t *window) {
-  do {
-    pos = prev_char(pos);
-  } while (!is_WORD_end(pos) && !first_char(pos));
-  return pos;
-}
-
-static int is_paragraph_start(line_t *line) {
-  return line->prev->buf == NULL ||
-    (!line->buf->len && line->next && line->next->buf->len);
-}
-
-static int is_paragraph_end(line_t *line) {
-  return line->next == NULL ||
-    (!line->buf->len && line->prev && line->prev->buf->len);
-}
-
-static pos_t paragraph_start(pos_t pos, window_t *window) {
-  pos.offset = 0;
-  if (pos.line->prev->buf) {
+static int prev_until(int pos, window_t *window, motion_op_t *pred) {
+  if (pos > 0) {
     do {
-      pos.line = pos.line->prev;
-    } while (!is_paragraph_start(pos.line));
+      --pos;
+    } while (!pred(pos, window) && pos > 0);
   }
   return pos;
 }
 
-static pos_t paragraph_end(pos_t pos, window_t *window) {
-  if (!pos.line->next) {
-    pos.offset = pos.line->buf->len - 1;
-  } else {
+static int next_until(int pos, window_t *window, motion_op_t *pred) {
+  int size = gb_size(window->buffer->text);
+  if (pos < size - 1) {
     do {
-      pos.line = pos.line->next;
-    } while (!is_paragraph_end(pos.line));
-    pos.offset = 0;
+      ++pos;
+    } while (!pred(pos, window) && pos < size - 1);
   }
   return pos;
+}
+
+static int next_word_start(int pos, window_t *window) {
+  return next_until(pos, window, is_word_start);
+}
+
+static int next_WORD_start(int pos, window_t *window) {
+  return next_until(pos, window, is_WORD_start);
+}
+
+static int prev_word_start(int pos, window_t *window) {
+  return prev_until(pos, window, is_word_start);
+}
+
+static int prev_WORD_start(int pos, window_t *window) {
+  return prev_until(pos, window, is_WORD_start);
+}
+
+static int next_word_end(int pos, window_t *window) {
+  return next_until(pos, window, is_word_end);
+}
+
+static int next_WORD_end(int pos, window_t *window) {
+  return next_until(pos, window, is_WORD_end);
+}
+
+static int prev_word_end(int pos, window_t *window) {
+  return prev_until(pos, window, is_word_end);
+}
+
+static int prev_WORD_end(int pos, window_t *window) {
+  return prev_until(pos, window, is_WORD_end);
+}
+
+static int is_paragraph_start(int pos, window_t *window) {
+  if (pos == 0) {
+    return 1;
+  }
+  gapbuf_t *gb = window->buffer->text;
+  return is_blank_line(gb, pos) && !is_blank_line(gb, pos + 1);
+}
+
+static int is_paragraph_end(int pos, window_t *window) {
+  gapbuf_t *gb = window->buffer->text;
+  if (pos == gb_size(gb) - 1) {
+    return 1;
+  }
+  return is_blank_line(gb, pos) && !is_blank_line(gb, pos - 1);
+}
+
+static int paragraph_start(int pos, window_t *window) {
+  return prev_until(pos, window, is_paragraph_start);
+}
+
+static int paragraph_end(int pos, window_t *window) {
+  return next_until(pos, window, is_paragraph_end);
 }
 
 static motion_t motion_table[] = {
@@ -333,13 +295,13 @@ int motion_key(motion_t *motion, struct tb_event *ev) {
   return -1;
 }
 
-pos_t motion_apply(motion_t *motion, window_t *window) {
-  pos_t result = window->cursor;
+int motion_apply(motion_t *motion, window_t *window) {
+  int result = window->cursor;
   int n = motion->count ? motion->count : 1;
 
   // TODO(isbadawi): This is a hack to make G work correctly.
   if (!strcmp(motion->name, "G")) {
-    n = motion->count ? motion->count - 1 : window->buffer->nlines - 1;
+    n = motion->count ? motion->count - 1 : window->buffer->text->lines->len - 1;
     result = buffer_top(result, window);
   }
 

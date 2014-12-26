@@ -10,6 +10,7 @@
 
 #include "buf.h"
 #include "buffer.h"
+#include "gap.h"
 #include "mode.h"
 #include "util.h"
 
@@ -35,7 +36,7 @@ static void editor_add_window(editor_t *editor, window_t *window) {
 
 static window_t *editor_get_window_by_name(editor_t* editor, char *name) {
   for (window_t *w = editor->windows->next; w; w = w->next) {
-    if (w->buffer && !strcmp(w->buffer->name->buf, name)) {
+    if (w->buffer && w->buffer->name && !strcmp(w->buffer->name, name)) {
       return w;
     }
   }
@@ -53,7 +54,7 @@ void editor_open(editor_t *editor, char *path) {
     } else {
       buffer = buffer_open(path);
       editor_status_msg(editor, "\"%s\" %dL, %dC",
-          path, buffer->nlines, buffer_size(buffer));
+          path, gb_nlines(buffer->text), gb_size(buffer->text));
     }
     editor_add_buffer(editor, buffer);
     window = window_create(buffer);
@@ -79,11 +80,11 @@ void editor_save_buffer(editor_t *editor, char *path) {
     name = path;
   } else {
     rc = buffer_write(buffer);
-    name = buffer->name->buf;
+    name = buffer->name;
   }
   if (!rc) {
     editor_status_msg(editor, "\"%s\" %dL, %dC written",
-        name, buffer->nlines, buffer_size(buffer));
+        name, gb_nlines(buffer->text), gb_size(buffer->text));
   } else {
     editor_status_err(editor, "No file name");
   }
@@ -97,7 +98,7 @@ void editor_execute_command(editor_t *editor, char *command) {
       if (b->dirty) {
         editor_status_err(editor,
             "No write since last change for buffer \"%s\"",
-             b->name->len ? b->name->buf : "[No Name]");
+            b->name ? b->name : "[No Name]");
         return;
       }
     }
@@ -127,7 +128,8 @@ void editor_draw(editor_t *editor) {
   // TODO(isbadawi): Multiple windows at the same time.
   window_draw(editor->window);
 
-  for (int y = editor->window->buffer->nlines; y < tb_height() - 1; ++y) {
+  int nlines = gb_nlines(editor->window->buffer->text);
+  for (int y = nlines; y < tb_height() - 1; ++y) {
     tb_change_cell(0, y, '~', TB_BLUE, TB_DEFAULT);
   }
 

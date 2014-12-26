@@ -196,19 +196,15 @@ static int is_paragraph_start(int pos, window_t *window) {
     return 1;
   }
   gapbuf_t *gb = window->buffer->text;
-  char this = gb_getchar(gb, pos);
-  char next = gb_getchar(gb, pos + 1);
-  return this == '\n' && next != '\n';
+  return is_blank_line(gb, pos) && !is_blank_line(gb, pos + 1);
 }
 
 static int is_paragraph_end(int pos, window_t *window) {
   gapbuf_t *gb = window->buffer->text;
-  if (pos == gb_size(gb)) {
+  if (pos == gb_size(gb) - 1) {
     return 1;
   }
-  char this = gb_getchar(gb, pos);
-  char last = gb_getchar(gb, pos - 1);
-  return this == '\n' && last != '\n';
+  return is_blank_line(gb, pos) && !is_blank_line(gb, pos - 1);
 }
 
 static int paragraph_start(int pos, window_t *window) {

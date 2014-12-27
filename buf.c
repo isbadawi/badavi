@@ -6,7 +6,10 @@
 
 #include "util.h"
 
-static int buf_grow(buf_t *buf, int cap) {
+int buf_grow(buf_t *buf, int cap) {
+  if (buf->cap >= cap) {
+    return 0;
+  }
   buf->buf = realloc(buf->buf, cap);
   if (!buf->buf) {
     return -1;

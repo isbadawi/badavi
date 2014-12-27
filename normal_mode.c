@@ -28,6 +28,9 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   }
 
   switch (ev->ch) {
+  case '"':
+    editor_push_mode(editor, quote_mode());
+    break;
   case 'i':
     editor_push_mode(editor, insert_mode());
     break;
@@ -35,12 +38,13 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     editor_push_mode(editor, command_mode());
     break;
   case 'p': {
-    buf_t *reg = editor_get_register(editor, '"');
+    buf_t *reg = editor_get_register(editor, editor->register_);
     gapbuf_t *gb = editor->window->buffer->text;
     int *cursor = &editor->window->cursor;
     int where = gb_getchar(gb, *cursor) == '\n' ? *cursor : *cursor + 1;
     gb_putstring(gb, reg->buf, reg->len, where);
     *cursor = where + reg->len - 1;
+    editor->register_ = '"';
     break;
   }
   case 'a': editor_send_keys(editor, "li"); break;

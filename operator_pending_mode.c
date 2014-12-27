@@ -29,7 +29,7 @@ typedef struct {
 
 
 static void yank_op(editor_t *editor, region_t region) {
-  buf_t *reg = editor_get_register(editor, '"');
+  buf_t *reg = editor_get_register(editor, editor->register_);
   gapbuf_t *gb = editor->window->buffer->text;
 
   int n = region.end - region.start;
@@ -80,11 +80,11 @@ static void entered(editor_t *editor) {
         editor->window->cursor, motion_apply(editor));
     editor->window->cursor = region.start;
     mode->op(editor, region);
+    editor->register_ = '"';
   }
 }
 
 static void key_pressed(editor_t *editor, struct tb_event *ev) {
-
   if (ev->ch != '0' && isdigit(ev->ch)) {
     editor_push_mode(editor, digit_mode());
     editor_handle_key_press(editor, ev);

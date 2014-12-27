@@ -24,3 +24,19 @@ editing_mode_t digit_mode_impl = {
 editing_mode_t *digit_mode(void) {
   return &digit_mode_impl;
 }
+
+static void quote_pressed(editor_t *editor, struct tb_event *ev) {
+  if (isalpha(ev->ch)) {
+    editor->register_ = tolower(ev->ch);
+  }
+  editor_pop_mode(editor);
+}
+
+editing_mode_t quote_mode_impl = {
+  no_op,
+  quote_pressed
+};
+
+editing_mode_t *quote_mode(void) {
+  return &quote_mode_impl;
+}

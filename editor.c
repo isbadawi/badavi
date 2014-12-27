@@ -15,8 +15,11 @@
 #include "util.h"
 
 static editor_register_t register_table[] = {
-  {'"', NULL},
-  {-1, NULL}
+  {'"'},
+  {'a'}, {'b'}, {'c'}, {'d'}, {'e'}, {'f'}, {'g'}, {'h'}, {'i'}, {'j'}, {'k'},
+  {'l'}, {'m'}, {'n'}, {'o'}, {'p'}, {'q'}, {'r'}, {'s'}, {'t'}, {'u'}, {'v'},
+  {'w'}, {'x'}, {'y'}, {'z'},
+  {-1}
 };
 
 void editor_init(editor_t *editor) {
@@ -34,6 +37,7 @@ void editor_init(editor_t *editor) {
 
   editor->count = 0;
   editor->motion = NULL;
+  editor->register_ = '"';
 }
 
 buf_t *editor_get_register(editor_t *editor, char name) {

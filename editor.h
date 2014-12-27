@@ -41,6 +41,7 @@ typedef struct {
   // TODO(isbadawi): This feels like a kludge but I don't know...
   int count;
   motion_t *motion;
+  int register_;
 } editor_t;
 
 void editor_init(editor_t *editor);

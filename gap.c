@@ -146,18 +146,23 @@ void gb_putstring(gapbuf_t *gb, char *buf, int n, int pos) {
   int line, col;
   gb_pos_to_linecol(gb, pos, &line, &col);
 
-  // TODO(isbadawi): Revisit this with n > 1...
+  // Adjust the line lengths.
+
+  // Where we started inserting on this line
+  int start = col;
+  // Characters since last newline
+  int last = 0;
   for (int i = 0; i < n; ++i) {
     if (gb->gapstart[i] == '\n') {
       int oldlen = gb->lines->buf[line];
-      gb->lines->buf[line] = col + i;
-      intbuf_insert(gb->lines, oldlen - col, ++line);
-      col = 0;
+      gb->lines->buf[line] = start + last;
+      intbuf_insert(gb->lines, oldlen - (start + last), ++line);
+      start = last = 0;
     } else {
       gb->lines->buf[line]++;
+      last++;
     }
   }
-
   gb->gapstart += n;
 }
 

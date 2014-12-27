@@ -93,6 +93,19 @@ char gb_getchar(gapbuf_t *gb, int pos) {
   return gb->bufstart[gb_index(gb, pos)];
 }
 
+void gb_getstring(gapbuf_t *gb, int pos, int n, char *buf) {
+  char *start = gb->bufstart + gb_index(gb, pos);
+  char *end = gb->bufstart + gb_index(gb, pos + n);
+  if (end < gb->gapstart || start >= gb->gapend) {
+    memcpy(buf, start, n);
+  } else {
+    int l = gb->gapstart - start;
+    int r = end - gb->gapend;
+    memcpy(buf, start, l);
+    memcpy(buf + l, gb->gapend, r);
+  }
+}
+
 // Moves the gap so that gb->bufstart + pos == gb->gapstart.
 static void gb_mvgap(gapbuf_t *gb, int pos) {
   char *point = gb->bufstart + gb_index(gb, pos);

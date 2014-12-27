@@ -41,6 +41,8 @@ void gb_save(gapbuf_t *gb, FILE *fp);
 
 // Returns the character at offset pos from the start of the buffer.
 char gb_getchar(gapbuf_t *gb, int pos);
+// Reads n characters starting at offset pos into buf.
+void gb_getstring(gapbuf_t *gb, int pos, int n, char *buf);
 
 // Insert a single character after offset pos.
 void gb_putchar(gapbuf_t *gb, char c, int pos);

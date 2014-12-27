@@ -26,11 +26,11 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   switch (ev->ch) {
   case 'i':
     editor_status_msg(editor, "-- INSERT --");
-    editor->mode = insert_mode();
+    editor_push_mode(editor, insert_mode());
     break;
   case ':':
     editor_status_msg(editor, ":");
-    editor->mode = command_mode();
+    editor_push_mode(editor, command_mode());
     break;
   case 'p': {
     buf_t *reg = editor_get_register(editor, '"');
@@ -57,7 +57,7 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   default: {
     editing_mode_t *mode = operator_pending_mode(ev->ch);
     if (mode) {
-      editor->mode = mode;
+      editor_push_mode(editor, mode);
     }
   }
   }

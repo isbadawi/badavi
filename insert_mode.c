@@ -14,7 +14,7 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   switch (ev->key) {
   case TB_KEY_ESC:
     editor_status_msg(editor, "");
-    editor->mode = normal_mode();
+    editor_pop_mode(editor);
     return;
   case TB_KEY_BACKSPACE2:
     if (cursor > 0) {

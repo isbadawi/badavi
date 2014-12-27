@@ -92,6 +92,17 @@ void editor_open_empty(editor_t *editor) {
   editor->window = window;
 }
 
+void editor_push_mode(editor_t *editor, editing_mode_t *mode) {
+  mode->parent = editor->mode;
+  editor->mode = mode;
+}
+
+void editor_pop_mode(editor_t *editor) {
+  if (editor->mode->parent) {
+    editor->mode = editor->mode->parent;
+  }
+}
+
 void editor_save_buffer(editor_t *editor, char *path) {
   buffer_t *buffer = editor->window->buffer;
   char *name;

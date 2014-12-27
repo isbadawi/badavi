@@ -35,7 +35,7 @@ static void yank_op(editor_t *editor, region_t region) {
   gb_getstring(gb, region.start, n, reg->buf);
   reg->len = n;
 
-  editor->mode = normal_mode();
+  editor_pop_mode(editor);
 }
 
 static void delete_op(editor_t *editor, region_t region) {
@@ -43,14 +43,13 @@ static void delete_op(editor_t *editor, region_t region) {
   gapbuf_t *gb = editor->window->buffer->text;
   gb_del(gb, region.end - region.start, region.end);
   editor->window->buffer->dirty = 1;
-  editor->mode = normal_mode();
 }
 
 static void change_op(editor_t *editor, region_t region) {
   delete_op(editor, region);
   // TODO(isbadawi): This is duplicated between normal mode and here.
   editor_status_msg(editor, "-- INSERT --");
-  editor->mode = insert_mode();
+  editor_push_mode(editor, insert_mode());
 }
 
 typedef struct {
@@ -86,8 +85,7 @@ static void key_pressed(editor_t *editor, struct tb_event *ev) {
     editor->window->cursor = region.start;
     mode->op(editor, region);
   } else if (rc < 0) {
-    // If the character doesn't make sense, go back to normal mode
-    editor->mode = normal_mode();
+    editor_pop_mode(editor);
   }
 }
 

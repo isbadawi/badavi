@@ -23,7 +23,7 @@ typedef struct {
   // The "selected" window -- the one being edited. An element of windows.
   window_t *window;
 
-  // The editing mode (e.g. normal mode, insert mode, etc.)
+  // A stack of editing modes.
   editing_mode_t* mode;
 
   // What's written to the status bar.
@@ -39,6 +39,9 @@ void editor_init(editor_t *editor);
 
 void editor_open(editor_t *editor, char *path);
 void editor_open_empty(editor_t *editor);
+
+void editor_push_mode(editor_t *editor, editing_mode_t *mode);
+void editor_pop_mode(editor_t *editor);
 
 void editor_save_buffer(editor_t *editor, char *path);
 void editor_execute_command(editor_t *editor, char *command);

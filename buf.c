@@ -75,7 +75,6 @@ int buf_insert(buf_t *buf, const char *s, int pos) {
       len);
 
   buf->len += len;
-  buf->buf[buf->len] = '\0';
   return 0;
 }
 

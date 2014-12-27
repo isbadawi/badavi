@@ -32,6 +32,15 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     editor_status_msg(editor, ":");
     editor->mode = command_mode();
     break;
+  case 'p': {
+    buf_t *reg = editor_get_register(editor, '"');
+    gapbuf_t *gb = editor->window->buffer->text;
+    int *cursor = &editor->window->cursor;
+    int where = gb_getchar(gb, *cursor) == '\n' ? *cursor : *cursor + 1;
+    gb_putstring(gb, reg->buf, reg->len, where);
+    *cursor = where + reg->len - 1;
+    break;
+  }
   case 'a': editor_send_keys(editor, "li"); break;
   case 'I': editor_send_keys(editor, "0i"); break;
   case 'A': editor_send_keys(editor, "$i"); break;

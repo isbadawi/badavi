@@ -14,12 +14,33 @@
 #include "mode.h"
 #include "util.h"
 
+static editor_register_t register_table[] = {
+  {'"', NULL},
+  {-1, NULL}
+};
+
 void editor_init(editor_t *editor) {
   editor->status = buf_create(tb_width() / 2);
+  editor->status_error = 0;
   editor->buffers = buffer_create(NULL);
   editor->windows = window_create(NULL);
   editor->window = NULL;
   editor->mode = normal_mode();
+
+  editor->registers = register_table;
+  for (int i = 0; editor->registers[i].name != -1; ++i) {
+    editor->registers[i].buf = buf_create(1);
+  }
+
+}
+
+buf_t *editor_get_register(editor_t *editor, char name) {
+  for (int i = 0; editor->registers[i].name != -1; ++i) {
+    if (editor->registers[i].name == name) {
+      return editor->registers[i].buf;
+    }
+  }
+  return NULL;
 }
 
 static void editor_add_buffer(editor_t *editor, buffer_t *buffer) {

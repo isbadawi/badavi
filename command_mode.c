@@ -25,7 +25,7 @@ static void command_mode_key_pressed(editor_t *editor, struct tb_event *ev) {
     return;
   case TB_KEY_ENTER: {
     if (editor->status->len > 1) {
-      char *command = strdup(editor->status->buf + 1);
+      char *command = strndup(editor->status->buf + 1, editor->status->len - 1);
       editor_execute_command(editor, command);
       free(command);
     }

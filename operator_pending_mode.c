@@ -25,7 +25,21 @@ typedef struct {
   op_t* op;
 } operator_pending_mode_t;
 
+
+static void yank_op(editor_t *editor, region_t region) {
+  buf_t *reg = editor_get_register(editor, '"');
+  gapbuf_t *gb = editor->window->buffer->text;
+
+  int n = region.end - region.start;
+  buf_grow(reg, n);
+  gb_getstring(gb, region.start, n, reg->buf);
+  reg->len = n;
+
+  editor->mode = normal_mode();
+}
+
 static void delete_op(editor_t *editor, region_t region) {
+  yank_op(editor, region);
   gapbuf_t *gb = editor->window->buffer->text;
   gb_del(gb, region.end - region.start, region.end);
   editor->window->buffer->dirty = 1;
@@ -47,6 +61,7 @@ typedef struct {
 static op_table_entry_t op_table[] = {
   {'d', delete_op},
   {'c', change_op},
+  {'y', yank_op},
   {-1, NULL}
 };
 

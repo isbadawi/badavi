@@ -8,6 +8,11 @@
 struct editing_mode_t;
 typedef struct editing_mode_t editing_mode_t;
 
+typedef struct {
+  char name;
+  buf_t *buf;
+} editor_register_t;
+
 // The "editor" holds the main state of the program.
 typedef struct {
   // The loaded buffers.
@@ -25,6 +30,9 @@ typedef struct {
   buf_t* status;
   // Whether the status is an error.
   int status_error;
+
+  // An array of registers.
+  editor_register_t *registers;
 } editor_t;
 
 void editor_init(editor_t *editor);
@@ -35,6 +43,8 @@ void editor_open_empty(editor_t *editor);
 void editor_save_buffer(editor_t *editor, char *path);
 void editor_execute_command(editor_t *editor, char *command);
 void editor_draw(editor_t *editor);
+
+buf_t *editor_get_register(editor_t *editor, char name);
 
 struct tb_event;
 void editor_handle_key_press(editor_t *editor, struct tb_event *ev);

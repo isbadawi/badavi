@@ -1,7 +1,7 @@
 CC = clang
 CFLAGS = -Wall -g
 
-OBJECTS=buf.o buffer.o gap.o util.o editor.o window.o motion.o \
+OBJECTS=buf.o buffer.o gap.o mode.o util.o editor.o window.o motion.o \
   normal_mode.o insert_mode.o command_mode.o operator_pending_mode.o
 
 badavi: main.c $(OBJECTS)

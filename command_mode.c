@@ -8,6 +8,10 @@
 #include "buf.h"
 #include "editor.h"
 
+static void command_mode_entered(editor_t *editor) {
+  editor_status_msg(editor, ":");
+}
+
 // TODO(isbadawi): Command mode needs a cursor, but modes don't affect drawing.
 static void command_mode_key_pressed(editor_t *editor, struct tb_event *ev) {
   char ch;
@@ -42,7 +46,10 @@ static void command_mode_key_pressed(editor_t *editor, struct tb_event *ev) {
   buf_append(editor->status, s);
 }
 
-static editing_mode_t impl = {command_mode_key_pressed};
+static editing_mode_t impl = {
+  command_mode_entered,
+  command_mode_key_pressed
+};
 
 editing_mode_t *command_mode(void) {
   return &impl;

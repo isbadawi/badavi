@@ -1,10 +1,15 @@
 #include "mode.h"
 
+#include <ctype.h>
 #include <termbox.h>
 
 #include "buffer.h"
 #include "gap.h"
 #include "editor.h"
+
+static void insert_mode_entered(editor_t *editor) {
+  editor_status_msg(editor, "-- INSERT --");
+}
 
 static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   buffer_t *buffer = editor->window->buffer;
@@ -30,7 +35,10 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   buffer->dirty = 1;
 }
 
-editing_mode_t impl = {insert_mode_key_pressed};
+static editing_mode_t impl = {
+  insert_mode_entered,
+  insert_mode_key_pressed
+};
 
 editing_mode_t *insert_mode(void) {
   return &impl;

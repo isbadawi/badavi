@@ -8,6 +8,9 @@
 struct editing_mode_t;
 typedef struct editing_mode_t editing_mode_t;
 
+struct motion_t;
+typedef struct motion_t motion_t;
+
 typedef struct {
   char name;
   buf_t *buf;
@@ -33,6 +36,11 @@ typedef struct {
 
   // An array of registers.
   editor_register_t *registers;
+
+  // Temporary input state.
+  // TODO(isbadawi): This feels like a kludge but I don't know...
+  int count;
+  motion_t *motion;
 } editor_t;
 
 void editor_init(editor_t *editor);

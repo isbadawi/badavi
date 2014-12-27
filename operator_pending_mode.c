@@ -1,8 +1,10 @@
 #include "mode.h"
 
+#include <ctype.h>
 #include <stdlib.h>
 
-#include "buffer.h"
+#include <termbox.h>
+
 #include "editor.h"
 #include "gap.h"
 #include "motion.h"
@@ -47,8 +49,6 @@ static void delete_op(editor_t *editor, region_t region) {
 
 static void change_op(editor_t *editor, region_t region) {
   delete_op(editor, region);
-  // TODO(isbadawi): This is duplicated between normal mode and here.
-  editor_status_msg(editor, "-- INSERT --");
   editor_push_mode(editor, insert_mode());
 }
 
@@ -73,23 +73,32 @@ static op_t *op_find(char name) {
   return NULL;
 }
 
-static void key_pressed(editor_t *editor, struct tb_event *ev) {
-  static motion_t motion = {NULL, 0, 0};
+static void entered(editor_t *editor) {
   operator_pending_mode_t* mode = (operator_pending_mode_t*) editor->mode;
-
-  int rc = motion_key(&motion, ev);
-  if (rc == 1) {
+  if (editor->motion) {
     region_t region = region_create(
-        editor->window->cursor,
-        motion_apply(&motion, editor->window));
+        editor->window->cursor, motion_apply(editor));
     editor->window->cursor = region.start;
     mode->op(editor, region);
-  } else if (rc < 0) {
-    editor_pop_mode(editor);
   }
 }
 
-static operator_pending_mode_t impl = {{key_pressed}, NULL};
+static void key_pressed(editor_t *editor, struct tb_event *ev) {
+
+  if (ev->ch != '0' && isdigit(ev->ch)) {
+    editor_push_mode(editor, digit_mode());
+    editor_handle_key_press(editor, ev);
+    return;
+  } else {
+    editor_push_mode(editor, motion_mode());
+    editor_handle_key_press(editor, ev);
+  }
+}
+
+static operator_pending_mode_t impl = {
+  {entered, key_pressed},
+  NULL
+};
 
 editing_mode_t *operator_pending_mode(char op_name) {
   op_t *op = op_find(op_name);

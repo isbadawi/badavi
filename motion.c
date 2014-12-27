@@ -5,6 +5,8 @@
 
 #include <termbox.h>
 
+#include "editor.h"
+#include "mode.h"
 #include "util.h"
 
 static int is_line_start(gapbuf_t *gb, int pos) {
@@ -216,101 +218,98 @@ static int paragraph_end(int pos, window_t *window) {
 }
 
 static motion_t motion_table[] = {
-  {"h", left},
-  {"j", down},
-  {"k", up},
-  {"l", right},
-  {"0", line_start},
-  {"$", line_end},
-  {"^", first_non_blank},
-  {"g_", last_non_blank},
-  {"{", paragraph_start},
-  {"}", paragraph_end},
-  {"b", prev_word_start},
-  {"B", prev_WORD_start},
-  {"w", next_word_start},
-  {"W", next_WORD_start},
-  {"e", next_word_end},
-  {"E", next_WORD_end},
-  {"ge", prev_word_end},
-  {"gE", prev_WORD_end},
-  {"G", down}, // See motion_apply...
-  {"gg", buffer_top},
+  {'h', left},
+  {'j', down},
+  {'k', up},
+  {'l', right},
+  {'0', line_start},
+  {'$', line_end},
+  {'^', first_non_blank},
+  {'{', paragraph_start},
+  {'}', paragraph_end},
+  {'b', prev_word_start},
+  {'B', prev_WORD_start},
+  {'w', next_word_start},
+  {'W', next_WORD_start},
+  {'e', next_word_end},
+  {'E', next_WORD_end},
+  {'G', down}, // See motion_apply...
   // TODO(isbadawi): What about {t,f,T,F}{char}?
-  {NULL, NULL}
+  {-1, NULL}
 };
 
-static motion_t *motion_find(char *name) {
-  for (int i = 0; motion_table[i].name != NULL; ++i) {
-    if (!strcmp(motion_table[i].name, name)) {
-      return &motion_table[i];
+static motion_t g_motion_table[] = {
+  {'_', last_non_blank},
+  {'e', prev_word_end},
+  {'E', prev_WORD_end},
+  {'g', buffer_top},
+  {-1, NULL}
+};
+
+static motion_t *motion_find(motion_t *table, char name) {
+  for (int i = 0; table[i].name != -1; ++i) {
+    if (table[i].name == name) {
+      return &table[i];
     }
   }
   return NULL;
 }
 
-static int motion_exists_with_prefix(char *name) {
-  for (int i = 0; motion_table[i].name != NULL; ++i) {
-    if (!strncmp(motion_table[i].name, name, strlen(name))) {
-      return 1;
-    }
-  }
-  return 0;
+static void no_op(editor_t *editor) {
 }
 
-int motion_key(motion_t *motion, struct tb_event *ev) {
-  if (!isdigit(motion->last)) {
-    motion->count = 0;
+static void g_pressed(editor_t *editor, struct tb_event *ev) {
+  motion_t *motion = motion_find(g_motion_table, ev->ch);
+  if (motion) {
+    editor->motion = motion;
   }
-
-  if (isdigit(ev->ch) && !(motion->count == 0 && ev->ch == '0')) {
-    motion->count *= 10;
-    motion->count += ev->ch - '0';
-    motion->last = ev->ch;
-    return 0;
-  }
-
-  motion_t *m = NULL;
-  char name[3];
-  if (motion->last) {
-    name[0] = motion->last;
-    name[1] = ev->ch;
-    name[2] = '\0';
-    m = motion_find(name);
-  }
-  if (!m) {
-    name[0] = ev->ch;
-    name[1] = '\0';
-    m = motion_find(name);
-  }
-  if (m) {
-    motion->name = m->name;
-    motion->op = m->op;
-    return 1;
-  }
-  if (motion_exists_with_prefix(name)) {
-    motion->last = ev->ch;
-    return 0;
-  }
-  return -1;
+  editor_pop_mode(editor);
+  editor_pop_mode(editor);
 }
 
-int motion_apply(motion_t *motion, window_t *window) {
-  int result = window->cursor;
-  int n = motion->count ? motion->count : 1;
+static editing_mode_t g_mode = {
+  no_op,
+  g_pressed
+};
+
+void key_pressed(editor_t *editor, struct tb_event *ev) {
+  if (ev->ch == 'g') {
+    editor_push_mode(editor, &g_mode);
+    return;
+  }
+  motion_t *motion = motion_find(motion_table, ev->ch);
+  if (motion) {
+    editor->motion = motion;
+  }
+  editor_pop_mode(editor);
+  return;
+}
+
+static editing_mode_t impl = {
+  no_op,
+  key_pressed
+};
+
+editing_mode_t *motion_mode(void) {
+  return &impl;
+}
+
+int motion_apply(editor_t *editor) {
+  motion_t *motion = editor->motion;
+  int result = editor->window->cursor;
+  int n = editor->count ? editor->count : 1;
 
   // TODO(isbadawi): This is a hack to make G work correctly.
-  if (!strcmp(motion->name, "G")) {
-    n = motion->count ? motion->count - 1 : window->buffer->text->lines->len - 1;
-    result = buffer_top(result, window);
+  if (motion->name == 'G') {
+    n = editor->count ? editor->count - 1 : gb_nlines(editor->window->buffer->text) - 1;
+    result = buffer_top(result, editor->window);
   }
 
   for (int i = 0; i < n; ++i) {
-    result = motion->op(result, window);
+    result = motion->op(result, editor->window);
   }
 
-  motion->op = NULL;
-  motion->count = 0;
-  motion->last = 0;
+  editor->count = 0;
+  editor->motion = NULL;
   return result;
 }

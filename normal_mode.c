@@ -1,5 +1,6 @@
 #include "mode.h"
 
+#include <ctype.h>
 #include <stdlib.h>
 
 #include <termbox.h>
@@ -7,29 +8,30 @@
 #include "buf.h"
 #include "editor.h"
 #include "motion.h"
+#include "mode.h"
 
 static int is_last_line(gapbuf_t *gb, int pos) {
   return pos > gb_size(gb) - gb->lines->buf[gb->lines->len - 1];
 }
 
-static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
-  static motion_t motion = {NULL, 0, 0};
+static void normal_mode_entered(editor_t *editor) {
+  if (editor->motion) {
+    editor->window->cursor = motion_apply(editor);
+  }
+}
 
-  int rc = motion_key(&motion, ev);
-  if (rc == 1) {
-    editor->window->cursor = motion_apply(&motion, editor->window);
-    return;
-  } else if (rc == 0) {
+static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
+  if (ev->ch != '0' && isdigit(ev->ch)) {
+    editor_push_mode(editor, digit_mode());
+    editor_handle_key_press(editor, ev);
     return;
   }
 
   switch (ev->ch) {
   case 'i':
-    editor_status_msg(editor, "-- INSERT --");
     editor_push_mode(editor, insert_mode());
     break;
   case ':':
-    editor_status_msg(editor, ":");
     editor_push_mode(editor, command_mode());
     break;
   case 'p': {
@@ -58,12 +60,18 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     editing_mode_t *mode = operator_pending_mode(ev->ch);
     if (mode) {
       editor_push_mode(editor, mode);
+    } else {
+      editor_push_mode(editor, motion_mode());
+      editor_handle_key_press(editor, ev);
     }
   }
   }
 }
 
-static editing_mode_t impl = {normal_mode_key_pressed};
+static editing_mode_t impl = {
+  normal_mode_entered,
+  normal_mode_key_pressed
+};
 
 editing_mode_t *normal_mode(void) {
   return &impl;

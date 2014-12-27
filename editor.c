@@ -32,6 +32,8 @@ void editor_init(editor_t *editor) {
     editor->registers[i].buf = buf_create(1);
   }
 
+  editor->count = 0;
+  editor->motion = NULL;
 }
 
 buf_t *editor_get_register(editor_t *editor, char name) {
@@ -95,11 +97,13 @@ void editor_open_empty(editor_t *editor) {
 void editor_push_mode(editor_t *editor, editing_mode_t *mode) {
   mode->parent = editor->mode;
   editor->mode = mode;
+  editor->mode->entered(editor);
 }
 
 void editor_pop_mode(editor_t *editor) {
   if (editor->mode->parent) {
     editor->mode = editor->mode->parent;
+    editor->mode->entered(editor);
   }
 }
 

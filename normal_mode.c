@@ -27,6 +27,9 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     return;
   }
 
+
+  gapbuf_t *gb = editor->window->buffer->text;
+  int *cursor = &editor->window->cursor;
   switch (ev->ch) {
   case '"':
     editor_push_mode(editor, quote_mode());
@@ -39,8 +42,6 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     break;
   case 'p': {
     buf_t *reg = editor_get_register(editor, editor->register_);
-    gapbuf_t *gb = editor->window->buffer->text;
-    int *cursor = &editor->window->cursor;
     int where = gb_getchar(gb, *cursor) == '\n' ? *cursor : *cursor + 1;
     gb_putstring(gb, reg->buf, reg->len, where);
     *cursor = where + reg->len - 1;
@@ -56,7 +57,7 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   case 'D': editor_send_keys(editor, "d$"); break;
   case 'C': editor_send_keys(editor, "c$"); break;
   case 'J':
-    if (!is_last_line(editor->window->buffer->text, editor->window->cursor)) {
+    if (!is_last_line(gb, *cursor)) {
       editor_send_keys(editor, "A <esc>jI<bs><esc>");
     }
     break;

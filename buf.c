@@ -25,6 +25,7 @@ buf_t *buf_create(int cap) {
   }
   buf->buf = NULL;
 
+  buf->cap = 0;
   if (buf_grow(buf, cap) < 0) {
     free(buf);
     return NULL;

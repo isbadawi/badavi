@@ -218,6 +218,7 @@ int gb_lastindexof(gapbuf_t *gb, char c, int start) {
 }
 
 void gb_pos_to_linecol(gapbuf_t *gb, int pos, int *line, int *column) {
+  *line = *column = -1;
   int offset = 0;
   for (int i = 0; i < gb->lines->len; ++i) {
     int len = gb->lines->buf[i];

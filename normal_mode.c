@@ -21,6 +21,11 @@ static void normal_mode_entered(editor_t *editor) {
 }
 
 static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
+  if (ev->key == TB_KEY_CTRL_C) {
+    editor_status_msg(editor, "Type :q<Enter> to exit badavi");
+    return;
+  }
+
   if (ev->ch != '0' && isdigit(ev->ch)) {
     editor_push_mode(editor, digit_mode());
     editor_handle_key_press(editor, ev);

@@ -16,7 +16,7 @@ static void command_mode_entered(editor_t *editor) {
 static void command_mode_key_pressed(editor_t *editor, struct tb_event *ev) {
   char ch;
   switch (ev->key) {
-  case TB_KEY_ESC:
+  case TB_KEY_ESC: case TB_KEY_CTRL_C:
     buf_printf(editor->status, "");
     editor_pop_mode(editor);
     return;

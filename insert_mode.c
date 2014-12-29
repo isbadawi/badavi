@@ -17,7 +17,7 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   int *cursor = &editor->window->cursor;
   char ch;
   switch (ev->key) {
-  case TB_KEY_ESC:
+  case TB_KEY_ESC: case TB_KEY_CTRL_C:
     editor_status_msg(editor, "");
     editor_pop_mode(editor);
     return;

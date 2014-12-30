@@ -26,12 +26,32 @@ window_t *window_create(buffer_t *buffer, int x, int y, int w, int h) {
   return window;
 }
 
+// Number of columns to use for the line number (including the trailing space).
+static int window_numberwidth(window_t* window) {
+  int nlines = window->buffer->text->lines->len;
+  char buf[10];
+  int maxwidth = snprintf(buf, 10, "%d", nlines);
+
+  // 4 is the vim default for 'numberwidth'.
+  return max(4, maxwidth + 1);
+}
+
 static void window_ensure_cursor_visible(window_t *window) {
   int x, y;
   gb_pos_to_linecol(window->buffer->text, window->cursor, &y, &x);
 
-  window->left = max(min(window->left, x), x - window->w + 1);
-  window->top = max(min(window->top, y), y - window->h + 1);
+  int w = window->w - window_numberwidth(window);
+  int h = window->h;
+
+  window->left = max(min(window->left, x), x - w + 1);
+  window->top = max(min(window->top, y), y - h + 1);
+}
+
+static void window_change_cell(window_t *window, int x, int y, char c, int fg, int bg) {
+  tb_change_cell(
+      window_numberwidth(window) + window->x + x,
+      window->y + y,
+      c, fg, bg);
 }
 
 static void window_draw_cursor(window_t *window) {
@@ -40,9 +60,9 @@ static void window_draw_cursor(window_t *window) {
   int x, y;
   gb_pos_to_linecol(gb, window->cursor, &y, &x);
 
-  tb_change_cell(
-      window->x + x - window->left,
-      window->y + y - window->top,
+  window_change_cell(window,
+      x - window->left,
+      y - window->top,
       c == '\n' ? ' ' : c,
       TB_DEFAULT,
       TB_WHITE);
@@ -52,14 +72,29 @@ void window_draw(window_t *window) {
   window_ensure_cursor_visible(window);
   gapbuf_t *gb = window->buffer->text;
 
+  int numberwidth = window_numberwidth(window);
+
+  int w = window->w - numberwidth;
+  int h = window->h;
+
   int topy = window->top;
   int topx = window->left;
-  int rows = min(gb->lines->len - topy, window->h);
+  int rows = min(gb->lines->len - topy, h);
   for (int y = 0; y < rows; ++y) {
-    int cols = min(gb->lines->buf[y + topy] - topx, window->w);
+    // Draw line number.
+    int linenumber = window->top + y + 1;
+    int col = numberwidth - 2;
+    while (linenumber > 0) {
+      int digit = linenumber % 10;
+      tb_change_cell(col--, y, digit + '0', TB_YELLOW, TB_DEFAULT);
+      linenumber = (linenumber - digit) / 10;
+    }
+
+    // Draw rest of line.
+    int cols = min(gb->lines->buf[y + topy] - topx, w);
     for (int x = 0; x < cols; ++x) {
       char c = gb_getchar(gb, gb_linecol_to_pos(gb, y + topy, x + topx));
-      tb_change_cell(window->x + x, window->y + y, c, TB_WHITE, TB_DEFAULT);
+      window_change_cell(window, x, y, c, TB_WHITE, TB_DEFAULT);
     }
   }
 

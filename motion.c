@@ -217,34 +217,42 @@ static int paragraph_end(int pos, window_t *window) {
   return next_until(pos, window, is_paragraph_end);
 }
 
+#define LINEWISE 1, 0
+#define EXCLUSIVE 0, 1
+#define INCLUSIVE 0, 0
+
 static motion_t motion_table[] = {
-  {'h', left},
-  {'j', down},
-  {'k', up},
-  {'l', right},
-  {'0', line_start},
-  {'$', line_end},
-  {'^', first_non_blank},
-  {'{', paragraph_start},
-  {'}', paragraph_end},
-  {'b', prev_word_start},
-  {'B', prev_WORD_start},
-  {'w', next_word_start},
-  {'W', next_WORD_start},
-  {'e', next_word_end},
-  {'E', next_WORD_end},
-  {'G', down}, // See motion_apply...
+  {'h', left, EXCLUSIVE},
+  {'j', down, LINEWISE},
+  {'k', up, LINEWISE},
+  {'l', right, EXCLUSIVE},
+  {'0', line_start, EXCLUSIVE},
+  {'$', line_end, INCLUSIVE},
+  {'^', first_non_blank, EXCLUSIVE},
+  {'{', paragraph_start, EXCLUSIVE},
+  {'}', paragraph_end, EXCLUSIVE},
+  {'b', prev_word_start, EXCLUSIVE},
+  {'B', prev_WORD_start, EXCLUSIVE},
+  {'w', next_word_start, EXCLUSIVE},
+  {'W', next_WORD_start, EXCLUSIVE},
+  {'e', next_word_end, INCLUSIVE},
+  {'E', next_WORD_end, INCLUSIVE},
+  {'G', down, LINEWISE}, // See motion_apply...
   // TODO(isbadawi): What about {t,f,T,F}{char}?
-  {-1, NULL}
+  {-1, NULL, 0, 0}
 };
 
 static motion_t g_motion_table[] = {
-  {'_', last_non_blank},
-  {'e', prev_word_end},
-  {'E', prev_WORD_end},
-  {'g', buffer_top},
-  {-1, NULL}
+  {'_', last_non_blank, INCLUSIVE},
+  {'e', prev_word_end, INCLUSIVE},
+  {'E', prev_WORD_end, INCLUSIVE},
+  {'g', buffer_top, LINEWISE},
+  {-1, NULL, 0, 0}
 };
+
+#undef LINEWISE
+#undef EXCLUSIVE
+#undef INCLUSIVE
 
 static motion_t *motion_find(motion_t *table, char name) {
   for (int i = 0; table[i].name != -1; ++i) {

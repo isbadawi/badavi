@@ -23,24 +23,13 @@ window_t *window_create(buffer_t *buffer) {
 
 static void window_ensure_cursor_visible(window_t *window) {
   int w = tb_width();
-  int h = tb_height();
-  gapbuf_t *gb = window->buffer->text;
+  int h = tb_height() - 1;
 
-  // TODO(isbadawi): This might be expensive for buffers with many lines.
-  int cursorx, cursory;
-  gb_pos_to_linecol(gb, window->cursor, &cursory, &cursorx);
+  int x, y;
+  gb_pos_to_linecol(window->buffer->text, window->cursor, &x, &y);
 
-  if (cursorx < window->left) {
-    window->left = cursorx;
-  } else if (cursorx - window->left >= w) {
-    window->left = cursorx - w + 1;
-  }
-
-  if (cursory < window->top) {
-    window->top = cursory;
-  } else if (cursory - window->top >= h - 1) {
-    window->top = cursory - h + 2;
-  }
+  window->left = max(min(window->left, x), x - w + 1);
+  window->top = max(min(window->top, y), y - h + 1);
 }
 
 void window_draw(window_t *window) {
@@ -48,14 +37,15 @@ void window_draw(window_t *window) {
   gapbuf_t *gb = window->buffer->text;
 
   int w = tb_width();
-  int h = tb_height();
+  int h = tb_height() - 1;
   int topy = window->top;
   int topx = window->left;
-  // TODO(isbadawi): Each linecol_to_pos call is a loop.
-  for (int y = topy; y <= gb->lines->len && y - topy < h - 1; ++y) {
-    for (int x = topx; x < gb->lines->buf[y] && x - topx < w; ++x) {
-      char c = gb_getchar(gb, gb_linecol_to_pos(gb, y, x));
-      tb_change_cell(x - topx, y - topy, c, TB_WHITE, TB_DEFAULT);
+  int rows = min(gb->lines->len - topy, h);
+  for (int y = 0; y < rows; ++y) {
+    int cols = min(gb->lines->buf[y + topy] - topx, w);
+    for (int x = 0; x < cols; ++x) {
+      char c = gb_getchar(gb, gb_linecol_to_pos(gb, y + topy, x + topx));
+      tb_change_cell(x, y, c, TB_WHITE, TB_DEFAULT);
     }
   }
 

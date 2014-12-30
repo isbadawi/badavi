@@ -26,7 +26,7 @@ void editor_init(editor_t *editor) {
   editor->status = buf_create(tb_width() / 2);
   editor->status_error = 0;
   editor->buffers = buffer_create(NULL);
-  editor->windows = window_create(NULL);
+  editor->windows = window_create(NULL, 0, 0, 0, 0);
   editor->window = NULL;
   editor->mode = normal_mode();
 
@@ -84,7 +84,7 @@ void editor_open(editor_t *editor, char *path) {
           path, gb_nlines(buffer->text), gb_size(buffer->text));
     }
     editor_add_buffer(editor, buffer);
-    window = window_create(buffer);
+    window = window_create(buffer, 0, 0, tb_width(), tb_height() - 1);
     editor_add_window(editor, window);
   }
   editor->window = window;
@@ -93,7 +93,7 @@ void editor_open(editor_t *editor, char *path) {
 void editor_open_empty(editor_t *editor) {
   buffer_t *buffer = buffer_create(NULL);
   editor_add_buffer(editor, buffer);
-  window_t *window = window_create(buffer);
+  window_t *window = window_create(buffer, 0, 0, tb_width(), tb_height() - 1);
   editor_add_window(editor, window);
   editor->window = window;
 }

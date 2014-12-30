@@ -6,6 +6,11 @@
 typedef struct window_t {
   // The buffer being edited.
   buffer_t *buffer;
+  // The position and size of the window.
+  int x;
+  int y;
+  int w;
+  int h;
   // The coordinates of the top left cell visible on screen.
   int top;
   int left;
@@ -15,9 +20,8 @@ typedef struct window_t {
   struct window_t *next;
 } window_t;
 
-window_t *window_create(buffer_t *buffer);
+window_t *window_create(buffer_t *buffer, int x, int y, int w, int h);
 
-// TODO(isbadawi): This could take x, y, w, h to support split windows.
 void window_draw(window_t *window);
 
 #endif

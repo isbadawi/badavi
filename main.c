@@ -31,6 +31,13 @@ static void suspend(editor_t *editor) {
 int main(int argc, char *argv[]) {
   debug_init();
 
+  int err = tb_init();
+  if (err) {
+    fprintf(stderr, "tb_init() failed with error code %d\n", err);
+    return 1;
+  }
+  atexit(tb_shutdown);
+
   editor_t editor;
   editor_init(&editor);
 
@@ -41,13 +48,6 @@ int main(int argc, char *argv[]) {
   } else {
     editor_open_empty(&editor);
   }
-
-  int err = tb_init();
-  if (err) {
-    fprintf(stderr, "tb_init() failed with error code %d\n", err);
-    return 1;
-  }
-  atexit(tb_shutdown);
 
   editor_draw(&editor);
 
@@ -62,6 +62,9 @@ int main(int argc, char *argv[]) {
       }
       break;
     case TB_EVENT_RESIZE:
+      // TODO(isbadawi): Replace this with something more sophisticated.
+      editor.window->w = tb_width();
+      editor.window->h = tb_height() - 1;
       editor_draw(&editor);
       break;
     default:

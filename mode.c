@@ -3,6 +3,8 @@
 #include <ctype.h>
 #include <termbox.h>
 
+#include "editor.h"
+
 static void no_op(editor_t *editor) {
 }
 
@@ -26,8 +28,9 @@ editing_mode_t *digit_mode(void) {
 }
 
 static void quote_pressed(editor_t *editor, struct tb_event *ev) {
-  if (isalpha(ev->ch)) {
-    editor->register_ = tolower(ev->ch);
+  char name = tolower(ev->ch);
+  if (editor_get_register(editor, name)) {
+    editor->register_ = name;
   }
   editor_pop_mode(editor);
 }

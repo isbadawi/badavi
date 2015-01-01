@@ -52,7 +52,6 @@ void gb_putstring(gapbuf_t *gb, char *buf, int n, int pos);
 // Remove the n characters before offset pos.
 void gb_del(gapbuf_t *gb, int n, int pos);
 
-
 // Return the offset of the first occurrence of c in the buffer, starting at
 // offset start, or gb_size(gb) if c is not found.
 int gb_indexof(gapbuf_t *gb, char c, int start);
@@ -64,5 +63,10 @@ int gb_lastindexof(gapbuf_t *gb, char c, int start);
 void gb_pos_to_linecol(gapbuf_t *gb, int pos, int *line, int *offset);
 // Vice versa.
 int gb_linecol_to_pos(gapbuf_t *gb, int line, int offset);
+
+// Returns the offset of the first match of regex in the buffer, starting at
+// offset start. Returns -2 if the regex is malformed, and -1 if the regex
+// is fine but there were no matches.
+int gb_search_forwards(gapbuf_t *gb, char *regex, int start);
 
 #endif

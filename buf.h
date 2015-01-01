@@ -11,13 +11,15 @@ typedef struct {
 } buf_t;
 
 buf_t *buf_create(int cap);
-buf_t *buf_from_cstr(const char *s);
+buf_t *buf_from_cstr(char *s);
 void buf_free(buf_t *buf);
 
+void buf_clear(buf_t *buf);
 int buf_grow(buf_t *buf, int cap);
 int buf_delete(buf_t *buf, int pos, int len);
-int buf_insert(buf_t *buf, const char *s, int pos);
-int buf_append(buf_t *buf, const char *s);
+int buf_insert(buf_t *buf, char *s, int pos);
+int buf_insert_bytes(buf_t *buf, char *s, int n, int pos);
+int buf_append(buf_t *buf, char *s);
 
 // Write the formatted data to buf (overwriting what was there),
 // automatically growing it if needed.

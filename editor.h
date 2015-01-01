@@ -57,6 +57,7 @@ void editor_execute_command(editor_t *editor, char *command);
 void editor_draw(editor_t *editor);
 
 buf_t *editor_get_register(editor_t *editor, char name);
+void editor_search(editor_t *editor);
 
 struct tb_event;
 void editor_handle_key_press(editor_t *editor, struct tb_event *ev);

@@ -20,6 +20,7 @@ struct editing_mode_t {
 editing_mode_t *normal_mode(void);
 editing_mode_t *insert_mode(void);
 editing_mode_t *command_mode(void);
+editing_mode_t *search_mode(void);
 editing_mode_t *operator_pending_mode(char op);
 
 // These are "utility modes" used to help process input.

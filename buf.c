@@ -36,7 +36,7 @@ buf_t *buf_create(int cap) {
   return buf;
 }
 
-buf_t *buf_from_cstr(const char *s) {
+buf_t *buf_from_cstr(char *s) {
   buf_t *buf = buf_create(max(1, strlen(s)) * 2);
   if (!buf) {
     return NULL;
@@ -50,8 +50,15 @@ void buf_free(buf_t *buf) {
   free(buf->buf);
 }
 
-int buf_insert(buf_t *buf, const char *s, int pos) {
-  int len = strlen(s);
+void buf_clear(buf_t *buf) {
+  buf->len = 0;
+}
+
+int buf_insert(buf_t *buf, char *s, int pos) {
+  return buf_insert_bytes(buf, s, strlen(s), pos);
+}
+
+int buf_insert_bytes(buf_t *buf, char *s, int len, int pos) {
   int new_len = buf->len + len;
 
   if (new_len + 1 >= buf->cap) {
@@ -79,7 +86,7 @@ int buf_insert(buf_t *buf, const char *s, int pos) {
   return 0;
 }
 
-int buf_append(buf_t *buf, const char *s) {
+int buf_append(buf_t *buf, char *s) {
   return buf_insert(buf, s, buf->len);
 }
 

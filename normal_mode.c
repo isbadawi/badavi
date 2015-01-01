@@ -45,6 +45,9 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   case ':':
     editor_push_mode(editor, command_mode());
     break;
+  case '/':
+    editor_push_mode(editor, search_mode());
+    break;
   case 'p': {
     buf_t *reg = editor_get_register(editor, editor->register_);
     int where = gb_getchar(gb, *cursor) == '\n' ? *cursor : *cursor + 1;
@@ -53,6 +56,7 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     editor->register_ = '"';
     break;
   }
+  case 'n': editor_search(editor); break;
   case 'a': editor_send_keys(editor, "li"); break;
   case 'I': editor_send_keys(editor, "0i"); break;
   case 'A': editor_send_keys(editor, "$i"); break;

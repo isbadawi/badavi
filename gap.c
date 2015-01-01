@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <regex.h>
 
 #include "util.h"
 
@@ -237,4 +238,30 @@ int gb_linecol_to_pos(gapbuf_t *gb, int line, int column) {
     offset += gb->lines->buf[i] + 1;
   }
   return offset + column;
+}
+
+int gb_search_forwards(gapbuf_t *gb, char *pattern, int start) {
+  // Move the gap so the searched region is contiguous.
+  gb_mvgap(gb, start);
+
+  regex_t regex;
+  int err = regcomp(&regex, pattern, REG_EXTENDED|REG_NEWLINE);
+  if (err) {
+    // TODO(isbadawi): regcomp error codes give more info about the bad regex.
+    return -2;
+  }
+
+  // regexec assumes the string is at the beginning of a line unless told
+  // otherwise. This affects regexes that use ^.
+  int flags = 0;
+  if (start > 0 && gb_getchar(gb, start - 1) != '\n') {
+    flags |= REG_NOTBOL;
+  }
+
+  regmatch_t match;
+  int nomatch = regexec(&regex, gb->gapend, 1, &match, flags);
+  regfree(&regex);
+
+  // TODO(isbadawi): rm_eo would also be useful for highlighting matches.
+  return nomatch ? -1 : (gb->gapstart - gb->bufstart) + match.rm_so;
 }

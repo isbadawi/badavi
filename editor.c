@@ -15,10 +15,16 @@
 #include "util.h"
 
 static editor_register_t register_table[] = {
+  // Last search pattern register
+  // TODO(isbadawi): Investigate segfaults when this register is listed later.
+  {'/'},
+  // Unnamed default register
   {'"'},
+  // Named registers
   {'a'}, {'b'}, {'c'}, {'d'}, {'e'}, {'f'}, {'g'}, {'h'}, {'i'}, {'j'}, {'k'},
   {'l'}, {'m'}, {'n'}, {'o'}, {'p'}, {'q'}, {'r'}, {'s'}, {'t'}, {'u'}, {'v'},
   {'w'}, {'x'}, {'y'}, {'z'},
+  // Sentinel
   {-1}
 };
 
@@ -47,6 +53,39 @@ buf_t *editor_get_register(editor_t *editor, char name) {
     }
   }
   return NULL;
+}
+
+#define SEARCH_PATTERN_MAXLEN 256
+
+// TODO(isbadawi): Searching should be a motion.
+void editor_search(editor_t *editor) {
+  buf_t *reg = editor_get_register(editor, '/');
+  if (reg->len == 0) {
+    editor_status_err(editor, "No previous regular expression");
+    return;
+  }
+
+  gapbuf_t *gb = editor->window->buffer->text;
+  int *cursor = &editor->window->cursor;
+
+  char pattern[SEARCH_PATTERN_MAXLEN];
+  memcpy(pattern, reg->buf, reg->len);
+  pattern[reg->len] = '\0';
+
+  int offset = gb_search_forwards(gb, pattern, *cursor + 1);
+  if (offset == -2) {
+    editor_status_err(editor, "Bad pattern: \"%s\"", pattern);
+    return;
+  }
+  if (offset == -1) {
+    editor_status_msg(editor, "search hit BOTTOM, continuing at TOP");
+    offset = gb_search_forwards(gb, pattern, 0);
+  }
+  if (offset == -1) {
+    editor_status_err(editor, "Pattern not found: \"%s\"", pattern);
+  } else {
+    *cursor = offset;
+  }
 }
 
 static void editor_add_buffer(editor_t *editor, buffer_t *buffer) {

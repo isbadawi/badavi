@@ -22,7 +22,7 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     editor_pop_mode(editor);
     return;
   case TB_KEY_BACKSPACE2:
-    if (cursor > 0) {
+    if (*cursor > 0) {
       gb_del(gb, 1, (*cursor)--);
       buffer->dirty = 1;
     }

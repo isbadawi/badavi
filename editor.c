@@ -170,6 +170,9 @@ void editor_save_buffer(editor_t *editor, char *path) {
 }
 
 void editor_execute_command(editor_t *editor, char *command) {
+  if (!strlen(command)) {
+    return;
+  }
   char *cmd = strtok(command, " ");
   char *arg = strtok(NULL, " ");
   if (!strcmp(cmd, "q")) {

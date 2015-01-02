@@ -17,6 +17,7 @@ struct editing_mode_t {
   editing_mode_t *parent;
 };
 
+
 editing_mode_t *normal_mode(void);
 editing_mode_t *insert_mode(void);
 editing_mode_t *command_mode(void);

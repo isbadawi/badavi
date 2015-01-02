@@ -55,10 +55,7 @@ void buf_clear(buf_t *buf) {
 }
 
 int buf_insert(buf_t *buf, char *s, int pos) {
-  return buf_insert_bytes(buf, s, strlen(s), pos);
-}
-
-int buf_insert_bytes(buf_t *buf, char *s, int len, int pos) {
+  int len = strlen(s);
   int new_len = buf->len + len;
 
   if (new_len + 1 >= buf->cap) {

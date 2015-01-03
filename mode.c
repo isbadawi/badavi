@@ -94,7 +94,7 @@ static void cmdline_mode_key_pressed(editor_t *editor, struct tb_event *ev) {
 }
 
 static void search_mode_cmdline_cb(editor_t *editor, char *command) {
-  if (strlen(command)) {
+  if (*command) {
     buf_t *reg = editor_get_register(editor, '/');
     buf_clear(reg);
     buf_append(reg, command);

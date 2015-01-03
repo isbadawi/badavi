@@ -84,7 +84,7 @@ static void entered(editor_t *editor) {
   region_t region = region_create(
       editor->window->cursor, motion_apply(editor));
 
-  int last = gb_lastindexof(gb, '\n', region.start);
+  int last = gb_lastindexof(gb, '\n', region.start - 1);
   int next = gb_indexof(gb, '\n', region.end);
   if (motion->linewise) {
     region.start = max(0, last + 1);

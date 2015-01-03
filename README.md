@@ -19,7 +19,7 @@ to edit another file.
 * Delete (`d`), change (`c`) and yank (`y`) operators, which can be applied to
 any of the motions. (Text objects aren't implemented yet). The affected
 region is saved into the unnamed register, used by `p` to paste text. Named
-registers from `a` to `z` are also implemented, and can specified by
+registers from `a` to `z` are also implemented, and can be specified by
 prefixing the operator (or `p`) with `"a` through `"z`.
 
 * Regex search with `/` (only forward search is implemented for now). Standard

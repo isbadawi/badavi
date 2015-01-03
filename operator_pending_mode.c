@@ -84,6 +84,7 @@ static void entered(editor_t *editor) {
   region_t region = region_create(
       editor->window->cursor, motion_apply(editor));
 
+
   int last = gb_lastindexof(gb, '\n', region.start - 1);
   int next = gb_indexof(gb, '\n', region.end);
   if (motion->linewise) {
@@ -93,11 +94,14 @@ static void entered(editor_t *editor) {
     region.end = min(region.end + 1, next);
   }
 
-  editor->window->cursor = region.start;
-
   operator_pending_mode_t* mode = (operator_pending_mode_t*) editor->mode;
   mode->op(editor, region);
   editor->register_ = '"';
+
+  editor->window->cursor = region.start;
+  if (editor->window->cursor > gb_size(gb) - 1) {
+    editor->window->cursor = gb_lastindexof(gb, '\n', last - 1) + 1;
+  }
 }
 
 static void key_pressed(editor_t *editor, struct tb_event *ev) {

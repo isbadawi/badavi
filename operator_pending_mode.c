@@ -88,12 +88,7 @@ static void entered(editor_t *editor) {
   int next = gb_indexof(gb, '\n', region.end);
   if (motion->linewise) {
     region.start = max(0, last + 1);
-    // TODO(isbadawi): Removing the last newline (e.g. dG) causes problems.
-    // Temporary workaround is to limit the end of the region to
-    // gb_size(gb) - 1. This leaves an extra trailing blank line if the delete
-    // reaches the end of the file. But ideally gb_size(gb) i.e. deleting
-    // starting from one past the last byte should work. Investigate more.
-    region.end = min(gb_size(gb) - 1, next + 1);
+    region.end = min(gb_size(gb), next + 1);
   } else if (!motion->exclusive) {
     region.end = min(region.end + 1, next);
   }

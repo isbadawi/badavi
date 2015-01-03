@@ -197,6 +197,12 @@ void gb_del(gapbuf_t *gb, int n, int pos) {
   }
 
   gb->gapstart -= n;
+
+  // Empty files are tricky for us, so insert a newline if needed...
+  if (!gb_size(gb)) {
+    *(gb->gapstart++) = '\n';
+    intbuf_add(gb->lines, 0);
+  }
 }
 
 int gb_indexof(gapbuf_t *gb, char c, int start) {
@@ -219,17 +225,18 @@ int gb_lastindexof(gapbuf_t *gb, char c, int start) {
 }
 
 void gb_pos_to_linecol(gapbuf_t *gb, int pos, int *line, int *column) {
-  *line = *column = -1;
   int offset = 0;
+  *line = *column = 0;
   for (int i = 0; i < gb->lines->len; ++i) {
     int len = gb->lines->buf[i];
+    *line = i;
+    *column = pos - offset;
     if (offset <= pos && pos <= offset + len) {
-      *line = i;
-      *column = pos - offset;
       return;
     }
     offset += len + 1;
   }
+  *column = pos - offset;
 }
 
 int gb_linecol_to_pos(gapbuf_t *gb, int line, int column) {

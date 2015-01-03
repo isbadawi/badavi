@@ -26,8 +26,7 @@ static int is_last_line(gapbuf_t *gb, int pos) {
 }
 
 static int is_blank_line(gapbuf_t *gb, int pos) {
-  return gb_getchar(gb, pos) == '\n' &&
-    (pos == 0 || gb_getchar(gb, pos - 1) == '\n');
+  return gb_getchar(gb, pos) == '\n' && is_line_start(gb, pos);
 }
 
 static int left(int pos, window_t *window) {

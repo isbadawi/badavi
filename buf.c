@@ -46,6 +46,16 @@ buf_t *buf_from_cstr(char *s) {
   return buf;
 }
 
+buf_t *buf_from_char(char c) {
+  char s[2] = {c, '\0'};
+  return buf_from_cstr(s);
+}
+
+buf_t *buf_copy(buf_t *buf) {
+  char *s = strndup(buf->buf, buf->len);
+  return buf_from_cstr(s);
+}
+
 void buf_free(buf_t *buf) {
   free(buf->buf);
 }

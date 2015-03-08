@@ -12,6 +12,8 @@ typedef struct {
 
 buf_t *buf_create(int cap);
 buf_t *buf_from_cstr(char *s);
+buf_t *buf_from_char(char c);
+buf_t *buf_copy(buf_t *buf);
 void buf_free(buf_t *buf);
 
 void buf_clear(buf_t *buf);

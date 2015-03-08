@@ -43,6 +43,9 @@ void editor_init(editor_t *editor) {
     editor->registers[i].buf = buf_create(1);
   }
 
+  editor->undo_stack = list_create();
+  editor->redo_stack = list_create();
+
   editor->count = 0;
   editor->motion = NULL;
   editor->register_ = '"';
@@ -273,9 +276,74 @@ void editor_status_err(editor_t *editor, const char *format, ...) {
 }
 
 void editor_undo(editor_t* editor) {
-  editor_status_msg(editor, "Undo!");
+  if (list_empty(editor->undo_stack)) {
+    editor_status_msg(editor, "Already at oldest change");
+    return;
+  }
+
+  list_t *group = list_pop(editor->undo_stack);
+
+  gapbuf_t *gb = editor->window->buffer->text;
+  edit_action_t *action;
+  LIST_FOREACH(group, action) {
+    switch (action->type) {
+    case EDIT_ACTION_INSERT:
+      gb_del(gb, action->buf->len, action->pos + action->buf->len);
+      editor->window->cursor = action->pos;
+      break;
+    case EDIT_ACTION_DELETE:
+      gb_putstring(gb, action->buf->buf, action->buf->len, action->pos);
+      editor->window->cursor = action->pos;
+      break;
+    }
+  }
+
+  list_prepend(editor->redo_stack, group);
 }
 
 void editor_redo(editor_t* editor) {
-  editor_status_msg(editor, "Redo!");
+  if (list_empty(editor->redo_stack)) {
+    editor_status_msg(editor, "Already at newest change");
+    return;
+  }
+
+  list_t *group = list_pop(editor->redo_stack);
+
+  gapbuf_t *gb = editor->window->buffer->text;
+  edit_action_t *action;
+  LIST_FOREACH_REVERSE(group, action) {
+    switch (action->type) {
+    case EDIT_ACTION_INSERT:
+      gb_putstring(gb, action->buf->buf, action->buf->len, action->pos);
+      editor->window->cursor = action->pos + action->buf->len;
+      break;
+    case EDIT_ACTION_DELETE:
+      gb_del(gb, action->buf->len, action->pos + action->buf->len);
+      editor->window->cursor = action->pos;
+      break;
+    }
+  }
+
+  list_prepend(editor->undo_stack, group);
+}
+
+void editor_start_action_group(editor_t *editor) {
+  list_t *group;
+  LIST_FOREACH(editor->redo_stack, group) {
+    edit_action_t *action;
+    LIST_FOREACH(group, action) {
+      buf_free(action->buf);
+    }
+    list_clear(group);
+  }
+  list_clear(editor->redo_stack);
+
+  list_prepend(editor->undo_stack, list_create());
+}
+
+void editor_add_action(editor_t *editor, edit_action_t action) {
+  edit_action_t *action_copy = malloc(sizeof(edit_action_t));
+  memcpy(action_copy, &action, sizeof action);
+  list_t *group = list_peek(editor->undo_stack);
+  list_prepend(group, action_copy);
 }

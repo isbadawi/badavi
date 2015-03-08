@@ -27,6 +27,8 @@ POSIX regexes are used, so the syntax is not exactly the same as vim's. For
 instance, word boundaries are specified with `[[:<:]]` and `[[:>:]]` instead
 of `\<` and `\>`. `n` can be used to cycle through matches.
 
+* Undo (`u`) and redo (`<c-r>`) (only single-level for now, unlike vim).
+
 ### Building
 
 Just run `make`. The only dependency is `termbox`, which is easy to find --

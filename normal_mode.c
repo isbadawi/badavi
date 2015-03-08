@@ -57,6 +57,13 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     int where = gb_getchar(gb, *cursor) == '\n' ? *cursor : *cursor + 1;
     gb_putstring(gb, reg->buf, reg->len, where);
     *cursor = where + reg->len - 1;
+    edit_action_t action = {
+      .type = EDIT_ACTION_INSERT,
+      .pos = where,
+      .buf = buf_copy(reg)
+    };
+    editor_start_action_group(editor);
+    editor_add_action(editor, action);
     editor->register_ = '"';
     break;
   }

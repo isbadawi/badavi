@@ -43,6 +43,19 @@ static void yank_op(editor_t *editor, region_t region) {
 static void delete_op(editor_t *editor, region_t region) {
   yank_op(editor, region);
   gapbuf_t *gb = editor->window->buffer->text;
+
+  buf_t *buf = buf_create(region.end - region.start + 1);
+  gb_getstring(gb, region.start, region.end - region.start, buf->buf);
+  buf->len = region.end - region.start;
+  buf->buf[buf->len] = '\0';
+  edit_action_t action = {
+    .type = EDIT_ACTION_DELETE,
+    .pos = region.start,
+    .buf = buf
+  };
+  editor_start_action_group(editor);
+  editor_add_action(editor, action);
+
   gb_del(gb, region.end - region.start, region.end);
   editor->window->buffer->dirty = 1;
 }

@@ -7,7 +7,7 @@ typedef struct list_node_t {
   struct list_node_t *next;
 } list_node_t;
 
-// A singly linked list.
+// A doubly linked list.
 // Head and tail are sentinel nodes with data == NULL.
 typedef struct {
   list_node_t *head;

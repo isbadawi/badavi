@@ -4,6 +4,7 @@
 #include "buf.h"
 #include "buffer.h"
 #include "window.h"
+#include "list.h"
 
 struct editing_mode_t;
 typedef struct editing_mode_t editing_mode_t;
@@ -19,10 +20,10 @@ typedef struct {
 // The "editor" holds the main state of the program.
 typedef struct {
   // The loaded buffers.
-  buffer_t *buffers;
+  list_t *buffers;
 
   // The open windows.
-  window_t *windows;
+  list_t *windows;
   // The "selected" window -- the one being edited. An element of windows.
   window_t *window;
 

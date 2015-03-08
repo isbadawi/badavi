@@ -12,7 +12,6 @@ window_t *window_create(buffer_t *buffer, int x, int y, int w, int h) {
     return NULL;
   }
 
-  window->next = NULL;
   window->buffer = buffer;
   window->top = 0;
   window->left = 0;

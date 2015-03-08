@@ -13,8 +13,6 @@ typedef struct buffer_t {
   gapbuf_t *text;
   // True if this buffer has unsaved changes.
   int dirty;
-  // The next buffer, or NULL.
-  struct buffer_t *next;
 } buffer_t;
 
 // All functions returns 0 on success, negative number on error.

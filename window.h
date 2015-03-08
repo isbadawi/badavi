@@ -16,8 +16,6 @@ typedef struct window_t {
   int left;
   // The offset of the cursor.
   int cursor;
-  // The next window, or NULL.
-  struct window_t *next;
 } window_t;
 
 window_t *window_create(buffer_t *buffer, int x, int y, int w, int h);

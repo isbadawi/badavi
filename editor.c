@@ -31,8 +31,10 @@ static editor_register_t register_table[] = {
 void editor_init(editor_t *editor) {
   editor->status = buf_create(tb_width() / 2);
   editor->status_error = 0;
-  editor->buffers = buffer_create(NULL);
-  editor->windows = window_create(NULL, 0, 0, 0, 0);
+  editor->buffers = list_create();
+  list_append(editor->buffers, buffer_create(NULL));
+  editor->windows = list_create();
+  list_append(editor->windows, window_create(NULL, 0, 0, 0, 0));
   editor->window = NULL;
   editor->mode = normal_mode();
 
@@ -88,20 +90,9 @@ void editor_search(editor_t *editor) {
   }
 }
 
-static void editor_add_buffer(editor_t *editor, buffer_t *buffer) {
-  buffer_t *b = editor->buffers;
-  for (; b->next; b = b->next);
-  b->next = buffer;
-}
-
-static void editor_add_window(editor_t *editor, window_t *window) {
-  window_t *w = editor->windows;
-  for (; w->next; w = w->next);
-  w->next = window;
-}
-
 static window_t *editor_get_window_by_name(editor_t* editor, char *name) {
-  for (window_t *w = editor->windows->next; w; w = w->next) {
+  window_t *w;
+  LIST_FOREACH(editor->windows, w) {
     if (w->buffer && w->buffer->name && !strcmp(w->buffer->name, name)) {
       return w;
     }
@@ -122,18 +113,18 @@ void editor_open(editor_t *editor, char *path) {
       editor_status_msg(editor, "\"%s\" %dL, %dC",
           path, gb_nlines(buffer->text), gb_size(buffer->text));
     }
-    editor_add_buffer(editor, buffer);
+    list_append(editor->buffers, buffer);
     window = window_create(buffer, 0, 0, tb_width(), tb_height() - 1);
-    editor_add_window(editor, window);
+    list_append(editor->windows, buffer);
   }
   editor->window = window;
 }
 
 void editor_open_empty(editor_t *editor) {
   buffer_t *buffer = buffer_create(NULL);
-  editor_add_buffer(editor, buffer);
+  list_append(editor->buffers, buffer);
   window_t *window = window_create(buffer, 0, 0, tb_width(), tb_height() - 1);
-  editor_add_window(editor, window);
+  list_append(editor->windows, window);
   editor->window = window;
 }
 
@@ -176,7 +167,8 @@ void editor_execute_command(editor_t *editor, char *command) {
   char *cmd = strtok(command, " ");
   char *arg = strtok(NULL, " ");
   if (!strcmp(cmd, "q")) {
-    for (buffer_t *b = editor->buffers->next; b != NULL; b = b->next) {
+    buffer_t *b;
+    LIST_FOREACH(editor->buffers, b) {
       if (b->dirty) {
         editor_status_err(editor,
             "No write since last change for buffer \"%s\"",
@@ -202,7 +194,6 @@ void editor_execute_command(editor_t *editor, char *command) {
     editor_status_err(editor, "Not an editor command: %s", command);
   }
 }
-
 
 void editor_draw(editor_t *editor) {
   tb_clear();

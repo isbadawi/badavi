@@ -15,7 +15,6 @@ static buffer_t *buffer_of(char *path, gapbuf_t *gb) {
   buffer->text = gb;
   strcpy(buffer->name, path ? path : "");
   buffer->dirty = 0;
-  buffer->next = NULL;
 
   return buffer;
 }

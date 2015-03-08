@@ -67,4 +67,7 @@ void editor_status_err(editor_t *editor, const char *format, ...);
 
 void editor_send_keys(editor_t *editor, const char *keys);
 
+void editor_undo(editor_t *editor);
+void editor_redo(editor_t *editor);
+
 #endif

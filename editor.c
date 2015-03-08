@@ -280,3 +280,11 @@ void editor_status_err(editor_t *editor, const char *format, ...) {
   va_end(args);
   editor->status_error = 1;
 }
+
+void editor_undo(editor_t* editor) {
+  editor_status_msg(editor, "Undo!");
+}
+
+void editor_redo(editor_t* editor) {
+  editor_status_msg(editor, "Redo!");
+}

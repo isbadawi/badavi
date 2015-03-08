@@ -26,12 +26,16 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     return;
   }
 
+  if (ev->key == TB_KEY_CTRL_R) {
+    editor_redo(editor);
+    return;
+  }
+
   if (ev->ch != '0' && isdigit(ev->ch)) {
     editor_push_mode(editor, digit_mode());
     editor_handle_key_press(editor, ev);
     return;
   }
-
 
   gapbuf_t *gb = editor->window->buffer->text;
   int *cursor = &editor->window->cursor;
@@ -56,6 +60,7 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     editor->register_ = '"';
     break;
   }
+  case 'u': editor_undo(editor); break;
   case 'n': editor_search(editor); break;
   case 'a': editor_send_keys(editor, "li"); break;
   case 'I': editor_send_keys(editor, "0i"); break;

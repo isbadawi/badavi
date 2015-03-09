@@ -1,12 +1,17 @@
 CC = clang
 CFLAGS = -Wall -Werror -pedantic -g
+LDLIBS = -ltermbox
+OUTPUT_OPTION = -MMD -MP -o $@
 
-OBJECTS=buf.o buffer.o gap.o mode.o util.o editor.o window.o motion.o \
-  normal_mode.o insert_mode.o operator_pending_mode.o list.o
+SRCS = $(wildcard *.c)
+OBJS = $(SRCS:.c=.o)
+DEPS = $(SRCS:.c=.d)
 
-badavi: main.c $(OBJECTS)
-	$(CC) main.c $(OBJECTS) -o badavi $(CFLAGS) -ltermbox
+badavi: $(OBJS)
+	$(CC) -o $@ $(LDFLAGS) $^ $(LDLIBS)
+
+-include $(DEPS)
 
 .PHONY: clean
 clean:
-	rm -f *.o
+	rm -f $(OBJS) $(DEPS)

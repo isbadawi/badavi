@@ -1,3 +1,4 @@
 badavi
 *.o
+*.d
 *.dSYM

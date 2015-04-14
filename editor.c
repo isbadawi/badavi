@@ -118,7 +118,7 @@ void editor_open(editor_t *editor, char *path) {
     }
     list_append(editor->buffers, buffer);
     window = window_create(buffer, 0, 0, tb_width(), tb_height() - 1);
-    list_append(editor->windows, buffer);
+    list_append(editor->windows, window);
   }
   editor->window = window;
 }

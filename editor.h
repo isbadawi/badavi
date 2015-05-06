@@ -47,12 +47,6 @@ typedef struct {
   // An array of registers.
   editor_register_t *registers;
 
-  // Undo and redo stacks.
-  // The elements are lists of actions.
-  // TODO(isbadawi): These should be per-buffer.
-  list_t *undo_stack;
-  list_t *redo_stack;
-
   // Temporary input state.
   // TODO(isbadawi): This feels like a kludge but I don't know...
   int count;

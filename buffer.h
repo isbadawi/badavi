@@ -2,6 +2,7 @@
 #define _buffer_h_included
 
 #include "gap.h"
+#include "list.h"
 
 #define BUFFER_NAME_MAXLEN 255
 
@@ -13,6 +14,11 @@ typedef struct buffer_t {
   gapbuf_t *text;
   // True if this buffer has unsaved changes.
   int dirty;
+
+  // Undo and redo stacks.
+  // The elements are lists of actions.
+  list_t *undo_stack;
+  list_t *redo_stack;
 } buffer_t;
 
 // All functions returns 0 on success, negative number on error.

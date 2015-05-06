@@ -16,6 +16,9 @@ static buffer_t *buffer_of(char *path, gapbuf_t *gb) {
   strcpy(buffer->name, path ? path : "");
   buffer->dirty = 0;
 
+  buffer->undo_stack = list_create();
+  buffer->redo_stack = list_create();
+
   return buffer;
 }
 

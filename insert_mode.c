@@ -22,8 +22,8 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     // If we exit insert mode without making changes, let's not add a
     // useless undo action.
     // TODO(isbadawi): Maybe this belongs in an "editor_end_action_group"
-    if (list_empty(list_peek(editor->undo_stack))) {
-      list_pop(editor->undo_stack);
+    if (list_empty(list_peek(buffer->undo_stack))) {
+      list_pop(buffer->undo_stack);
     }
 
     editor_status_msg(editor, "");

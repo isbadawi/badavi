@@ -1,7 +1,6 @@
 #include "mode.h"
 
 #include <ctype.h>
-#include <stdlib.h>
 
 #include <termbox.h>
 

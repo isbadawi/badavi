@@ -2,7 +2,6 @@
 #define _editor_h_included
 
 #include "buf.h"
-#include "buffer.h"
 #include "window.h"
 #include "list.h"
 

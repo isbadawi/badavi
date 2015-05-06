@@ -1,6 +1,5 @@
 #include "mode.h"
 
-#include <ctype.h>
 #include <termbox.h>
 
 #include "buffer.h"

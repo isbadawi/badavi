@@ -5,8 +5,6 @@
 #include <sys/stat.h>
 #include <regex.h>
 
-#include "util.h"
-
 #define GAPSIZE 1024
 
 gapbuf_t *gb_create(void) {

@@ -4,7 +4,13 @@
 #include "editor.h"
 #include "window.h"
 
-typedef int (motion_op_t) (int, window_t*);
+typedef struct {
+  int pos;
+  window_t *window;
+  motion_t *motion;
+} motion_context_t;
+
+typedef int (motion_op_t) (motion_context_t);
 
 struct motion_t {
   char name;

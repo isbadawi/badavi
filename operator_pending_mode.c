@@ -36,7 +36,6 @@ static void yank_op(editor_t *editor, region_t region) {
   buf_grow(reg, n);
   gb_getstring(gb, region.start, n, reg->buf);
   reg->len = n;
-
   editor_pop_mode(editor);
 }
 
@@ -103,6 +102,9 @@ static void entered(editor_t *editor) {
   if (motion->linewise) {
     region.start = max(0, last + 1);
     region.end = min(gb_size(gb), next + 1);
+  } else if (region.start == region.end) {
+    editor_pop_mode(editor);
+    return;
   } else if (!motion->exclusive) {
     region.end = min(region.end + 1, next);
   }

@@ -31,7 +31,7 @@ buf_t *buf_create(int cap) {
     return NULL;
   }
 
-  buf->len = 0;
+  buf_clear(buf);
   buf->cap = cap;
   return buf;
 }
@@ -52,8 +52,7 @@ buf_t *buf_from_char(char c) {
 }
 
 buf_t *buf_copy(buf_t *buf) {
-  char *s = strndup(buf->buf, buf->len);
-  return buf_from_cstr(s);
+  return buf_from_cstr(buf->buf);
 }
 
 void buf_free(buf_t *buf) {
@@ -61,6 +60,7 @@ void buf_free(buf_t *buf) {
 }
 
 void buf_clear(buf_t *buf) {
+  buf->buf[0] = '\0';
   buf->len = 0;
 }
 

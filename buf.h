@@ -3,7 +3,7 @@
 
 #include <stdarg.h>
 
-// buf_t is a simple growable array.
+// buf_t is a simple growable string.
 typedef struct {
   char *buf;
   int len;

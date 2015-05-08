@@ -33,7 +33,7 @@ static void yank_op(editor_t *editor, region_t region) {
   gapbuf_t *gb = editor->window->buffer->text;
 
   int n = region.end - region.start;
-  buf_grow(reg, n);
+  buf_grow(reg, n + 1);
   gb_getstring(gb, region.start, n, reg->buf);
   reg->len = n;
   editor_pop_mode(editor);

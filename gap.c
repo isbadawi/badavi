@@ -103,6 +103,7 @@ void gb_getstring(gapbuf_t *gb, int pos, int n, char *buf) {
     memcpy(buf, start, l);
     memcpy(buf + l, gb->gapend, r);
   }
+  buf[n] = '\0';
 }
 
 // Moves the gap so that gb->bufstart + pos == gb->gapstart.

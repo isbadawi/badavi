@@ -163,39 +163,63 @@ void editor_save_buffer(editor_t *editor, char *path) {
   }
 }
 
+typedef struct {
+  const char *name;
+  void (*action)(editor_t*, char*);
+} editor_command_t;
+
+static void editor_command_quit(editor_t *editor, char *arg) {
+  buffer_t *b;
+  LIST_FOREACH(editor->buffers, b) {
+    if (b->dirty) {
+      editor_status_err(editor,
+          "No write since last change for buffer \"%s\"",
+          b->name ? b->name : "[No Name]");
+      return;
+    }
+  }
+  exit(0);
+}
+
+static void editor_command_force_quit(editor_t *editor, char *arg) {
+  exit(0);
+}
+
+static void editor_command_write_quit(editor_t *editor, char *arg) {
+  editor_save_buffer(editor, NULL);
+  exit(0);
+}
+
+static void editor_command_edit(editor_t *editor, char *arg) {
+  if (arg) {
+    editor_open(editor, arg);
+  } else {
+    editor_status_err(editor, "No file name");
+  }
+}
+
+static editor_command_t editor_commands[] = {
+  {"q", editor_command_quit},
+  {"q!", editor_command_force_quit},
+  {"w", editor_save_buffer},
+  {"wq", editor_command_write_quit},
+  {"e", editor_command_edit},
+  {NULL, NULL}
+};
+
 void editor_execute_command(editor_t *editor, char *command) {
   if (!*command) {
     return;
   }
   char *cmd = strtok(command, " ");
   char *arg = strtok(NULL, " ");
-  if (!strcmp(cmd, "q")) {
-    buffer_t *b;
-    LIST_FOREACH(editor->buffers, b) {
-      if (b->dirty) {
-        editor_status_err(editor,
-            "No write since last change for buffer \"%s\"",
-            b->name ? b->name : "[No Name]");
-        return;
-      }
+  for (int i = 0; editor_commands[i].name; ++i) {
+    if (!strcmp(cmd, editor_commands[i].name)) {
+      editor_commands[i].action(editor, arg);
+      return;
     }
-    exit(0);
-  } else if (!strcmp(cmd, "q!")) {
-    exit(0);
-  } else if (!strcmp(cmd, "w")) {
-    editor_save_buffer(editor, arg);
-  } else if (!strcmp(cmd, "wq")) {
-    editor_save_buffer(editor, NULL);
-    exit(0);
-  } else if (!strcmp(cmd, "e")) {
-    if (arg) {
-      editor_open(editor, arg);
-    } else {
-      editor_status_err(editor, "No file name");
-    }
-  } else {
-    editor_status_err(editor, "Not an editor command: %s", command);
   }
+  editor_status_err(editor, "Not an editor command: %s", command);
 }
 
 void editor_draw(editor_t *editor) {

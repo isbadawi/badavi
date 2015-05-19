@@ -64,9 +64,22 @@ void gb_pos_to_linecol(gapbuf_t *gb, int pos, int *line, int *offset);
 // Vice versa.
 int gb_linecol_to_pos(gapbuf_t *gb, int line, int offset);
 
-// Returns the offset of the first match of regex in the buffer, starting at
-// offset start. Returns -2 if the regex is malformed, and -1 if the regex
-// is fine but there were no matches.
-int gb_search_forwards(gapbuf_t *gb, char *regex, int start);
+typedef struct {
+  enum {
+    GB_SEARCH_BAD_REGEX,
+    GB_SEARCH_NO_MATCH,
+    GB_SEARCH_MATCH,
+  } status;
+
+  union {
+    char error[48];
+    struct { int start; int len; } match;
+  } v;
+} gb_search_result_t;
+
+// Search forward from offset start for a match for the regex. Fills in a
+// gb_search_t structure describing the outcome.
+void gb_search_forwards(gapbuf_t *gb, char *regex, int start,
+                        gb_search_result_t *result);
 
 #endif

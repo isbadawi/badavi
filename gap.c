@@ -246,15 +246,17 @@ int gb_linecol_to_pos(gapbuf_t *gb, int line, int column) {
   return offset + column;
 }
 
-int gb_search_forwards(gapbuf_t *gb, char *pattern, int start) {
+void gb_search_forwards(gapbuf_t *gb, char *pattern, int start,
+                        gb_search_result_t *result) {
   // Move the gap so the searched region is contiguous.
   gb_mvgap(gb, start);
 
   regex_t regex;
   int err = regcomp(&regex, pattern, REG_EXTENDED|REG_NEWLINE);
   if (err) {
-    // TODO(isbadawi): regcomp error codes give more info about the bad regex.
-    return -2;
+    result->status = GB_SEARCH_BAD_REGEX;
+    regerror(err, &regex, result->v.error, sizeof result->v.error);
+    return;
   }
 
   // regexec assumes the string is at the beginning of a line unless told
@@ -268,6 +270,11 @@ int gb_search_forwards(gapbuf_t *gb, char *pattern, int start) {
   int nomatch = regexec(&regex, gb->gapend, 1, &match, flags);
   regfree(&regex);
 
-  // TODO(isbadawi): rm_eo would also be useful for highlighting matches.
-  return nomatch ? -1 : (gb->gapstart - gb->bufstart) + match.rm_so;
+  if (nomatch) {
+    result->status = GB_SEARCH_NO_MATCH;
+  } else {
+    result->status = GB_SEARCH_MATCH;
+    result->v.match.start = (gb->gapstart - gb->bufstart) + match.rm_so;
+    result->v.match.len = match.rm_eo - match.rm_so;
+  }
 }

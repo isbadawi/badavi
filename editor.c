@@ -74,19 +74,22 @@ void editor_search(editor_t *editor) {
   memcpy(pattern, reg->buf, reg->len);
   pattern[reg->len] = '\0';
 
-  int offset = gb_search_forwards(gb, pattern, *cursor + 1);
-  if (offset == -2) {
-    editor_status_err(editor, "Bad pattern: \"%s\"", pattern);
+  gb_search_result_t result;
+  gb_search_forwards(gb, pattern, *cursor + 1, &result);
+  switch (result.status) {
+  case GB_SEARCH_BAD_REGEX:
+    editor_status_err(editor, "Bad regex \"%s\": %s", pattern, result.v.error);
     return;
-  }
-  if (offset == -1) {
+  case GB_SEARCH_NO_MATCH:
     editor_status_msg(editor, "search hit BOTTOM, continuing at TOP");
-    offset = gb_search_forwards(gb, pattern, 0);
-  }
-  if (offset == -1) {
-    editor_status_err(editor, "Pattern not found: \"%s\"", pattern);
-  } else {
-    *cursor = offset;
+    gb_search_forwards(gb, pattern, 0, &result);
+    if (result.status == GB_SEARCH_NO_MATCH) {
+      editor_status_err(editor, "Pattern not found: \"%s\"", pattern);
+      return;
+    }
+    // fallthrough
+  case GB_SEARCH_MATCH:
+    *cursor = result.v.match.start;
   }
 }
 

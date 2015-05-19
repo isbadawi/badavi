@@ -28,7 +28,7 @@ window_t *window_create(buffer_t *buffer, int x, int y, int w, int h) {
 
 // Number of columns to use for the line number (including the trailing space).
 static int window_numberwidth(window_t* window) {
-  if (!option_get_int("number")) {
+  if (!option_get_bool("number")) {
     return 0;
   }
 
@@ -36,8 +36,7 @@ static int window_numberwidth(window_t* window) {
   char buf[10];
   int maxwidth = snprintf(buf, 10, "%d", nlines);
 
-  // 4 is the vim default for 'numberwidth'.
-  return max(4, maxwidth + 1);
+  return max(option_get_int("numberwidth"), maxwidth + 1);
 }
 
 static void window_ensure_cursor_visible(window_t *window) {
@@ -85,7 +84,7 @@ void window_draw(window_t *window) {
   int topx = window->left;
   int rows = min(gb->lines->len - topy, h);
   for (int y = 0; y < rows; ++y) {
-    if (option_get_int("number")) {
+    if (option_get_bool("number")) {
       int linenumber = window->top + y + 1;
       int col = numberwidth - 2;
       while (linenumber > 0) {

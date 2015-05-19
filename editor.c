@@ -6,6 +6,7 @@
 #include <stdarg.h>
 
 #include <pwd.h>
+#include <regex.h>
 #include <unistd.h>
 
 #include <termbox.h>
@@ -243,45 +244,61 @@ static void editor_command_set(editor_t *editor, char *arg) {
     return;
   }
 
-  enum { OPT_ENABLE, OPT_DISABLE, OPT_TOGGLE, OPT_SHOW } action = OPT_ENABLE;
-  int len = strlen(arg);
+  regex_t regex;
+  regcomp(&regex, "(no)?([a-z]+)(=[0-9]+|!|\\?)?", REG_EXTENDED);
 
-  // nonumber
-  if (len > 2 && arg[0] == 'n' && arg[1] == 'o') {
-    arg += 2;
-    len -= 2;
-    action = OPT_DISABLE;
-  }
+  regmatch_t groups[4];
+  int nomatch = regexec(&regex, arg, 4, groups, 0);
+  regfree(&regex);
 
-  if (len && arg[len - 1] == '!') {
-    arg[len-- - 1] = '\0';
-    action = OPT_TOGGLE;
-  } else if (len && arg[len - 1] == '?') {
-    arg[len-- - 1] = '\0';
-    action = OPT_SHOW;
-  }
-
-  if (!option_exists(arg)) {
-    editor_status_err(editor, "Unknown option: %s", arg);
+  if (nomatch) {
+    editor_status_err(editor, "Invalid argument: %s", arg);
     return;
   }
 
-  int val = option_get_int(arg);
+  char opt[32];
+  int optlen = groups[2].rm_eo - groups[2].rm_so;
+  strncpy(opt, arg + groups[2].rm_so, optlen);
+  opt[optlen] = '\0';
 
-  switch (action) {
-    case OPT_ENABLE:
-      option_set_int(arg, 1);
-      return;
-    case OPT_DISABLE:
-      option_set_int(arg, 0);
-      return;
-    case OPT_TOGGLE:
-      option_set_int(arg, !val);
-      return;
-    case OPT_SHOW:
-      editor_status_msg(editor, "%s%s", val ? "" : "no", arg);
-      return;
+  if (!option_exists(opt)) {
+    editor_status_err(editor, "Unknown option: %s", opt);
+    return;
   }
+
+  if (groups[3].rm_so == -1) {
+    if (option_is_int(opt)) {
+      editor_status_msg(editor, "%s=%d", opt, option_get_int(opt));
+    } else if (option_is_bool(opt)) {
+      option_set_bool(opt, groups[1].rm_so == -1);
+    }
+    return;
+  }
+
+  switch (arg[groups[3].rm_so]) {
+  case '!':
+    if (option_is_bool(opt)) {
+      option_set_bool(opt, !option_get_bool(opt));
+    } else {
+      editor_status_err(editor, "Invalid argument: %s", arg);
+    }
+    break;
+  case '?':
+    if (option_is_int(opt)) {
+      editor_status_msg(editor, "%s=%d", opt, option_get_int(opt));
+    } else {
+      editor_status_msg(editor, "%s%s", option_get_bool(opt) ? "" : "no", opt);
+    }
+    break;
+  case '=':
+    if (option_is_int(opt)) {
+      option_set_int(opt, atoi(arg + groups[3].rm_so + 1));
+    } else {
+      editor_status_err(editor, "Invalid argument: %s", arg);
+    }
+    break;
+  }
+  return;
 }
 
 static editor_command_t editor_commands[] = {

@@ -4,6 +4,7 @@
 
 #include <termbox.h>
 
+#include "options.h"
 #include "util.h"
 
 window_t *window_create(buffer_t *buffer, int x, int y, int w, int h) {
@@ -27,6 +28,10 @@ window_t *window_create(buffer_t *buffer, int x, int y, int w, int h) {
 
 // Number of columns to use for the line number (including the trailing space).
 static int window_numberwidth(window_t* window) {
+  if (!option_get_int("number")) {
+    return 0;
+  }
+
   int nlines = window->buffer->text->lines->len;
   char buf[10];
   int maxwidth = snprintf(buf, 10, "%d", nlines);
@@ -80,16 +85,16 @@ void window_draw(window_t *window) {
   int topx = window->left;
   int rows = min(gb->lines->len - topy, h);
   for (int y = 0; y < rows; ++y) {
-    // Draw line number.
-    int linenumber = window->top + y + 1;
-    int col = numberwidth - 2;
-    while (linenumber > 0) {
-      int digit = linenumber % 10;
-      tb_change_cell(col--, y, digit + '0', TB_YELLOW, TB_DEFAULT);
-      linenumber = (linenumber - digit) / 10;
+    if (option_get_int("number")) {
+      int linenumber = window->top + y + 1;
+      int col = numberwidth - 2;
+      while (linenumber > 0) {
+        int digit = linenumber % 10;
+        tb_change_cell(col--, y, digit + '0', TB_YELLOW, TB_DEFAULT);
+        linenumber = (linenumber - digit) / 10;
+      }
     }
 
-    // Draw rest of line.
     int cols = min(gb->lines->buf[y + topy] - topx, w);
     for (int x = 0; x < cols; ++x) {
       char c = gb_getchar(gb, gb_linecol_to_pos(gb, y + topy, x + topx));

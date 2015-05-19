@@ -13,6 +13,7 @@
 #include "buffer.h"
 #include "gap.h"
 #include "mode.h"
+#include "options.h"
 #include "util.h"
 
 static editor_register_t register_table[] = {
@@ -223,6 +224,54 @@ static void editor_command_source(editor_t *editor, char *arg) {
   fclose(fp);
 }
 
+static void editor_command_set(editor_t *editor, char *arg) {
+  if (!arg) {
+    // TODO(isbadawi): show current values of all options...
+    editor_status_err(editor, "Argument required");
+    return;
+  }
+
+  enum { OPT_ENABLE, OPT_DISABLE, OPT_TOGGLE, OPT_SHOW } action = OPT_ENABLE;
+  int len = strlen(arg);
+
+  // nonumber
+  if (len > 2 && arg[0] == 'n' && arg[1] == 'o') {
+    arg += 2;
+    len -= 2;
+    action = OPT_DISABLE;
+  }
+
+  if (len && arg[len - 1] == '!') {
+    arg[len-- - 1] = '\0';
+    action = OPT_TOGGLE;
+  } else if (len && arg[len - 1] == '?') {
+    arg[len-- - 1] = '\0';
+    action = OPT_SHOW;
+  }
+
+  if (!option_exists(arg)) {
+    editor_status_err(editor, "Unknown option: %s", arg);
+    return;
+  }
+
+  int val = option_get_int(arg);
+
+  switch (action) {
+    case OPT_ENABLE:
+      option_set_int(arg, 1);
+      return;
+    case OPT_DISABLE:
+      option_set_int(arg, 0);
+      return;
+    case OPT_TOGGLE:
+      option_set_int(arg, !val);
+      return;
+    case OPT_SHOW:
+      editor_status_msg(editor, "%s%s", val ? "" : "no", arg);
+      return;
+  }
+}
+
 static editor_command_t editor_commands[] = {
   {"q", editor_command_quit},
   {"q!", editor_command_force_quit},
@@ -230,6 +279,7 @@ static editor_command_t editor_commands[] = {
   {"wq", editor_command_write_quit},
   {"e", editor_command_edit},
   {"so", editor_command_source},
+  {"set", editor_command_set},
   {NULL, NULL}
 };
 

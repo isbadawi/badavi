@@ -1,5 +1,6 @@
 #include "editor.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -198,12 +199,37 @@ static void editor_command_edit(editor_t *editor, char *arg) {
   }
 }
 
+static void editor_command_source(editor_t *editor, char *arg) {
+  if (!arg) {
+    editor_status_err(editor, "Argument required");
+    return;
+  }
+
+  FILE *fp = fopen(arg, "r");
+  if (!fp) {
+    editor_status_err(editor, "Can't open file %s", arg);
+    return;
+  }
+
+  size_t n = 0;
+  char *line = NULL;
+  int len = 0;
+  while ((len = getline(&line, &n, fp)) != -1) {
+    line[len - 1] = '\0';
+    editor_execute_command(editor, line);
+    free(line);
+  }
+
+  fclose(fp);
+}
+
 static editor_command_t editor_commands[] = {
   {"q", editor_command_quit},
   {"q!", editor_command_force_quit},
   {"w", editor_save_buffer},
   {"wq", editor_command_write_quit},
   {"e", editor_command_edit},
+  {"so", editor_command_source},
   {NULL, NULL}
 };
 

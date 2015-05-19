@@ -93,7 +93,7 @@ void editor_search(editor_t *editor) {
 static window_t *editor_get_window_by_name(editor_t* editor, char *name) {
   window_t *w;
   LIST_FOREACH(editor->windows, w) {
-    if (w->buffer && w->buffer->name && !strcmp(w->buffer->name, name)) {
+    if (w->buffer && !strcmp(w->buffer->name, name)) {
       return w;
     }
   }

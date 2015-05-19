@@ -27,8 +27,9 @@ window_t *window_create(buffer_t *buffer, int x, int y, int w, int h) {
 }
 
 // Number of columns to use for the line number (including the trailing space).
+// TODO(isbadawi): This might not be exactly correct for relativenumber mode.
 static int window_numberwidth(window_t* window) {
-  if (!option_get_bool("number")) {
+  if (!option_get_bool("number") && !option_get_bool("relativenumber")) {
     return 0;
   }
 
@@ -75,6 +76,9 @@ void window_draw(window_t *window) {
   window_ensure_cursor_visible(window);
   gapbuf_t *gb = window->buffer->text;
 
+  int number = option_get_bool("number");
+  int relativenumber = option_get_bool("relativenumber");
+
   int numberwidth = window_numberwidth(window);
 
   int w = window->w - numberwidth;
@@ -84,14 +88,22 @@ void window_draw(window_t *window) {
   int topx = window->left;
   int rows = min(gb->lines->len - topy, h);
   for (int y = 0; y < rows; ++y) {
-    if (option_get_bool("number")) {
+    if (number || relativenumber) {
       int linenumber = window->top + y + 1;
+      if (relativenumber) {
+        int cursorline, cursorcol;
+        gb_pos_to_linecol(gb, window->cursor, &cursorline, &cursorcol);
+        if (!(number && linenumber == cursorline + 1)) {
+          linenumber = abs(linenumber - cursorline - 1);
+        }
+      }
+
       int col = numberwidth - 2;
-      while (linenumber > 0) {
+      do {
         int digit = linenumber % 10;
         tb_change_cell(col--, y, digit + '0', TB_YELLOW, TB_DEFAULT);
         linenumber = (linenumber - digit) / 10;
-      }
+      } while (linenumber > 0);
     }
 
     int cols = min(gb->lines->buf[y + topy] - topx, w);

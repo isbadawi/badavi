@@ -5,6 +5,8 @@
 #include <sys/stat.h>
 #include <regex.h>
 
+#include "options.h"
+
 #define GAPSIZE 1024
 
 gapbuf_t *gb_create(void) {
@@ -252,7 +254,11 @@ void gb_search_forwards(gapbuf_t *gb, char *pattern, int start,
   gb_mvgap(gb, start);
 
   regex_t regex;
-  int err = regcomp(&regex, pattern, REG_EXTENDED|REG_NEWLINE);
+  int flags = REG_EXTENDED | REG_NEWLINE;
+  if (option_get_bool("ignorecase")) {
+    flags |= REG_ICASE;
+  }
+  int err = regcomp(&regex, pattern, flags);
   if (err) {
     result->status = GB_SEARCH_BAD_REGEX;
     regerror(err, &regex, result->v.error, sizeof result->v.error);
@@ -261,7 +267,7 @@ void gb_search_forwards(gapbuf_t *gb, char *pattern, int start,
 
   // regexec assumes the string is at the beginning of a line unless told
   // otherwise. This affects regexes that use ^.
-  int flags = 0;
+  flags = 0;
   if (start > 0 && gb_getchar(gb, start - 1) != '\n') {
     flags |= REG_NOTBOL;
   }

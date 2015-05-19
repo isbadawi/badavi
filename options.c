@@ -26,6 +26,7 @@ typedef struct {
 static option_t option_table[] = {
   BOOL_OPTION(number, 0),
   INT_OPTION(numberwidth, 4),
+  BOOL_OPTION(ignorecase, 0),
   {NULL, -1}
 };
 

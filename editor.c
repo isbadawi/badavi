@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdarg.h>
 
+#include <pwd.h>
 #include <unistd.h>
 
 #include <termbox.h>
@@ -30,6 +31,15 @@ static editor_register_t register_table[] = {
   {-1}
 };
 
+static void editor_source_badavimrc(editor_t *editor) {
+  const char *home = getenv("HOME");
+  home = home ? home : getpwuid(getuid())->pw_dir;
+  char cmd[255];
+  snprintf(cmd, 255, "so %s/.badavimrc", home);
+  editor_execute_command(editor, cmd);
+  editor_status_msg(editor, "");
+}
+
 void editor_init(editor_t *editor) {
   editor->status = buf_create(tb_width() / 2);
   editor->status_error = 0;
@@ -48,6 +58,8 @@ void editor_init(editor_t *editor) {
   editor->count = 0;
   editor->motion = NULL;
   editor->register_ = '"';
+
+  editor_source_badavimrc(editor);
 }
 
 buf_t *editor_get_register(editor_t *editor, char name) {

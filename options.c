@@ -15,7 +15,7 @@ typedef struct {
  {#name, OPTION_TYPE_INT, {defaultval}}
 
 static option_t option_table[] = {
-  INT_OPTION(number, 1),
+  INT_OPTION(number, 0),
   {NULL, -1}
 };
 

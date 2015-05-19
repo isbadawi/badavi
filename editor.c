@@ -231,8 +231,8 @@ static void editor_command_source(editor_t *editor, char *arg) {
   while ((len = getline(&line, &n, fp)) != -1) {
     line[len - 1] = '\0';
     editor_execute_command(editor, line);
-    free(line);
   }
+  free(line);
 
   fclose(fp);
 }

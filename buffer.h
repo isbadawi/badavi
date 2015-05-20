@@ -1,6 +1,8 @@
 #ifndef _buffer_h_included
 #define _buffer_h_included
 
+#include <stdbool.h>
+
 #include "gap.h"
 #include "list.h"
 
@@ -13,7 +15,7 @@ typedef struct buffer_t {
   // The text proper.
   gapbuf_t *text;
   // True if this buffer has unsaved changes.
-  int dirty;
+  bool dirty;
 
   // Undo and redo stacks.
   // The elements are lists of actions.

@@ -1,5 +1,6 @@
 #include "window.h"
 
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include <termbox.h>
@@ -79,8 +80,8 @@ void window_draw(window_t *window) {
   int cursorline, cursorcol;
   gb_pos_to_linecol(gb, window->cursor, &cursorline, &cursorcol);
 
-  int number = option_get_bool("number");
-  int relativenumber = option_get_bool("relativenumber");
+  bool number = option_get_bool("number");
+  bool relativenumber = option_get_bool("relativenumber");
 
   int numberwidth = window_numberwidth(window);
 
@@ -107,7 +108,7 @@ void window_draw(window_t *window) {
       } while (linenumber > 0);
     }
 
-    int drawcursorline = relative == 0 && option_get_bool("cursorline");
+    bool drawcursorline = relative == 0 && option_get_bool("cursorline");
     uint16_t fg = drawcursorline ? (TB_WHITE | TB_UNDERLINE) : TB_WHITE;
 
     int cols = min(gb->lines->buf[y + topy] - topx, w);

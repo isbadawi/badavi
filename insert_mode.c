@@ -37,7 +37,7 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
       };
       editor_add_action(editor, action);
       gb_del(gb, 1, (*cursor)--);
-      buffer->dirty = 1;
+      buffer->dirty = true;
     }
     return;
   case TB_KEY_ENTER: ch = '\n'; break;
@@ -51,7 +51,7 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   };
   editor_add_action(editor, action);
   gb_putchar(gb, ch, (*cursor)++);
-  buffer->dirty = 1;
+  buffer->dirty = true;
 }
 
 static editing_mode_t impl = {

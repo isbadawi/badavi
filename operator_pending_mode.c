@@ -56,7 +56,7 @@ static void delete_op(editor_t *editor, region_t region) {
   editor_add_action(editor, action);
 
   gb_del(gb, region.end - region.start, region.end);
-  editor->window->buffer->dirty = 1;
+  editor->window->buffer->dirty = true;
 }
 
 static void change_op(editor_t *editor, region_t region) {

@@ -1,9 +1,9 @@
 #include "options.h"
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <assert.h>
+#include <stdbool.h>
 
 typedef struct {
   const char *name;
@@ -41,30 +41,30 @@ static option_t *option_find(const char *name) {
   return NULL;
 }
 
-static int option_has_type(const char *name, enum option_type_t type) {
+static bool option_has_type(const char *name, enum option_type_t type) {
   option_t *option = option_find(name);
   return option && option->type == type;
 }
 
-int option_exists(const char *name) {
+bool option_exists(const char *name) {
   return option_find(name) != NULL;
 }
 
-int option_is_bool(const char *name) {
+bool option_is_bool(const char *name) {
   return option_has_type(name, OPTION_TYPE_BOOL);
 }
 
-int option_get_bool(const char *name) {
+bool option_get_bool(const char *name) {
   assert(option_is_bool(name));
   return option_find(name)->value.i;
 }
 
-void option_set_bool(const char *name, int value) {
+void option_set_bool(const char *name, bool value) {
   assert(option_is_bool(name));
   option_find(name)->value.i = value;
 }
 
-int option_is_int(const char *name) {
+bool option_is_int(const char *name) {
   return option_has_type(name, OPTION_TYPE_INT);
 }
 

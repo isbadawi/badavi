@@ -43,7 +43,7 @@ static void editor_source_badavimrc(editor_t *editor) {
 
 void editor_init(editor_t *editor) {
   editor->status = buf_create(tb_width() / 2);
-  editor->status_error = 0;
+  editor->status_error = false;
   editor->buffers = list_create();
   list_append(editor->buffers, buffer_create(NULL));
   editor->windows = list_create();
@@ -393,7 +393,7 @@ void editor_status_msg(editor_t *editor, const char *format, ...) {
   va_start(args, format);
   buf_vprintf(editor->status, format, args);
   va_end(args);
-  editor->status_error = 0;
+  editor->status_error = false;
 }
 
 void editor_status_err(editor_t *editor, const char *format, ...) {
@@ -401,7 +401,7 @@ void editor_status_err(editor_t *editor, const char *format, ...) {
   va_start(args, format);
   buf_vprintf(editor->status, format, args);
   va_end(args);
-  editor->status_error = 1;
+  editor->status_error = true;
 }
 
 void editor_undo(editor_t* editor) {

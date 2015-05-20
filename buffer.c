@@ -14,7 +14,7 @@ static buffer_t *buffer_of(char *path, gapbuf_t *gb) {
 
   buffer->text = gb;
   strcpy(buffer->name, path ? path : "");
-  buffer->dirty = 0;
+  buffer->dirty = false;
 
   buffer->undo_stack = list_create();
   buffer->redo_stack = list_create();
@@ -57,7 +57,7 @@ int buffer_saveas(buffer_t *buffer, char *path) {
   }
 
   gb_save(buffer->text, fp);
-  buffer->dirty = 0;
+  buffer->dirty = false;
   fclose(fp);
   return 0;
 }

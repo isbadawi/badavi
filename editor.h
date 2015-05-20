@@ -1,6 +1,8 @@
 #ifndef _editor_h_included
 #define _editor_h_included
 
+#include <stdbool.h>
+
 #include "buf.h"
 #include "window.h"
 #include "list.h"
@@ -41,7 +43,7 @@ typedef struct {
   // What's written to the status bar.
   buf_t* status;
   // Whether the status is an error.
-  int status_error;
+  bool status_error;
 
   // An array of registers.
   editor_register_t *registers;

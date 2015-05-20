@@ -1,6 +1,7 @@
 #include "mode.h"
 
 #include <ctype.h>
+#include <stdbool.h>
 
 #include <termbox.h>
 
@@ -9,7 +10,7 @@
 #include "motion.h"
 #include "mode.h"
 
-static int is_last_line(gapbuf_t *gb, int pos) {
+static bool is_last_line(gapbuf_t *gb, int pos) {
   return pos > gb_size(gb) - gb->lines->buf[gb->lines->len - 1];
 }
 

@@ -57,7 +57,7 @@ void *list_peek(list_t *list) {
   return list->head->next->data;
 }
 
-int list_empty(list_t *list) {
+bool list_empty(list_t *list) {
   return list->head->next == list->tail;
 }
 

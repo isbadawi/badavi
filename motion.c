@@ -1,6 +1,7 @@
 #include "motion.h"
 
 #include <ctype.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include <termbox.h>
@@ -9,23 +10,23 @@
 #include "mode.h"
 #include "util.h"
 
-static int is_line_start(gapbuf_t *gb, int pos) {
+static bool is_line_start(gapbuf_t *gb, int pos) {
   return pos == 0 || gb_getchar(gb, pos - 1) == '\n';
 }
 
-static int is_line_end(gapbuf_t *gb, int pos) {
+static bool is_line_end(gapbuf_t *gb, int pos) {
   return pos == gb_size(gb) - 1 || gb_getchar(gb, pos) == '\n';
 }
 
-static int is_first_line(gapbuf_t *gb, int pos) {
+static bool is_first_line(gapbuf_t *gb, int pos) {
   return pos < gb->lines->buf[0];
 }
 
-static int is_last_line(gapbuf_t *gb, int pos) {
+static bool is_last_line(gapbuf_t *gb, int pos) {
   return pos >= gb_size(gb) - 1 - gb->lines->buf[gb->lines->len - 1];
 }
 
-static int is_blank_line(gapbuf_t *gb, int pos) {
+static bool is_blank_line(gapbuf_t *gb, int pos) {
   return gb_getchar(gb, pos) == '\n' && is_line_start(gb, pos);
 }
 
@@ -97,11 +98,11 @@ static int last_non_blank(motion_context_t ctx) {
   return end;
 }
 
-static int is_word_char(char c) {
+static bool is_word_char(char c) {
   return isalnum(c) || c == '_';
 }
 
-static int is_word_start(motion_context_t ctx) {
+static bool is_word_start(motion_context_t ctx) {
   gapbuf_t *gb = ctx.window->buffer->text;
   if (is_line_start(gb, ctx.pos)) {
     return 1;
@@ -111,7 +112,7 @@ static int is_word_start(motion_context_t ctx) {
   return !isspace(this) && (is_word_char(this) + is_word_char(last) == 1);
 }
 
-static int is_WORD_start(motion_context_t ctx) {
+static bool is_WORD_start(motion_context_t ctx) {
   if (ctx.pos == 0) {
     return 1;
   }
@@ -121,7 +122,7 @@ static int is_WORD_start(motion_context_t ctx) {
   return !isspace(this) && isspace(last);
 }
 
-static int is_word_end(motion_context_t ctx) {
+static bool is_word_end(motion_context_t ctx) {
   gapbuf_t *gb = ctx.window->buffer->text;
   if (ctx.pos == gb_size(gb) - 1 || is_blank_line(gb, ctx.pos)) {
     return 1;
@@ -131,7 +132,7 @@ static int is_word_end(motion_context_t ctx) {
   return !isspace(this) && (is_word_char(this) + is_word_char(next) == 1);
 }
 
-static int is_WORD_end(motion_context_t ctx) {
+static bool is_WORD_end(motion_context_t ctx) {
   gapbuf_t *gb = ctx.window->buffer->text;
   if (ctx.pos == gb_size(gb)) {
     return 1;
@@ -141,7 +142,7 @@ static int is_WORD_end(motion_context_t ctx) {
   return !isspace(this) && isspace(next);
 }
 
-static int prev_until(motion_context_t ctx, motion_op_t *pred) {
+static int prev_until(motion_context_t ctx, bool (*pred)(motion_context_t)) {
   if (ctx.pos > 0) {
     do {
       --ctx.pos;
@@ -150,7 +151,7 @@ static int prev_until(motion_context_t ctx, motion_op_t *pred) {
   return ctx.pos;
 }
 
-static int next_until(motion_context_t ctx, motion_op_t *pred) {
+static int next_until(motion_context_t ctx, bool (*pred)(motion_context_t)) {
   int size = gb_size(ctx.window->buffer->text);
   if (ctx.pos < size - 1) {
     do {
@@ -192,7 +193,7 @@ static int prev_WORD_end(motion_context_t ctx) {
   return prev_until(ctx, is_WORD_end);
 }
 
-static int is_paragraph_start(motion_context_t ctx) {
+static bool is_paragraph_start(motion_context_t ctx) {
   if (ctx.pos == 0) {
     return 1;
   }
@@ -200,7 +201,7 @@ static int is_paragraph_start(motion_context_t ctx) {
   return is_blank_line(gb, ctx.pos) && !is_blank_line(gb, ctx.pos + 1);
 }
 
-static int is_paragraph_end(motion_context_t ctx) {
+static bool is_paragraph_end(motion_context_t ctx) {
   gapbuf_t *gb = ctx.window->buffer->text;
   if (ctx.pos == gb_size(gb) - 1) {
     return 1;
@@ -216,9 +217,9 @@ static int paragraph_end(motion_context_t ctx) {
   return next_until(ctx, is_paragraph_end);
 }
 
-#define LINEWISE 1, 0
-#define EXCLUSIVE 0, 1
-#define INCLUSIVE 0, 0
+#define LINEWISE true, false
+#define EXCLUSIVE false, true
+#define INCLUSIVE false, false
 
 static motion_t motion_table[] = {
   {'h', left, EXCLUSIVE},
@@ -237,7 +238,7 @@ static motion_t motion_table[] = {
   {'e', next_word_end, INCLUSIVE},
   {'E', next_WORD_end, INCLUSIVE},
   {'G', down, LINEWISE}, // See motion_apply...
-  {-1, NULL, 0, 0}
+  {-1, NULL, false, false}
 };
 
 static motion_t g_motion_table[] = {
@@ -245,7 +246,7 @@ static motion_t g_motion_table[] = {
   {'e', prev_word_end, INCLUSIVE},
   {'E', prev_WORD_end, INCLUSIVE},
   {'g', buffer_top, LINEWISE},
-  {-1, NULL, 0, 0}
+  {-1, NULL, false, false}
 };
 
 static motion_t *motion_find(motion_t *table, char name) {

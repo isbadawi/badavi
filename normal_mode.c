@@ -39,6 +39,8 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   gapbuf_t *gb = editor->window->buffer->text;
   int *cursor = &editor->window->cursor;
   switch (ev->ch) {
+  case 0:
+    break;
   case '"':
     editor_push_mode(editor, quote_mode());
     break;

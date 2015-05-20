@@ -76,6 +76,9 @@ void window_draw(window_t *window) {
   window_ensure_cursor_visible(window);
   gapbuf_t *gb = window->buffer->text;
 
+  int cursorline, cursorcol;
+  gb_pos_to_linecol(gb, window->cursor, &cursorline, &cursorcol);
+
   int number = option_get_bool("number");
   int relativenumber = option_get_bool("relativenumber");
 
@@ -88,14 +91,12 @@ void window_draw(window_t *window) {
   int topx = window->left;
   int rows = min(gb->lines->len - topy, h);
   for (int y = 0; y < rows; ++y) {
+    int absolute = window->top + y + 1;
+    int relative = abs(absolute - cursorline - 1);
+    int linenumber = absolute;
     if (number || relativenumber) {
-      int linenumber = window->top + y + 1;
-      if (relativenumber) {
-        int cursorline, cursorcol;
-        gb_pos_to_linecol(gb, window->cursor, &cursorline, &cursorcol);
-        if (!(number && linenumber == cursorline + 1)) {
-          linenumber = abs(linenumber - cursorline - 1);
-        }
+      if (relativenumber && !(number && relative == 0)) {
+        linenumber = relative;
       }
 
       int col = numberwidth - 2;
@@ -106,10 +107,19 @@ void window_draw(window_t *window) {
       } while (linenumber > 0);
     }
 
+    int drawcursorline = relative == 0 && option_get_bool("cursorline");
+    uint16_t fg = drawcursorline ? (TB_WHITE | TB_UNDERLINE) : TB_WHITE;
+
     int cols = min(gb->lines->buf[y + topy] - topx, w);
     for (int x = 0; x < cols; ++x) {
       char c = gb_getchar(gb, gb_linecol_to_pos(gb, y + topy, x + topx));
-      window_change_cell(window, x, y, c, TB_WHITE, TB_DEFAULT);
+      window_change_cell(window, x, y, c, fg, TB_DEFAULT);
+    }
+
+    if (drawcursorline) {
+      for (int x = cols; x < w; ++x) {
+        window_change_cell(window, x, y, ' ', fg, TB_DEFAULT);
+      }
     }
   }
 

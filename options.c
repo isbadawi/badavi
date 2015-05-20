@@ -28,6 +28,7 @@ static option_t option_table[] = {
   BOOL_OPTION(relativenumber, 0),
   INT_OPTION(numberwidth, 4),
   BOOL_OPTION(ignorecase, 0),
+  BOOL_OPTION(cursorline, 0),
   {NULL, -1}
 };
 

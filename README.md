@@ -16,6 +16,11 @@ an optional count.
 to quit, `:q!` to force quit even if there are unsaved changes, and `:e path`
 to edit another file.
 
+* Some of the simpler options are implemented, e.g. `number`, `relativenumber`,
+`numberwidth`, `ignorecase`, `cursorline`. You can use the same `:set` commands
+as in vim, e.g. `:set nonumber`, `:set numberwidth=8`, etc. You can also put
+those commands in a `~/.badavimrc` file to execute them on startup.
+
 * Delete (`d`), change (`c`) and yank (`y`) operators, which can be applied to
 any of the motions. (Text objects aren't implemented yet). The affected
 region is saved into the unnamed register, used by `p` to paste text. Named

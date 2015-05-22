@@ -7,7 +7,6 @@ WARNING_EXCEPTIONS = \
 	-Wno-assign-enum \
 	-Wno-conversion \
 	-Wno-missing-field-initializers \
-	-Wno-missing-variable-declarations \
 	-Wno-padded \
 	-Wno-shorten-64-to-32 \
 	-Wno-sign-conversion

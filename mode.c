@@ -21,7 +21,7 @@ static void digit_pressed(editor_t *editor, struct tb_event *ev) {
   editor->count += ev->ch - '0';
 }
 
-editing_mode_t digit_mode_impl = {
+static editing_mode_t digit_mode_impl = {
   no_op,
   digit_pressed
 };
@@ -38,7 +38,7 @@ static void quote_pressed(editor_t *editor, struct tb_event *ev) {
   editor_pop_mode(editor);
 }
 
-editing_mode_t quote_mode_impl = {
+static editing_mode_t quote_mode_impl = {
   no_op,
   quote_pressed
 };
@@ -103,12 +103,12 @@ static void search_mode_cmdline_cb(editor_t *editor, char *command) {
   editor_search(editor);
 }
 
-cmdline_mode_t search_impl = {
+static cmdline_mode_t search_impl = {
   {cmdline_mode_entered, cmdline_mode_key_pressed},
   '/', search_mode_cmdline_cb
 };
 
-cmdline_mode_t command_impl = {
+static cmdline_mode_t command_impl = {
   {cmdline_mode_entered, cmdline_mode_key_pressed},
   ':', editor_execute_command
 };

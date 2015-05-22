@@ -12,7 +12,7 @@ static void no_op(editor_t __unused *editor) {
 }
 
 static void digit_pressed(editor_t *editor, struct tb_event *ev) {
-  if (!isdigit(ev->ch)) {
+  if (!isdigit((int) ev->ch)) {
     editor_pop_mode(editor);
     editor_handle_key_press(editor, ev);
     return;
@@ -28,7 +28,7 @@ editing_mode_t *digit_mode(void) {
 }
 
 static void quote_pressed(editor_t *editor, struct tb_event *ev) {
-  char name = tolower(ev->ch);
+  char name = (char) tolower((int) ev->ch);
   if (editor_get_register(editor, name)) {
     editor->register_ = name;
   }
@@ -81,7 +81,7 @@ static void cmdline_mode_key_pressed(editor_t *editor, struct tb_event *ev) {
     ch = ' ';
     break;
   default:
-    ch = ev->ch;
+    ch = (char) ev->ch;
   }
   char s[2] = {ch, '\0'};
   buf_append(editor->status, s);

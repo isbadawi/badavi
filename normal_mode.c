@@ -10,7 +10,7 @@
 #include "motion.h"
 #include "mode.h"
 
-static bool is_last_line(gapbuf_t *gb, int pos) {
+static bool is_last_line(gapbuf_t *gb, size_t pos) {
   return pos > gb_size(gb) - gb->lines->buf[gb->lines->len - 1];
 }
 
@@ -31,14 +31,14 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     return;
   }
 
-  if (ev->ch != '0' && isdigit(ev->ch)) {
+  if (ev->ch != '0' && isdigit((int) ev->ch)) {
     editor_push_mode(editor, digit_mode());
     editor_handle_key_press(editor, ev);
     return;
   }
 
   gapbuf_t *gb = editor->window->buffer->text;
-  int *cursor = &editor->window->cursor;
+  size_t *cursor = &editor->window->cursor;
   switch (ev->ch) {
   case 0:
     break;
@@ -56,7 +56,7 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     break;
   case 'p': {
     buf_t *reg = editor_get_register(editor, editor->register_);
-    int where = gb_getchar(gb, *cursor) == '\n' ? *cursor : *cursor + 1;
+    size_t where = gb_getchar(gb, *cursor) == '\n' ? *cursor : *cursor + 1;
     gb_putstring(gb, reg->buf, reg->len, where);
     *cursor = where + reg->len - 1;
     edit_action_t action = {
@@ -85,7 +85,7 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     }
     break;
   default: {
-    editing_mode_t *mode = operator_pending_mode(ev->ch);
+    editing_mode_t *mode = operator_pending_mode((char) ev->ch);
     if (mode) {
       editor_push_mode(editor, mode);
     } else {

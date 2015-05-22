@@ -8,7 +8,7 @@
 #include "options.h"
 #include "util.h"
 
-window_t *window_create(buffer_t *buffer, int x, int y, int w, int h) {
+window_t *window_create(buffer_t *buffer, size_t x, size_t y, size_t w, size_t h) {
   window_t *window = malloc(sizeof(window_t));
   if (!window) {
     return NULL;
@@ -29,40 +29,45 @@ window_t *window_create(buffer_t *buffer, int x, int y, int w, int h) {
 
 // Number of columns to use for the line number (including the trailing space).
 // TODO(isbadawi): This might not be exactly correct for relativenumber mode.
-static int window_numberwidth(window_t* window) {
+static size_t window_numberwidth(window_t* window) {
   if (!option_get_bool("number") && !option_get_bool("relativenumber")) {
     return 0;
   }
 
-  int nlines = window->buffer->text->lines->len;
+  size_t nlines = window->buffer->text->lines->len;
   char buf[10];
-  int maxwidth = snprintf(buf, 10, "%d", nlines);
+  size_t maxwidth = (size_t) snprintf(buf, 10, "%zu", nlines);
 
-  return max(option_get_int("numberwidth"), maxwidth + 1);
+  return max((size_t) option_get_int("numberwidth"), maxwidth + 1);
 }
 
 static void window_ensure_cursor_visible(window_t *window) {
-  int x, y;
+  size_t x, y;
   gb_pos_to_linecol(window->buffer->text, window->cursor, &y, &x);
 
-  int w = window->w - window_numberwidth(window);
-  int h = window->h;
+  size_t w = window->w - window_numberwidth(window);
+  size_t h = window->h;
 
-  window->left = max(min(window->left, x), x - w + 1);
-  window->top = max(min(window->top, y), y - h + 1);
+  // TODO(isbadawi): Clean this up...
+  // The problem is that x & w (and y & h) are unsigned, but we want to treat
+  // their difference as signed. All these casts are necessary to get around
+  // warnings.
+  window->left = (size_t) ((ssize_t) max((ssize_t) min(window->left, x), (ssize_t) (x - w + 1)));
+  window->top = (size_t) ((ssize_t) max((ssize_t) min(window->top, y), (ssize_t) (y - h + 1)));
 }
 
-static void window_change_cell(window_t *window, int x, int y, char c, int fg, int bg) {
+static void window_change_cell(window_t *window, size_t x, size_t y, char c,
+                               int fg, int bg) {
   tb_change_cell(
-      window_numberwidth(window) + window->x + x,
-      window->y + y,
-      c, fg, bg);
+      (int) (window_numberwidth(window) + window->x + x),
+      (int) (window->y + y),
+      (uint32_t) c, (uint16_t) fg, (uint16_t) bg);
 }
 
 static void window_draw_cursor(window_t *window) {
   gapbuf_t *gb = window->buffer->text;
   char c = gb_getchar(gb, window->cursor);
-  int x, y;
+  size_t x, y;
   gb_pos_to_linecol(gb, window->cursor, &y, &x);
 
   window_change_cell(window,
@@ -77,48 +82,49 @@ void window_draw(window_t *window) {
   window_ensure_cursor_visible(window);
   gapbuf_t *gb = window->buffer->text;
 
-  int cursorline, cursorcol;
+  size_t cursorline, cursorcol;
   gb_pos_to_linecol(gb, window->cursor, &cursorline, &cursorcol);
 
   bool number = option_get_bool("number");
   bool relativenumber = option_get_bool("relativenumber");
 
-  int numberwidth = window_numberwidth(window);
+  size_t numberwidth = window_numberwidth(window);
 
-  int w = window->w - numberwidth;
-  int h = window->h;
+  size_t w = window->w - numberwidth;
+  size_t h = window->h;
 
-  int topy = window->top;
-  int topx = window->left;
-  int rows = min(gb->lines->len - topy, h);
-  for (int y = 0; y < rows; ++y) {
-    int absolute = window->top + y + 1;
-    int relative = abs(absolute - cursorline - 1);
-    int linenumber = absolute;
+  size_t topy = window->top;
+  size_t topx = window->left;
+  size_t rows = min(gb->lines->len - topy, h);
+  for (size_t y = 0; y < rows; ++y) {
+    size_t absolute = window->top + y + 1;
+    size_t relative = (size_t) labs((ssize_t)(absolute - cursorline - 1));
+    size_t linenumber = absolute;
     if (number || relativenumber) {
       if (relativenumber && !(number && relative == 0)) {
         linenumber = relative;
       }
 
-      int col = numberwidth - 2;
+      size_t col = numberwidth - 2;
       do {
-        int digit = linenumber % 10;
-        tb_change_cell(col--, y, digit + '0', TB_YELLOW, TB_DEFAULT);
+        size_t digit = linenumber % 10;
+        tb_change_cell((int) col--, (int) y, (uint32_t) (digit + '0'),
+                       TB_YELLOW, TB_DEFAULT);
         linenumber = (linenumber - digit) / 10;
       } while (linenumber > 0);
     }
 
     bool drawcursorline = relative == 0 && option_get_bool("cursorline");
-    uint16_t fg = drawcursorline ? (TB_WHITE | TB_UNDERLINE) : TB_WHITE;
+    int fg = drawcursorline ? (TB_WHITE | TB_UNDERLINE) : TB_WHITE;
 
-    int cols = min(gb->lines->buf[y + topy] - topx, w);
-    for (int x = 0; x < cols; ++x) {
+    size_t cols = (size_t) max(0, min((ssize_t) gb->lines->buf[y + topy] - (ssize_t) topx, (ssize_t) w));
+    for (size_t x = 0; x < cols; ++x) {
       char c = gb_getchar(gb, gb_linecol_to_pos(gb, y + topy, x + topx));
       window_change_cell(window, x, y, c, fg, TB_DEFAULT);
     }
 
     if (drawcursorline) {
-      for (int x = cols; x < w; ++x) {
+      for (size_t x = cols; x < w; ++x) {
         window_change_cell(window, x, y, ' ', fg, TB_DEFAULT);
       }
     }

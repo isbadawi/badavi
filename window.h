@@ -1,24 +1,26 @@
 #ifndef _window_h_included
 #define _window_h_included
 
+#include <stddef.h>
+
 #include "buffer.h"
 
 typedef struct window_t {
   // The buffer being edited.
   buffer_t *buffer;
   // The position and size of the window.
-  int x;
-  int y;
-  int w;
-  int h;
+  size_t x;
+  size_t y;
+  size_t w;
+  size_t h;
   // The coordinates of the top left cell visible on screen.
-  int top;
-  int left;
+  size_t top;
+  size_t left;
   // The offset of the cursor.
-  int cursor;
+  size_t cursor;
 } window_t;
 
-window_t *window_create(buffer_t *buffer, int x, int y, int w, int h);
+window_t *window_create(buffer_t *buffer, size_t x, size_t y, size_t w, size_t h);
 
 void window_draw(window_t *window);
 

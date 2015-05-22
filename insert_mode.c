@@ -14,7 +14,7 @@ static void insert_mode_entered(editor_t *editor) {
 static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   buffer_t *buffer = editor->window->buffer;
   gapbuf_t *gb = buffer->text;
-  int *cursor = &editor->window->cursor;
+  size_t *cursor = &editor->window->cursor;
   char ch;
   switch (ev->key) {
   case TB_KEY_ESC: case TB_KEY_CTRL_C:
@@ -42,7 +42,7 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     return;
   case TB_KEY_ENTER: ch = '\n'; break;
   case TB_KEY_SPACE: ch = ' '; break;
-  default: ch = ev->ch; break;
+  default: ch = (char) ev->ch; break;
   }
   edit_action_t action = {
     .type = EDIT_ACTION_INSERT,

@@ -1,16 +1,18 @@
 #ifndef _motion_h_included
 #define _motion_h_included
 
+#include <stddef.h>
+
 #include "editor.h"
 #include "window.h"
 
 typedef struct {
-  int pos;
+  size_t pos;
   window_t *window;
   motion_t *motion;
 } motion_context_t;
 
-typedef int (motion_op_t) (motion_context_t);
+typedef size_t (motion_op_t) (motion_context_t);
 
 struct motion_t {
   char name;
@@ -24,6 +26,6 @@ struct motion_t {
   bool exclusive;
 };
 
-int motion_apply(editor_t *editor);
+size_t motion_apply(editor_t *editor);
 
 #endif

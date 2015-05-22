@@ -11,11 +11,11 @@
 #include "util.h"
 
 typedef struct {
-  int start;
-  int end;
+  size_t start;
+  size_t end;
 } region_t;
 
-static region_t region_create(int start, int end) {
+static region_t region_create(size_t start, size_t end) {
   region_t region = {min(start, end), max(start, end)};
   return region;
 }
@@ -32,7 +32,7 @@ static void yank_op(editor_t *editor, region_t region) {
   buf_t *reg = editor_get_register(editor, editor->register_);
   gapbuf_t *gb = editor->window->buffer->text;
 
-  int n = region.end - region.start;
+  size_t n = region.end - region.start;
   buf_grow(reg, n + 1);
   gb_getstring(gb, region.start, n, reg->buf);
   reg->len = n;
@@ -97,10 +97,10 @@ static void entered(editor_t *editor) {
       editor->window->cursor, motion_apply(editor));
 
 
-  int last = gb_lastindexof(gb, '\n', region.start - 1);
-  int next = gb_indexof(gb, '\n', region.end);
+  ssize_t last = gb_lastindexof(gb, '\n', region.start - 1);
+  size_t next = gb_indexof(gb, '\n', region.end);
   if (motion->linewise) {
-    region.start = max(0, last + 1);
+    region.start = max(0, (size_t) (last + 1));
     region.end = min(gb_size(gb), next + 1);
   } else if (region.start == region.end) {
     editor_pop_mode(editor);
@@ -115,12 +115,12 @@ static void entered(editor_t *editor) {
 
   editor->window->cursor = region.start;
   if (editor->window->cursor > gb_size(gb) - 1) {
-    editor->window->cursor = gb_lastindexof(gb, '\n', last - 1) + 1;
+    editor->window->cursor = (size_t) (gb_lastindexof(gb, '\n', (size_t) (last - 1)) + 1);
   }
 }
 
 static void key_pressed(editor_t *editor, struct tb_event *ev) {
-  if (ev->ch != '0' && isdigit(ev->ch)) {
+  if (ev->ch != '0' && isdigit((int) ev->ch)) {
     editor_push_mode(editor, digit_mode());
     editor_handle_key_press(editor, ev);
     return;

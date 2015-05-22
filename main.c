@@ -63,8 +63,8 @@ int main(int argc, char *argv[]) {
       break;
     case TB_EVENT_RESIZE:
       // TODO(isbadawi): Replace this with something more sophisticated.
-      editor.window->w = tb_width();
-      editor.window->h = tb_height() - 1;
+      editor.window->w = (size_t) tb_width();
+      editor.window->h = (size_t) tb_height() - 1;
       editor_draw(&editor);
       break;
     default:

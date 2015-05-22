@@ -2,25 +2,27 @@
 #define _buf_h_included
 
 #include <stdarg.h>
+#include <stddef.h>
+#include <stdbool.h>
 
 // buf_t is a simple growable string.
 typedef struct {
   char *buf;
-  int len;
-  int cap;
+  size_t len;
+  size_t cap;
 } buf_t;
 
-buf_t *buf_create(int cap);
+buf_t *buf_create(size_t cap);
 buf_t *buf_from_cstr(char *s);
 buf_t *buf_from_char(char c);
 buf_t *buf_copy(buf_t *buf);
 void buf_free(buf_t *buf);
 
 void buf_clear(buf_t *buf);
-int buf_grow(buf_t *buf, int cap);
-int buf_delete(buf_t *buf, int pos, int len);
-int buf_insert(buf_t *buf, char *s, int pos);
-int buf_append(buf_t *buf, char *s);
+bool buf_grow(buf_t *buf, size_t cap);
+bool buf_delete(buf_t *buf, size_t pos, size_t len);
+bool buf_insert(buf_t *buf, char *s, size_t pos);
+bool buf_append(buf_t *buf, char *s);
 
 // Write the formatted data to buf (overwriting what was there),
 // automatically growing it if needed.
@@ -31,16 +33,16 @@ void buf_vprintf(buf_t *buf, const char *format, va_list args);
 
 // Similar to buf_t but for ints.
 typedef struct {
-  int *buf;
-  int len;
-  int cap;
+  unsigned int *buf;
+  size_t len;
+  size_t cap;
 } intbuf_t;
 
-intbuf_t *intbuf_create(int cap);
+intbuf_t *intbuf_create(size_t cap);
 void intbuf_free(intbuf_t *buf);
 
-void intbuf_insert(intbuf_t *buf, int i, int pos);
-void intbuf_add(intbuf_t *buf, int i);
-void intbuf_remove(intbuf_t *buf, int pos);
+void intbuf_insert(intbuf_t *buf, unsigned int i, size_t pos);
+void intbuf_add(intbuf_t *buf, unsigned int i);
+void intbuf_remove(intbuf_t *buf, size_t pos);
 
 #endif

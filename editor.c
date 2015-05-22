@@ -44,7 +44,7 @@ static void editor_source_badavimrc(editor_t *editor) {
 }
 
 void editor_init(editor_t *editor) {
-  editor->status = buf_create(tb_width() / 2);
+  editor->status = buf_create((size_t) (tb_width() / 2));
   editor->status_error = false;
   editor->buffers = list_create();
   list_append(editor->buffers, buffer_create(NULL));
@@ -85,7 +85,7 @@ void editor_search(editor_t *editor) {
   }
 
   gapbuf_t *gb = editor->window->buffer->text;
-  int *cursor = &editor->window->cursor;
+  size_t *cursor = &editor->window->cursor;
 
   char pattern[SEARCH_PATTERN_MAXLEN];
   memcpy(pattern, reg->buf, reg->len);
@@ -130,11 +130,13 @@ void editor_open(editor_t *editor, char *path) {
       editor_status_msg(editor, "\"%s\" [New File]", path);
     } else {
       buffer = buffer_open(path);
-      editor_status_msg(editor, "\"%s\" %dL, %dC",
+      editor_status_msg(editor, "\"%s\" %zu, %zu",
           path, gb_nlines(buffer->text), gb_size(buffer->text));
     }
     list_append(editor->buffers, buffer);
-    window = window_create(buffer, 0, 0, tb_width(), tb_height() - 1);
+    size_t width = (size_t) tb_width();
+    size_t height = (size_t) tb_height();
+    window = window_create(buffer, 0, 0, width, height - 1);
     list_append(editor->windows, window);
   }
   editor->window = window;
@@ -143,7 +145,9 @@ void editor_open(editor_t *editor, char *path) {
 void editor_open_empty(editor_t *editor) {
   buffer_t *buffer = buffer_create(NULL);
   list_append(editor->buffers, buffer);
-  window_t *window = window_create(buffer, 0, 0, tb_width(), tb_height() - 1);
+  size_t width = (size_t) tb_width();
+  size_t height = (size_t) tb_height();
+  window_t *window = window_create(buffer, 0, 0, width, height - 1);
   list_append(editor->windows, window);
   editor->window = window;
 }
@@ -173,7 +177,7 @@ void editor_save_buffer(editor_t *editor, char *path) {
     name = buffer->name;
   }
   if (!rc) {
-    editor_status_msg(editor, "\"%s\" %dL, %dC written",
+    editor_status_msg(editor, "\"%s\" %zuL, %zuC written",
         name, gb_nlines(buffer->text), gb_size(buffer->text));
   } else {
     editor_status_err(editor, "No file name");
@@ -232,7 +236,7 @@ static void editor_command_source(editor_t *editor, char *arg) {
 
   size_t n = 0;
   char *line = NULL;
-  int len = 0;
+  ssize_t len = 0;
   while ((len = getline(&line, &n, fp)) != -1) {
     line[len - 1] = '\0';
     editor_execute_command(editor, line);
@@ -262,7 +266,7 @@ static void editor_command_set(editor_t *editor, char *arg) {
   }
 
   char opt[32];
-  int optlen = groups[2].rm_eo - groups[2].rm_so;
+  size_t optlen = (size_t) (groups[2].rm_eo - groups[2].rm_so);
   strncpy(opt, arg + groups[2].rm_so, optlen);
   opt[optlen] = '\0';
 
@@ -338,13 +342,15 @@ void editor_draw(editor_t *editor) {
   // TODO(isbadawi): Multiple windows at the same time.
   window_draw(editor->window);
 
-  int nlines = gb_nlines(editor->window->buffer->text);
-  for (int y = nlines; y < tb_height() - 1; ++y) {
-    tb_change_cell(0, y, '~', TB_BLUE, TB_DEFAULT);
+  size_t bottom_row = (size_t) (tb_height() - 1);
+
+  size_t nlines = gb_nlines(editor->window->buffer->text);
+  for (size_t y = nlines; y < bottom_row; ++y) {
+    tb_change_cell(0, (int) y, '~', TB_BLUE, TB_DEFAULT);
   }
 
-  for (int x = 0; x < editor->status->len; ++x) {
-    tb_change_cell(x, tb_height() - 1, editor->status->buf[x],
+  for (size_t x = 0; x < editor->status->len; ++x) {
+    tb_change_cell((int) x, (int) bottom_row, (uint32_t) editor->status->buf[x],
         editor->status_error ? TB_DEFAULT : TB_WHITE,
         editor->status_error ? TB_RED : TB_DEFAULT);
   }
@@ -359,14 +365,14 @@ void editor_handle_key_press(editor_t *editor, struct tb_event *ev) {
 }
 
 void editor_send_keys(editor_t *editor, const char *keys) {
-  int len = strlen(keys);
+  size_t len = strlen(keys);
   struct tb_event ev;
-  for (int i = 0; i < len; ++i) {
+  for (size_t i = 0; i < len; ++i) {
     ev.key = 0;
     switch (keys[i]) {
     case '<': {
       char key[10];
-      int key_len = strcspn(keys + i + 1, ">");
+      size_t key_len = strcspn(keys + i + 1, ">");
       strncpy(key, keys + i + 1, key_len);
       key[key_len] = '\0';
       if (!strcmp("cr", key)) {
@@ -386,7 +392,7 @@ void editor_send_keys(editor_t *editor, const char *keys) {
       ev.key = TB_KEY_SPACE;
       break;
     default:
-      ev.ch = keys[i];
+      ev.ch = (uint32_t) keys[i];
       break;
     }
     editor_handle_key_press(editor, &ev);

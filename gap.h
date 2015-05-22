@@ -2,6 +2,7 @@
 #define _gap_h_included
 
 #include <stdio.h>
+#include <stddef.h>
 #include "buf.h"
 
 // A "gap buffer" or "split buffer". It's a big buffer that internally
@@ -32,37 +33,37 @@ gapbuf_t *gb_load(FILE *fp);
 void gb_free(gapbuf_t *gb);
 
 // Returns the size of the buffer.
-int gb_size(gapbuf_t *gb);
+size_t gb_size(gapbuf_t *gb);
 // Returns the number of lines.
-int gb_nlines(gapbuf_t *gb);
+size_t gb_nlines(gapbuf_t *gb);
 
 // Writes the contents of the buffer into fp.
 void gb_save(gapbuf_t *gb, FILE *fp);
 
 // Returns the character at offset pos from the start of the buffer.
-char gb_getchar(gapbuf_t *gb, int pos);
+char gb_getchar(gapbuf_t *gb, size_t pos);
 // Reads n characters starting at offset pos into buf.
-void gb_getstring(gapbuf_t *gb, int pos, int n, char *buf);
+void gb_getstring(gapbuf_t *gb, size_t pos, size_t n, char *buf);
 
 // Insert a single character after offset pos.
-void gb_putchar(gapbuf_t *gb, char c, int pos);
+void gb_putchar(gapbuf_t *gb, char c, size_t pos);
 // Insert a string of n characters after offset pos.
-void gb_putstring(gapbuf_t *gb, char *buf, int n, int pos);
+void gb_putstring(gapbuf_t *gb, char *buf, size_t n, size_t pos);
 
 // Remove the n characters before offset pos.
-void gb_del(gapbuf_t *gb, int n, int pos);
+void gb_del(gapbuf_t *gb, size_t n, size_t pos);
 
 // Return the offset of the first occurrence of c in the buffer, starting at
 // offset start, or gb_size(gb) if c is not found.
-int gb_indexof(gapbuf_t *gb, char c, int start);
+size_t gb_indexof(gapbuf_t *gb, char c, size_t start);
 // Return the offset of the last occurrence of c in the buffer, starting at
 // offset start, or -1 if c is not found.
-int gb_lastindexof(gapbuf_t *gb, char c, int start);
+ssize_t gb_lastindexof(gapbuf_t *gb, char c, size_t start);
 
 // Converts a buffer offset into a line number, and offset within that line.
-void gb_pos_to_linecol(gapbuf_t *gb, int pos, int *line, int *offset);
+void gb_pos_to_linecol(gapbuf_t *gb, size_t pos, size_t *line, size_t *offset);
 // Vice versa.
-int gb_linecol_to_pos(gapbuf_t *gb, int line, int offset);
+size_t gb_linecol_to_pos(gapbuf_t *gb, size_t line, size_t offset);
 
 typedef struct {
   enum {
@@ -73,13 +74,13 @@ typedef struct {
 
   union {
     char error[48];
-    struct { int start; int len; } match;
+    struct { size_t start; size_t len; } match;
   } v;
 } gb_search_result_t;
 
 // Search forward from offset start for a match for the regex. Fills in a
 // gb_search_t structure describing the outcome.
-void gb_search_forwards(gapbuf_t *gb, char *regex, int start,
+void gb_search_forwards(gapbuf_t *gb, char *regex, size_t start,
                         gb_search_result_t *result);
 
 #endif

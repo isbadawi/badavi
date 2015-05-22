@@ -2,6 +2,7 @@
 #define _editor_h_included
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "buf.h"
 #include "window.h"
@@ -22,7 +23,7 @@ typedef struct {
 typedef struct edit_action_t {
   enum { EDIT_ACTION_INSERT, EDIT_ACTION_DELETE } type;
   // The position at which the action occurred.
-  int pos;
+  size_t pos;
   // The text added (for insertions) or removed (for deletions).
   buf_t *buf;
 } edit_action_t;
@@ -50,9 +51,9 @@ typedef struct {
 
   // Temporary input state.
   // TODO(isbadawi): This feels like a kludge but I don't know...
-  int count;
+  unsigned int count;
   motion_t *motion;
-  int register_;
+  char register_;
 } editor_t;
 
 void editor_init(editor_t *editor);

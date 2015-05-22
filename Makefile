@@ -4,10 +4,7 @@ LDLIBS = -ltermbox
 OUTPUT_OPTION = -MMD -MP -o $@
 
 WARNING_EXCEPTIONS = \
-	-Wno-conversion \
 	-Wno-padded \
-	-Wno-shorten-64-to-32 \
-	-Wno-sign-conversion
 
 SRCS = $(wildcard *.c)
 OBJS = $(SRCS:.c=.o)

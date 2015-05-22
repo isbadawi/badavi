@@ -270,7 +270,7 @@ static void g_pressed(editor_t *editor, struct tb_event *ev) {
   editor_pop_mode(editor);
 }
 
-static editing_mode_t g_mode = { no_op, g_pressed };
+static editing_mode_t g_mode = {no_op, g_pressed, NULL};
 
 typedef struct {
   editing_mode_t mode;
@@ -363,7 +363,7 @@ static void till_key_pressed(editor_t *editor, struct tb_event *ev) {
 }
 
 static till_mode_t till_mode_impl = {
-  {no_op, till_key_pressed},
+  {no_op, till_key_pressed, NULL},
   -1
 };
 
@@ -389,10 +389,7 @@ static void key_pressed(editor_t *editor, struct tb_event *ev) {
   return;
 }
 
-static editing_mode_t impl = {
-  no_op,
-  key_pressed
-};
+static editing_mode_t impl = {no_op, key_pressed, NULL};
 
 editing_mode_t *motion_mode(void) {
   return &impl;

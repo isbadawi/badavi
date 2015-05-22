@@ -98,7 +98,8 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
 
 static editing_mode_t impl = {
   normal_mode_entered,
-  normal_mode_key_pressed
+  normal_mode_key_pressed,
+  NULL
 };
 
 editing_mode_t *normal_mode(void) {

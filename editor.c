@@ -18,19 +18,21 @@
 #include "options.h"
 #include "util.h"
 
+#define R(n) {n, NULL}
 static editor_register_t register_table[] = {
   // Last search pattern register
   // TODO(isbadawi): Investigate segfaults when this register is listed later.
-  {'/'},
+  R('/'),
   // Unnamed default register
-  {'"'},
+  R('"'),
   // Named registers
-  {'a'}, {'b'}, {'c'}, {'d'}, {'e'}, {'f'}, {'g'}, {'h'}, {'i'}, {'j'}, {'k'},
-  {'l'}, {'m'}, {'n'}, {'o'}, {'p'}, {'q'}, {'r'}, {'s'}, {'t'}, {'u'}, {'v'},
-  {'w'}, {'x'}, {'y'}, {'z'},
+  R('a'), R('b'), R('c'), R('d'), R('e'), R('f'), R('g'), R('h'), R('i'), R('j'), R('k'),
+  R('l'), R('m'), R('n'), R('o'), R('p'), R('q'), R('r'), R('s'), R('t'), R('u'), R('v'),
+  R('w'), R('x'), R('y'), R('z'),
   // Sentinel
-  {-1}
+  R(-1)
 };
+#undef R
 
 static void editor_source_badavimrc(editor_t *editor) {
   const char *home = getenv("HOME");

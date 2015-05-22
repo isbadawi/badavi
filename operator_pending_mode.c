@@ -131,7 +131,7 @@ static void key_pressed(editor_t *editor, struct tb_event *ev) {
 }
 
 static operator_pending_mode_t impl = {
-  {entered, key_pressed},
+  {entered, key_pressed, NULL},
   NULL
 };
 

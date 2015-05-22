@@ -4,9 +4,7 @@ LDLIBS = -ltermbox
 OUTPUT_OPTION = -MMD -MP -o $@
 
 WARNING_EXCEPTIONS = \
-	-Wno-assign-enum \
 	-Wno-conversion \
-	-Wno-missing-field-initializers \
 	-Wno-padded \
 	-Wno-shorten-64-to-32 \
 	-Wno-sign-conversion

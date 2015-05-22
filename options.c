@@ -29,7 +29,7 @@ static option_t option_table[] = {
   INT_OPTION(numberwidth, 4),
   BOOL_OPTION(ignorecase, 0),
   BOOL_OPTION(cursorline, 0),
-  {NULL, -1}
+  {NULL, OPTION_TYPE_INT, {-1}},
 };
 
 static option_t *option_find(const char *name) {

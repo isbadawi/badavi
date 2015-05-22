@@ -56,7 +56,8 @@ static void insert_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
 
 static editing_mode_t impl = {
   insert_mode_entered,
-  insert_mode_key_pressed
+  insert_mode_key_pressed,
+  NULL
 };
 
 editing_mode_t *insert_mode(void) {

@@ -1,10 +1,7 @@
 CC = clang
-CFLAGS = -Weverything $(WARNING_EXCEPTIONS) -Werror -g
+CFLAGS = -Weverything -Wno-padded -Werror -g
 LDLIBS = -ltermbox
 OUTPUT_OPTION = -MMD -MP -o $@
-
-WARNING_EXCEPTIONS = \
-	-Wno-padded \
 
 SRCS = $(wildcard *.c)
 OBJS = $(SRCS:.c=.o)

@@ -73,7 +73,9 @@ void editor_search(editor_t *editor);
 struct tb_event;
 void editor_handle_key_press(editor_t *editor, struct tb_event *ev);
 
+__attribute__((__format__(__printf__, 2, 3)))
 void editor_status_msg(editor_t *editor, const char *format, ...);
+__attribute__((__format__(__printf__, 2, 3)))
 void editor_status_err(editor_t *editor, const char *format, ...);
 
 void editor_send_keys(editor_t *editor, const char *keys);

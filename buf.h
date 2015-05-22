@@ -24,7 +24,9 @@ int buf_append(buf_t *buf, char *s);
 
 // Write the formatted data to buf (overwriting what was there),
 // automatically growing it if needed.
+__attribute__((__format__(__printf__, 2, 3)))
 void buf_printf(buf_t *buf, const char *format, ...);
+__attribute__((__format__(__printf__, 2, 0)))
 void buf_vprintf(buf_t *buf, const char *format, va_list args);
 
 // Similar to buf_t but for ints.

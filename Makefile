@@ -6,7 +6,6 @@ OUTPUT_OPTION = -MMD -MP -o $@
 WARNING_EXCEPTIONS = \
 	-Wno-assign-enum \
 	-Wno-conversion \
-	-Wno-format-nonliteral \
 	-Wno-missing-field-initializers \
 	-Wno-missing-prototypes \
 	-Wno-missing-variable-declarations \

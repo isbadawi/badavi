@@ -8,7 +8,6 @@ WARNING_EXCEPTIONS = \
 	-Wno-conversion \
 	-Wno-format-nonliteral \
 	-Wno-missing-field-initializers \
-	-Wno-missing-noreturn \
 	-Wno-missing-prototypes \
 	-Wno-missing-variable-declarations \
 	-Wno-padded \

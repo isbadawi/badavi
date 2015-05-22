@@ -196,11 +196,13 @@ static void editor_command_quit(editor_t *editor, char __unused *arg) {
   exit(0);
 }
 
+__attribute__((noreturn))
 static void editor_command_force_quit(editor_t __unused *editor,
                                       char __unused *arg) {
   exit(0);
 }
 
+__attribute__((noreturn))
 static void editor_command_write_quit(editor_t *editor, char __unused *arg) {
   editor_save_buffer(editor, NULL);
   exit(0);

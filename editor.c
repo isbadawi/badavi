@@ -183,7 +183,7 @@ typedef struct {
   void (*action)(editor_t*, char*);
 } editor_command_t;
 
-static void editor_command_quit(editor_t *editor, char *arg) {
+static void editor_command_quit(editor_t *editor, char __unused *arg) {
   buffer_t *b;
   LIST_FOREACH(editor->buffers, b) {
     if (b->dirty) {
@@ -196,11 +196,12 @@ static void editor_command_quit(editor_t *editor, char *arg) {
   exit(0);
 }
 
-static void editor_command_force_quit(editor_t *editor, char *arg) {
+static void editor_command_force_quit(editor_t __unused *editor,
+                                      char __unused *arg) {
   exit(0);
 }
 
-static void editor_command_write_quit(editor_t *editor, char *arg) {
+static void editor_command_write_quit(editor_t *editor, char __unused *arg) {
   editor_save_buffer(editor, NULL);
   exit(0);
 }

@@ -74,7 +74,7 @@ static int line_end(motion_context_t ctx) {
   return gb_indexof(gb, '\n', ctx.pos);
 }
 
-static int buffer_top(motion_context_t ctx) {
+static int buffer_top(motion_context_t __unused ctx) {
   return 0;
 }
 
@@ -258,7 +258,7 @@ static motion_t *motion_find(motion_t *table, char name) {
   return NULL;
 }
 
-static void no_op(editor_t *editor) {
+static void no_op(editor_t __unused *editor) {
 }
 
 static void g_pressed(editor_t *editor, struct tb_event *ev) {

@@ -8,7 +8,7 @@
 
 #include "editor.h"
 
-static void no_op(editor_t *editor) {
+static void no_op(editor_t __unused *editor) {
 }
 
 static void digit_pressed(editor_t *editor, struct tb_event *ev) {

@@ -372,7 +372,7 @@ static editing_mode_t *till_mode(char which) {
   return (editing_mode_t*) &till_mode_impl;
 }
 
-void key_pressed(editor_t *editor, struct tb_event *ev) {
+static void key_pressed(editor_t *editor, struct tb_event *ev) {
   if (ev->ch == 'g') {
     editor_push_mode(editor, &g_mode);
     return;

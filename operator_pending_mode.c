@@ -15,7 +15,7 @@ typedef struct {
   int end;
 } region_t;
 
-region_t region_create(int start, int end) {
+static region_t region_create(int start, int end) {
   region_t region = {min(start, end), max(start, end)};
   return region;
 }

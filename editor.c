@@ -46,11 +46,17 @@ static void editor_source_badavimrc(editor_t *editor) {
 void editor_init(editor_t *editor) {
   editor->status = buf_create((size_t) (tb_width() / 2));
   editor->status_error = false;
+
   editor->buffers = list_create();
-  list_append(editor->buffers, buffer_create(NULL));
+  buffer_t *buffer = buffer_create(NULL);
+  list_append(editor->buffers, buffer);
+
   editor->windows = list_create();
-  list_append(editor->windows, window_create(NULL, 0, 0, 0, 0));
-  editor->window = NULL;
+  size_t width = (size_t) tb_width();
+  size_t height = (size_t) tb_height();
+  editor->window = window_create(buffer, 0, 0, width, height - 1);
+  list_append(editor->windows, editor->window);
+
   editor->mode = normal_mode();
 
   editor->registers = register_table;
@@ -110,21 +116,20 @@ void editor_search(editor_t *editor) {
   }
 }
 
-static window_t *editor_get_window_by_name(editor_t* editor, char *name) {
-  window_t *w;
-  LIST_FOREACH(editor->windows, w) {
-    if (w->buffer && !strcmp(w->buffer->name, name)) {
-      return w;
+static buffer_t *editor_get_buffer_by_name(editor_t* editor, char *name) {
+  buffer_t *b;
+  LIST_FOREACH(editor->buffers, b) {
+    if (!strcmp(b->name, name)) {
+      return b;
     }
   }
   return NULL;
 }
 
 void editor_open(editor_t *editor, char *path) {
-  window_t *window = editor_get_window_by_name(editor, path);
+  buffer_t *buffer = editor_get_buffer_by_name(editor, path);
 
-  if (!window) {
-    buffer_t *buffer;
+  if (!buffer) {
     if (access(path, F_OK) < 0) {
       buffer = buffer_create(path);
       editor_status_msg(editor, "\"%s\" [New File]", path);
@@ -134,22 +139,8 @@ void editor_open(editor_t *editor, char *path) {
           path, gb_nlines(buffer->text), gb_size(buffer->text));
     }
     list_append(editor->buffers, buffer);
-    size_t width = (size_t) tb_width();
-    size_t height = (size_t) tb_height();
-    window = window_create(buffer, 0, 0, width, height - 1);
-    list_append(editor->windows, window);
   }
-  editor->window = window;
-}
-
-void editor_open_empty(editor_t *editor) {
-  buffer_t *buffer = buffer_create(NULL);
-  list_append(editor->buffers, buffer);
-  size_t width = (size_t) tb_width();
-  size_t height = (size_t) tb_height();
-  window_t *window = window_create(buffer, 0, 0, width, height - 1);
-  list_append(editor->windows, window);
-  editor->window = window;
+  editor->window->buffer = buffer;
 }
 
 void editor_push_mode(editor_t *editor, editing_mode_t *mode) {

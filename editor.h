@@ -59,7 +59,6 @@ typedef struct {
 void editor_init(editor_t *editor);
 
 void editor_open(editor_t *editor, char *path);
-void editor_open_empty(editor_t *editor);
 
 void editor_push_mode(editor_t *editor, editing_mode_t *mode);
 void editor_pop_mode(editor_t *editor);

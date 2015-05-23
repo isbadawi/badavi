@@ -45,8 +45,6 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i < argc; ++i) {
       editor_open(&editor, argv[i]);
     }
-  } else {
-    editor_open_empty(&editor);
   }
 
   editor_draw(&editor);

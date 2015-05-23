@@ -301,6 +301,64 @@ static void editor_command_set(editor_t *editor, char *arg) {
   return;
 }
 
+window_t *editor_left_window(editor_t *editor, window_t *window) {
+  window_t *prev = NULL;
+  window_t *w;
+  LIST_FOREACH(editor->windows, w) {
+    if (w == window) {
+      return prev;
+    }
+    prev = w;
+  }
+  return NULL;
+}
+
+window_t *editor_right_window(editor_t *editor, window_t *window) {
+  window_t *prev = NULL;
+  window_t *w;
+  LIST_FOREACH_REVERSE(editor->windows, w) {
+    if (w == window) {
+      return prev;
+    }
+    prev = w;
+  }
+  return NULL;
+}
+
+static size_t editor_nwindows(editor_t *editor) {
+  size_t nwindows = 0;
+  window_t *w;
+  LIST_FOREACH(editor->windows, w) {
+    nwindows++;
+  }
+  return nwindows;
+}
+
+static void editor_command_vsplit(editor_t *editor, char *arg) {
+  window_t *window = window_create(editor->window->buffer, 0, 0, 0, 0);
+  list_append(editor->windows, window);
+  editor->window = window;
+
+  size_t nwindows = editor_nwindows(editor);
+  size_t width = ((size_t) tb_width() - nwindows) / nwindows;
+  size_t height = (size_t) tb_height() - 2;
+
+  size_t i = 0;
+  window_t *w;
+  LIST_FOREACH(editor->windows, w) {
+    w->x = i++ * (width + 1);
+    w->y = 0;
+    w->w = width;
+    w->h = height;
+  }
+
+  window->w += ((size_t) tb_width() - nwindows) % nwindows + 1;
+
+  if (arg) {
+    editor_command_edit(editor, arg);
+  }
+}
+
 static editor_command_t editor_commands[] = {
   {"q", editor_command_quit},
   {"q!", editor_command_force_quit},
@@ -309,6 +367,7 @@ static editor_command_t editor_commands[] = {
   {"e", editor_command_edit},
   {"so", editor_command_source},
   {"set", editor_command_set},
+  {"vsp", editor_command_vsplit},
   {NULL, NULL}
 };
 
@@ -330,8 +389,32 @@ void editor_execute_command(editor_t *editor, char *command) {
 void editor_draw(editor_t *editor) {
   tb_clear();
 
-  // TODO(isbadawi): Multiple windows at the same time.
-  window_draw(editor->window);
+  bool first = true;
+  bool drawplate = editor_nwindows(editor) > 1;
+
+  window_t *w;
+  LIST_FOREACH(editor->windows, w) {
+    if (!first) {
+      for (int y = 0; y < tb_height() - 1; ++y) {
+        tb_change_cell((int) w->x - 1, y, '|', TB_BLACK, TB_WHITE);
+      }
+    }
+    first = false;
+
+    window_draw(w);
+    if (w == editor->window) {
+      window_draw_cursor(w);
+    }
+
+    if (drawplate) {
+      size_t namelen = strlen(w->buffer->name);
+      for (size_t x = 0; x < w->w; ++x) {
+        char c = x < namelen ? w->buffer->name[x] : ' ';
+        tb_change_cell((int) (w->x + x), tb_height() - 2, (uint32_t) c,
+                       TB_BLACK, TB_WHITE);
+      }
+    }
+  }
 
   for (size_t x = 0; x < editor->status->len; ++x) {
     tb_change_cell((int) x, tb_height() - 1, (uint32_t) editor->status->buf[x],

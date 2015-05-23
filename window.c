@@ -64,7 +64,7 @@ static void window_change_cell(window_t *window, size_t x, size_t y, char c,
       (uint32_t) c, (uint16_t) fg, (uint16_t) bg);
 }
 
-static void window_draw_cursor(window_t *window) {
+void window_draw_cursor(window_t *window) {
   gapbuf_t *gb = window->buffer->text;
   char c = gb_getchar(gb, window->cursor);
   size_t x, y;
@@ -105,7 +105,7 @@ void window_draw(window_t *window) {
         linenumber = relative;
       }
 
-      size_t col = numberwidth - 2;
+      size_t col = window->x + numberwidth - 2;
       do {
         size_t digit = linenumber % 10;
         tb_change_cell((int) col--, (int) y, (uint32_t) (digit + '0'),
@@ -134,6 +134,4 @@ void window_draw(window_t *window) {
   for (size_t y = nlines; y < window->y + window->h; ++y) {
     tb_change_cell((int) window->x, (int) y, '~', TB_BLUE, TB_DEFAULT);
   }
-
-  window_draw_cursor(window);
 }

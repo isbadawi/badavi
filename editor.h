@@ -90,4 +90,7 @@ void editor_start_action_group(editor_t *editor);
 // Add a new action to the current action group.
 void editor_add_action(editor_t *editor, edit_action_t action);
 
+window_t *editor_left_window(editor_t *editor, window_t *window);
+window_t *editor_right_window(editor_t *editor, window_t *window);
+
 #endif

@@ -21,14 +21,27 @@ static void normal_mode_entered(editor_t *editor) {
 }
 
 static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
-  if (ev->key == TB_KEY_CTRL_C) {
+  switch (ev->key) {
+  case TB_KEY_CTRL_C:
     editor_status_msg(editor, "Type :q<Enter> to exit badavi");
     return;
-  }
-
-  if (ev->key == TB_KEY_CTRL_R) {
+  case TB_KEY_CTRL_R:
     editor_redo(editor);
     return;
+  case TB_KEY_CTRL_H: {
+    window_t *left = editor_left_window(editor, editor->window);
+    if (left) {
+      editor->window = left;
+    }
+    return;
+  }
+  case TB_KEY_CTRL_L: {
+    window_t *right = editor_right_window(editor, editor->window);
+    if (right) {
+      editor->window = right;
+    }
+    return;
+  }
   }
 
   if (ev->ch != '0' && isdigit((int) ev->ch)) {

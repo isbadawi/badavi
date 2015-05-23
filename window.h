@@ -21,7 +21,7 @@ typedef struct window_t {
 } window_t;
 
 window_t *window_create(buffer_t *buffer, size_t x, size_t y, size_t w, size_t h);
-
 void window_draw(window_t *window);
+void window_draw_cursor(window_t *window);
 
 #endif

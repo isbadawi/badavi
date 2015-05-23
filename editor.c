@@ -333,15 +333,8 @@ void editor_draw(editor_t *editor) {
   // TODO(isbadawi): Multiple windows at the same time.
   window_draw(editor->window);
 
-  size_t bottom_row = (size_t) (tb_height() - 1);
-
-  size_t nlines = gb_nlines(editor->window->buffer->text);
-  for (size_t y = nlines; y < bottom_row; ++y) {
-    tb_change_cell(0, (int) y, '~', TB_BLUE, TB_DEFAULT);
-  }
-
   for (size_t x = 0; x < editor->status->len; ++x) {
-    tb_change_cell((int) x, (int) bottom_row, (uint32_t) editor->status->buf[x],
+    tb_change_cell((int) x, tb_height() - 1, (uint32_t) editor->status->buf[x],
         editor->status_error ? TB_DEFAULT : TB_WHITE,
         editor->status_error ? TB_RED : TB_DEFAULT);
   }

@@ -130,5 +130,10 @@ void window_draw(window_t *window) {
     }
   }
 
+  size_t nlines = gb_nlines(window->buffer->text);
+  for (size_t y = nlines; y < window->y + window->h; ++y) {
+    tb_change_cell((int) window->x, (int) y, '~', TB_BLUE, TB_DEFAULT);
+  }
+
   window_draw_cursor(window);
 }

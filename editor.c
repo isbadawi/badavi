@@ -302,36 +302,11 @@ static void editor_command_set(editor_t *editor, char *arg) {
 }
 
 window_t *editor_left_window(editor_t *editor, window_t *window) {
-  window_t *prev = NULL;
-  window_t *w;
-  LIST_FOREACH(editor->windows, w) {
-    if (w == window) {
-      return prev;
-    }
-    prev = w;
-  }
-  return NULL;
+  return list_prev(editor->windows, window);
 }
 
 window_t *editor_right_window(editor_t *editor, window_t *window) {
-  window_t *prev = NULL;
-  window_t *w;
-  LIST_FOREACH_REVERSE(editor->windows, w) {
-    if (w == window) {
-      return prev;
-    }
-    prev = w;
-  }
-  return NULL;
-}
-
-static size_t editor_nwindows(editor_t *editor) {
-  size_t nwindows = 0;
-  window_t *w;
-  LIST_FOREACH(editor->windows, w) {
-    nwindows++;
-  }
-  return nwindows;
+  return list_next(editor->windows, window);
 }
 
 static void editor_command_vsplit(editor_t *editor, char *arg) {
@@ -339,7 +314,7 @@ static void editor_command_vsplit(editor_t *editor, char *arg) {
   list_append(editor->windows, window);
   editor->window = window;
 
-  size_t nwindows = editor_nwindows(editor);
+  size_t nwindows = list_size(editor->windows);
   size_t width = ((size_t) tb_width() - nwindows) / nwindows;
   size_t height = (size_t) tb_height() - 2;
 
@@ -390,7 +365,7 @@ void editor_draw(editor_t *editor) {
   tb_clear();
 
   bool first = true;
-  bool drawplate = editor_nwindows(editor) > 1;
+  bool drawplate = list_size(editor->windows) > 1;
 
   window_t *w;
   LIST_FOREACH(editor->windows, w) {

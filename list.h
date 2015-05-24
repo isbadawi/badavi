@@ -2,6 +2,7 @@
 #define _list_h_included
 
 #include <stdbool.h>
+#include <stddef.h>
 
 typedef struct list_node_t {
   void *data;
@@ -40,5 +41,8 @@ void *list_pop(list_t *list);
 void *list_peek(list_t *list);
 bool list_empty(list_t *list);
 void list_clear(list_t *list);
+void *list_prev(list_t *list, void *data);
+void *list_next(list_t *list, void *data);
+size_t list_size(list_t *list);
 
 #endif

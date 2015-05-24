@@ -69,3 +69,32 @@ void list_clear(list_t *list) {
   list->head->next = list->tail;
   list->tail->prev = list->head;
 }
+
+void *list_prev(list_t *list, void *data) {
+  void *p;
+  LIST_FOREACH(list, p) {
+    if (p == data) {
+      return list->iter->prev->data;
+    }
+  }
+  return NULL;
+}
+
+void *list_next(list_t *list, void *data) {
+  void *p;
+  LIST_FOREACH_REVERSE(list, p) {
+    if (p == data) {
+      return list->iter->next->data;
+    }
+  }
+  return NULL;
+}
+
+size_t list_size(list_t *list) {
+  size_t size = 0;
+  void *p;
+  LIST_FOREACH(list, p) {
+    size++;
+  }
+  return size;
+}

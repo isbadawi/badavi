@@ -205,7 +205,7 @@ static void editor_command_quit(editor_t *editor, char __unused *arg) {
     if (b->dirty) {
       editor_status_err(editor,
           "No write since last change for buffer \"%s\"",
-          b->name ? b->name : "[No Name]");
+          *b->name ? b->name : "[No Name]");
       return;
     }
   }

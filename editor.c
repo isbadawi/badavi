@@ -419,7 +419,7 @@ void editor_draw(editor_t *editor) {
 
     if (drawplate) {
       char plate[300];
-      strcpy(plate, w->buffer->name);
+      strcpy(plate, *w->buffer->name ? w->buffer->name : "[No Name]");
       if (w->buffer->dirty) {
         strcat(plate, " [+]");
       }

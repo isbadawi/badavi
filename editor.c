@@ -418,9 +418,14 @@ void editor_draw(editor_t *editor) {
     }
 
     if (drawplate) {
-      size_t namelen = strlen(w->buffer->name);
+      char plate[300];
+      strcpy(plate, w->buffer->name);
+      if (w->buffer->dirty) {
+        strcat(plate, " [+]");
+      }
+      size_t platelen = strlen(plate);
       for (size_t x = 0; x < w->w; ++x) {
-        char c = x < namelen ? w->buffer->name[x] : ' ';
+        char c = x < platelen ? plate[x] : ' ';
         tb_change_cell((int) (w->x + x), tb_height() - 2, (uint32_t) c,
                        TB_BLACK, TB_WHITE);
       }

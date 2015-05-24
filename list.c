@@ -50,6 +50,18 @@ void *list_pop(list_t *list) {
   return data;
 }
 
+void list_remove(list_t *list, void *data) {
+  void *p;
+  LIST_FOREACH(list, p) {
+    if (p == data) {
+      list->iter->prev->next = list->iter->next;
+      list->iter->next->prev = list->iter->prev;
+      free(list->iter);
+      break;
+    }
+  }
+}
+
 void *list_peek(list_t *list) {
   if (list_empty(list)) {
     return NULL;

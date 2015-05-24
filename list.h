@@ -38,6 +38,7 @@ list_t *list_create(void);
 void list_prepend(list_t* list, void *data);
 void list_append(list_t* list, void *data);
 void *list_pop(list_t *list);
+void list_remove(list_t *list, void *data);
 void *list_peek(list_t *list);
 bool list_empty(list_t *list);
 void list_clear(list_t *list);

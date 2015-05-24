@@ -175,6 +175,25 @@ void editor_save_buffer(editor_t *editor, char *path) {
   }
 }
 
+static void editor_equalize_windows(editor_t *editor) {
+  size_t nwindows = list_size(editor->windows);
+  size_t width = ((size_t) tb_width() - nwindows) / nwindows;
+  size_t height = (size_t) tb_height() - ((nwindows == 1) ? 1 : 2);
+
+  size_t i = 0;
+  window_t *last = NULL;
+  window_t *w;
+  LIST_FOREACH(editor->windows, w) {
+    w->x = i++ * (width + 1);
+    w->y = 0;
+    w->w = width;
+    w->h = height;
+    last = w;
+  }
+
+  last->w += ((size_t) tb_width() - nwindows) % nwindows + 1;
+}
+
 typedef struct {
   const char *name;
   void (*action)(editor_t*, char*);
@@ -199,10 +218,38 @@ static void editor_command_force_quit(editor_t __unused *editor,
   exit(0);
 }
 
-__attribute__((noreturn))
-static void editor_command_write_quit(editor_t *editor, char __unused *arg) {
+static void editor_command_force_close_window(editor_t *editor, char *arg) {
+  if (list_size(editor->windows) == 1) {
+    editor_command_force_quit(editor, arg);
+  }
+
+  window_t *window = list_prev(editor->windows, editor->window);
+  if (!window) {
+    window = list_next(editor->windows, editor->window);
+  }
+  list_remove(editor->windows, editor->window);
+  editor->window = window;
+  editor_equalize_windows(editor);
+}
+
+static void editor_command_close_window(editor_t *editor, char *arg) {
+  if (list_size(editor->windows) == 1) {
+    editor_command_quit(editor, arg);
+    return;
+  }
+
+  if (editor->window->buffer->dirty) {
+      editor_status_err(editor,
+          "No write since last change (add ! to override)");
+      return;
+  }
+
+  editor_command_force_close_window(editor, arg);
+}
+
+static void editor_command_write_quit(editor_t *editor, char *arg) {
   editor_save_buffer(editor, NULL);
-  exit(0);
+  editor_command_close_window(editor, arg);
 }
 
 static void editor_command_edit(editor_t *editor, char *arg) {
@@ -314,20 +361,7 @@ static void editor_command_vsplit(editor_t *editor, char *arg) {
   list_append(editor->windows, window);
   editor->window = window;
 
-  size_t nwindows = list_size(editor->windows);
-  size_t width = ((size_t) tb_width() - nwindows) / nwindows;
-  size_t height = (size_t) tb_height() - 2;
-
-  size_t i = 0;
-  window_t *w;
-  LIST_FOREACH(editor->windows, w) {
-    w->x = i++ * (width + 1);
-    w->y = 0;
-    w->w = width;
-    w->h = height;
-  }
-
-  window->w += ((size_t) tb_width() - nwindows) % nwindows + 1;
+  editor_equalize_windows(editor);
 
   if (arg) {
     editor_command_edit(editor, arg);
@@ -335,8 +369,10 @@ static void editor_command_vsplit(editor_t *editor, char *arg) {
 }
 
 static editor_command_t editor_commands[] = {
-  {"q", editor_command_quit},
-  {"q!", editor_command_force_quit},
+  {"q", editor_command_close_window},
+  {"q!", editor_command_force_close_window},
+  {"qa", editor_command_quit},
+  {"qa!", editor_command_force_quit},
   {"w", editor_save_buffer},
   {"wq", editor_command_write_quit},
   {"e", editor_command_edit},

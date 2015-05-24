@@ -19,7 +19,7 @@ static bool is_line_end(gapbuf_t *gb, size_t pos) {
 }
 
 static bool is_first_line(gapbuf_t *gb, size_t pos) {
-  return pos < gb->lines->buf[0];
+  return pos <= gb->lines->buf[0];
 }
 
 static bool is_last_line(gapbuf_t *gb, size_t pos) {

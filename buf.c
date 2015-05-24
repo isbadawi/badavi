@@ -139,7 +139,7 @@ void buf_vprintf(buf_t *buf, const char *format, va_list args) {
 
 
 static bool intbuf_grow(intbuf_t *buf, size_t cap) {
-  buf->buf = realloc(buf->buf, cap * sizeof(int));
+  buf->buf = realloc(buf->buf, cap * sizeof(unsigned int));
   if (!buf->buf) {
     return false;
   }

@@ -1,5 +1,6 @@
 #include "editor.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -191,6 +192,7 @@ static void editor_equalize_windows(editor_t *editor) {
     last = w;
   }
 
+  assert(last);
   last->w += ((size_t) tb_width() - nwindows) % nwindows + 1;
 }
 

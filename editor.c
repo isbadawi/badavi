@@ -454,16 +454,15 @@ void editor_handle_key_press(editor_t *editor, struct tb_event *ev) {
   editor_draw(editor);
 }
 
-void editor_send_keys(editor_t *editor, const char *keys) {
-  size_t len = strlen(keys);
+void editor_send_keys(editor_t *editor, char *keys) {
   struct tb_event ev;
-  for (size_t i = 0; i < len; ++i) {
+  for (char *k = keys; *k; ++k) {
     ev.key = 0;
-    switch (keys[i]) {
+    switch (*k) {
     case '<': {
       char key[10];
-      size_t key_len = strcspn(keys + i + 1, ">");
-      strncpy(key, keys + i + 1, key_len);
+      size_t key_len = strcspn(k + 1, ">");
+      strncpy(key, k + 1, key_len);
       key[key_len] = '\0';
       if (!strcmp("cr", key)) {
         ev.key = TB_KEY_ENTER;
@@ -475,14 +474,14 @@ void editor_send_keys(editor_t *editor, const char *keys) {
         debug("BUG: editor_send_keys got <%s>\n", key);
         exit(1);
       }
-      i += key_len + 1;
+      k += key_len + 1;
       break;
     }
     case ' ':
       ev.key = TB_KEY_SPACE;
       break;
     default:
-      ev.ch = (uint32_t) keys[i];
+      ev.ch = (uint32_t) *k;
       break;
     }
     editor_handle_key_press(editor, &ev);

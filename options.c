@@ -14,6 +14,7 @@ typedef struct {
   } type;
 
   union {
+    bool b;
     int i;
   } value;
 } option_t;
@@ -24,11 +25,11 @@ typedef struct {
 #define INT_OPTION(name, defaultval) OPTION(name, OPTION_TYPE_INT, defaultval)
 
 static option_t option_table[] = {
-  BOOL_OPTION(number, 0),
-  BOOL_OPTION(relativenumber, 0),
   INT_OPTION(numberwidth, 4),
-  BOOL_OPTION(ignorecase, 0),
-  BOOL_OPTION(cursorline, 0),
+  BOOL_OPTION(number, false),
+  BOOL_OPTION(relativenumber, false),
+  BOOL_OPTION(ignorecase, false),
+  BOOL_OPTION(cursorline, false),
   {NULL, OPTION_TYPE_INT, {-1}},
 };
 
@@ -56,12 +57,12 @@ bool option_is_bool(const char *name) {
 
 bool option_get_bool(const char *name) {
   assert(option_is_bool(name));
-  return option_find(name)->value.i;
+  return option_find(name)->value.b;
 }
 
 void option_set_bool(const char *name, bool value) {
   assert(option_is_bool(name));
-  option_find(name)->value.i = value;
+  option_find(name)->value.b = value;
 }
 
 bool option_is_int(const char *name) {

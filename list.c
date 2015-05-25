@@ -100,6 +100,20 @@ void *list_next(list_t *list, void *data) {
   return list_get_node(list, data)->next->data;
 }
 
+void list_insert_after(list_t *list, void *el, void *data) {
+  list_node_t* node = list_get_node(list, el);
+  list_node_t* newnode = list_node_create(data, node, node->next);
+  node->next->prev = newnode;
+  node->next = newnode;
+}
+
+void list_insert_before(list_t *list, void *el, void *data) {
+  list_node_t *node = list_get_node(list, el);
+  list_node_t *newnode = list_node_create(data, node->prev, node);
+  node->prev->next = newnode;
+  node->prev = newnode;
+}
+
 size_t list_size(list_t *list) {
   size_t size = 0;
   void *p;

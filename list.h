@@ -44,6 +44,8 @@ bool list_empty(list_t *list);
 void list_clear(list_t *list);
 void *list_prev(list_t *list, void *data);
 void *list_next(list_t *list, void *data);
+void list_insert_after(list_t *list, void *el, void *data);
+void list_insert_before(list_t *list, void *el, void *data);
 size_t list_size(list_t *list);
 
 #endif

@@ -360,7 +360,11 @@ window_t *editor_right_window(editor_t *editor, window_t *window) {
 
 static void editor_command_vsplit(editor_t *editor, char *arg) {
   window_t *window = window_create(editor->window->buffer, 0, 0, 0, 0);
-  list_append(editor->windows, window);
+  if (option_get_bool("splitright")) {
+    list_insert_after(editor->windows, editor->window, window);
+  } else {
+    list_insert_before(editor->windows, editor->window, window);
+  }
   editor->window = window;
 
   editor_equalize_windows(editor);

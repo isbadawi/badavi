@@ -26,16 +26,24 @@ list_t *list_create(void) {
   return list;
 }
 
+static void list_insert_after_node(list_node_t *node, void *data) {
+  list_node_t *newnode = list_node_create(data, node, node->next);
+  node->next->prev = newnode;
+  node->next = newnode;
+}
+
+static void list_insert_before_node(list_node_t *node, void *data) {
+  list_node_t *newnode = list_node_create(data, node->prev, node);
+  node->prev->next = newnode;
+  node->prev = newnode;
+}
+
 void list_prepend(list_t *list, void *data) {
-  list_node_t *node = list_node_create(data, list->head, list->head->next);
-  node->next->prev = node;
-  list->head->next = node;
+  list_insert_after_node(list->head, data);
 }
 
 void list_append(list_t *list, void *data) {
-  list_node_t *node = list_node_create(data, list->tail->prev, list->tail);
-  node->prev->next = node;
-  list->tail->prev = node;
+  list_insert_before_node(list->tail, data);
 }
 
 void *list_pop(list_t *list) {
@@ -101,17 +109,11 @@ void *list_next(list_t *list, void *data) {
 }
 
 void list_insert_after(list_t *list, void *el, void *data) {
-  list_node_t* node = list_get_node(list, el);
-  list_node_t* newnode = list_node_create(data, node, node->next);
-  node->next->prev = newnode;
-  node->next = newnode;
+  list_insert_after_node(list_get_node(list, el), data);
 }
 
 void list_insert_before(list_t *list, void *el, void *data) {
-  list_node_t *node = list_get_node(list, el);
-  list_node_t *newnode = list_node_create(data, node->prev, node);
-  node->prev->next = newnode;
-  node->prev = newnode;
+  list_insert_before_node(list_get_node(list, el), data);
 }
 
 size_t list_size(list_t *list) {

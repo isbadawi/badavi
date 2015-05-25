@@ -26,6 +26,13 @@ list_t *list_create(void) {
   return list;
 }
 
+void list_free(list_t *list) {
+  list_clear(list);
+  free(list->head);
+  free(list->tail);
+  free(list);
+}
+
 static void list_insert_after_node(list_node_t *node, void *data) {
   list_node_t *newnode = list_node_create(data, node, node->next);
   node->next->prev = newnode;
@@ -82,8 +89,15 @@ bool list_empty(list_t *list) {
 
 void list_clear(list_t *list) {
   void *data;
+  list_node_t *prev = NULL;
   LIST_FOREACH(list, data) {
-    free(data);
+    if (prev) {
+      free(prev);
+    }
+    prev = list->iter;
+  }
+  if (prev) {
+    free(prev);
   }
   list->head->next = list->tail;
   list->tail->prev = list->head;

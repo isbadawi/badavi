@@ -12,6 +12,8 @@ typedef struct list_node_t {
 
 // A doubly linked list.
 // Head and tail are sentinel nodes with data == NULL.
+// n.b. The list doesn't own its data -- it just stores pointers.
+// It's up to the callers to free memory if required.
 typedef struct {
   list_node_t *head;
   list_node_t *tail;
@@ -35,6 +37,7 @@ typedef struct {
       i = list->iter->data)
 
 list_t *list_create(void);
+void list_free(list_t *list);
 void list_prepend(list_t* list, void *data);
 void list_append(list_t* list, void *data);
 void *list_pop(list_t *list);

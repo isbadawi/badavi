@@ -229,6 +229,7 @@ static void editor_command_force_close_window(editor_t *editor, char *arg) {
   if (!window) {
     window = list_next(editor->windows, editor->window);
   }
+  free(editor->window);
   list_remove(editor->windows, editor->window);
   editor->window = window;
   editor_equalize_windows(editor);
@@ -565,8 +566,9 @@ void editor_start_action_group(editor_t *editor) {
     edit_action_t *action;
     LIST_FOREACH(group, action) {
       buf_free(action->buf);
+      free(action);
     }
-    list_clear(group);
+    list_free(group);
   }
   list_clear(buffer->redo_stack);
 

@@ -66,6 +66,14 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   case '/':
     editor_push_mode(editor, search_mode());
     break;
+  case '*': {
+    char word[256];
+    motion_word_under_cursor(editor->window, word);
+    buf_t *reg = editor_get_register(editor, '/');
+    buf_printf(reg, "[[:<:]]%s[[:>:]]", word);
+    editor_search(editor);
+    break;
+  }
   case 'p': {
     buf_t *reg = editor_get_register(editor, editor->register_);
     size_t where = gb_getchar(gb, *cursor) == '\n' ? *cursor : *cursor + 1;

@@ -28,4 +28,8 @@ struct motion_t {
 
 size_t motion_apply(editor_t *editor);
 
+// TODO(isbadawi): This is an awkward place to put this.
+// But a lot of knowledge about words lives in motion.c right now.
+void motion_word_under_cursor(window_t *window, char *buf);
+
 #endif

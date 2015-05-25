@@ -229,8 +229,8 @@ static void editor_command_force_close_window(editor_t *editor, char *arg) {
   if (!window) {
     window = list_next(editor->windows, editor->window);
   }
-  free(editor->window);
   list_remove(editor->windows, editor->window);
+  free(editor->window);
   editor->window = window;
   editor_equalize_windows(editor);
 }

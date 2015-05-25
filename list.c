@@ -46,35 +46,34 @@ void list_append(list_t *list, void *data) {
   list_insert_before_node(list->tail, data);
 }
 
-void *list_pop(list_t *list) {
-  if (list_empty(list)) {
-    return NULL;
-  }
-  list_node_t *node = list->head->next;
+static void *list_remove_node(list_node_t *node) {
   void *data = node->data;
-  list->head->next = node->next;
-  node->next->prev = list->head;
+  node->prev->next = node->next;
+  node->next->prev = node->prev;
   free(node);
   return data;
 }
 
-void list_remove(list_t *list, void *data) {
+static list_node_t *list_get_node(list_t *list, void *data) {
   void *p;
   LIST_FOREACH(list, p) {
     if (p == data) {
-      list->iter->prev->next = list->iter->next;
-      list->iter->next->prev = list->iter->prev;
-      free(list->iter);
-      break;
+      return list->iter;
     }
   }
+  return NULL;
+}
+
+void *list_pop(list_t *list) {
+  return list_empty(list) ? NULL : list_remove_node(list->head->next);
+}
+
+void list_remove(list_t *list, void *data) {
+  list_remove_node(list_get_node(list, data));
 }
 
 void *list_peek(list_t *list) {
-  if (list_empty(list)) {
-    return NULL;
-  }
-  return list->head->next->data;
+  return list_empty(list) ? NULL : list->head->next->data;
 }
 
 bool list_empty(list_t *list) {
@@ -88,16 +87,6 @@ void list_clear(list_t *list) {
   }
   list->head->next = list->tail;
   list->tail->prev = list->head;
-}
-
-static list_node_t *list_get_node(list_t *list, void *data) {
-  void *p;
-  LIST_FOREACH(list, p) {
-    if (p == data) {
-      return list->iter;
-    }
-  }
-  return NULL;
 }
 
 void *list_prev(list_t *list, void *data) {

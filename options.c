@@ -29,6 +29,7 @@ static option_t option_table[] = {
   BOOL_OPTION(number, false),
   BOOL_OPTION(relativenumber, false),
   BOOL_OPTION(ignorecase, false),
+  BOOL_OPTION(smartcase, false),
   BOOL_OPTION(cursorline, false),
   BOOL_OPTION(splitright, false),
   {NULL, OPTION_TYPE_INT, {-1}},

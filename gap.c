@@ -1,5 +1,6 @@
 #include "gap.h"
 
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -250,6 +251,22 @@ size_t gb_linecol_to_pos(gapbuf_t *gb, size_t line, size_t column) {
   return offset + column;
 }
 
+static bool gb_should_ignore_case(char *pattern) {
+  if (!option_get_bool("ignorecase")) {
+    return false;
+  }
+  if (!option_get_bool("smartcase")) {
+    return true;
+  }
+
+  for (char *p = pattern; *p; ++p) {
+    if (isupper((int) *p)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void gb_search_forwards(gapbuf_t *gb, char *pattern, size_t start,
                         gb_search_result_t *result) {
   // Move the gap so the searched region is contiguous.
@@ -257,7 +274,7 @@ void gb_search_forwards(gapbuf_t *gb, char *pattern, size_t start,
 
   regex_t regex;
   int flags = REG_EXTENDED | REG_NEWLINE;
-  if (option_get_bool("ignorecase")) {
+  if (gb_should_ignore_case(pattern)) {
     flags |= REG_ICASE;
   }
   int err = regcomp(&regex, pattern, flags);

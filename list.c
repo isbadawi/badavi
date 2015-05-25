@@ -82,24 +82,22 @@ void list_clear(list_t *list) {
   list->tail->prev = list->head;
 }
 
-void *list_prev(list_t *list, void *data) {
+static list_node_t *list_get_node(list_t *list, void *data) {
   void *p;
   LIST_FOREACH(list, p) {
     if (p == data) {
-      return list->iter->prev->data;
+      return list->iter;
     }
   }
   return NULL;
 }
 
+void *list_prev(list_t *list, void *data) {
+  return list_get_node(list, data)->prev->data;
+}
+
 void *list_next(list_t *list, void *data) {
-  void *p;
-  LIST_FOREACH_REVERSE(list, p) {
-    if (p == data) {
-      return list->iter->next->data;
-    }
-  }
-  return NULL;
+  return list_get_node(list, data)->next->data;
 }
 
 size_t list_size(list_t *list) {

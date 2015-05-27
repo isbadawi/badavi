@@ -45,18 +45,18 @@ static void editor_source_badavimrc(editor_t *editor) {
 }
 
 void editor_init(editor_t *editor) {
-  editor->status = buf_create((size_t) (tb_width() / 2));
-  editor->status_error = false;
-
   editor->buffers = list_create();
   buffer_t *buffer = buffer_create(NULL);
   list_append(editor->buffers, buffer);
 
   editor->windows = list_create();
-  size_t width = (size_t) tb_width();
-  size_t height = (size_t) tb_height();
-  editor->window = window_create(buffer, 0, 0, width, height - 1);
+  editor->width = (size_t) tb_width();
+  editor->height = (size_t) tb_height();
+  editor->window = window_create(buffer, 0, 0, editor->width, editor->height - 1);
   list_append(editor->windows, editor->window);
+
+  editor->status = buf_create(editor->width);
+  editor->status_error = false;
 
   editor->mode = normal_mode();
 
@@ -176,10 +176,10 @@ void editor_save_buffer(editor_t *editor, char *path) {
   }
 }
 
-static void editor_equalize_windows(editor_t *editor) {
+void editor_equalize_windows(editor_t *editor) {
   size_t nwindows = list_size(editor->windows);
-  size_t width = ((size_t) tb_width() - nwindows) / nwindows;
-  size_t height = (size_t) tb_height() - ((nwindows == 1) ? 1 : 2);
+  size_t width = (editor->width - nwindows) / nwindows;
+  size_t height = editor->height - ((nwindows == 1) ? 1 : 2);
 
   size_t i = 0;
   window_t *last = NULL;
@@ -193,7 +193,7 @@ static void editor_equalize_windows(editor_t *editor) {
   }
 
   assert(last);
-  last->w += ((size_t) tb_width() - nwindows) % nwindows + 1;
+  last->w += (editor->width - nwindows) % nwindows + 1;
 }
 
 typedef struct {
@@ -413,8 +413,8 @@ void editor_draw(editor_t *editor) {
   window_t *w;
   LIST_FOREACH(editor->windows, w) {
     if (!first) {
-      for (int y = 0; y < tb_height() - 1; ++y) {
-        tb_change_cell((int) w->x - 1, y, '|', TB_BLACK, TB_WHITE);
+      for (size_t y = 0; y < editor->height - 1; ++y) {
+        tb_change_cell((int) w->x - 1, (int) y, '|', TB_BLACK, TB_WHITE);
       }
     }
     first = false;
@@ -433,14 +433,14 @@ void editor_draw(editor_t *editor) {
       size_t platelen = strlen(plate);
       for (size_t x = 0; x < w->w; ++x) {
         char c = x < platelen ? plate[x] : ' ';
-        tb_change_cell((int) (w->x + x), tb_height() - 2, (uint32_t) c,
+        tb_change_cell((int) (w->x + x), (int) editor->height - 2, (uint32_t) c,
                        TB_BLACK, TB_WHITE);
       }
     }
   }
 
   for (size_t x = 0; x < editor->status->len; ++x) {
-    tb_change_cell((int) x, tb_height() - 1, (uint32_t) editor->status->buf[x],
+    tb_change_cell((int) x, (int) editor->height - 1, (uint32_t) editor->status->buf[x],
         editor->status_error ? TB_DEFAULT : TB_WHITE,
         editor->status_error ? TB_RED : TB_DEFAULT);
   }
@@ -448,10 +448,8 @@ void editor_draw(editor_t *editor) {
   tb_present();
 }
 
-// The editor handles key presses by delegating to its mode.
 void editor_handle_key_press(editor_t *editor, struct tb_event *ev) {
   editor->mode->key_pressed(editor, ev);
-  editor_draw(editor);
 }
 
 void editor_send_keys(editor_t *editor, char *keys) {

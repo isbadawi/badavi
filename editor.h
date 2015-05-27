@@ -49,6 +49,10 @@ typedef struct {
   // An array of registers.
   editor_register_t *registers;
 
+  // The width and height of the screen.
+  size_t width;
+  size_t height;
+
   // Temporary input state.
   // TODO(isbadawi): This feels like a kludge but I don't know...
   unsigned int count;
@@ -82,6 +86,8 @@ void editor_send_keys(editor_t *editor, char *keys);
 
 void editor_undo(editor_t *editor);
 void editor_redo(editor_t *editor);
+
+void editor_equalize_windows(editor_t *editor);
 
 // Start a new action group, clearing the redo stack as a side effect.
 // Subsequent calls to editor_add_action will add actions to this group,

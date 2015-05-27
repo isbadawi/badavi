@@ -22,7 +22,6 @@
 #define R(n) {n, NULL}
 static editor_register_t register_table[] = {
   // Last search pattern register
-  // TODO(isbadawi): Investigate segfaults when this register is listed later.
   R('/'),
   // Unnamed default register
   R('"'),

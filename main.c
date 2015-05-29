@@ -41,9 +41,24 @@ int main(int argc, char *argv[]) {
   editor_t editor;
   editor_init(&editor);
 
-  if (argc > 1) {
-    for (int i = 1; i < argc; ++i) {
-      editor_open(&editor, argv[i]);
+  char *file = NULL;
+  char *line = NULL;
+
+  for (int i = 1; i < argc; ++i) {
+    char *arg = argv[i];
+    if (*arg == '+') {
+      line = arg + 1;
+    } else {
+      file = arg;
+    }
+  }
+
+  if (file) {
+    editor_open(&editor, file);
+    if (line && (!*line || atoi(line))) {
+      char buf[32];
+      snprintf(buf, 32, "%sG", line);
+      editor_send_keys(&editor, buf);
     }
   }
 

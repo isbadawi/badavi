@@ -38,7 +38,7 @@ static void editor_source_badavimrc(editor_t *editor) {
   const char *home = getenv("HOME");
   home = home ? home : getpwuid(getuid())->pw_dir;
   char cmd[255];
-  snprintf(cmd, 255, "so %s/.badavimrc", home);
+  snprintf(cmd, 255, "source %s/.badavimrc", home);
   editor_execute_command(editor, cmd);
   editor_status_msg(editor, "");
 }
@@ -197,6 +197,7 @@ void editor_equalize_windows(editor_t *editor) {
 
 typedef struct {
   const char *name;
+  const char *shortname;
   void (*action)(editor_t*, char*);
 } editor_command_t;
 
@@ -375,28 +376,29 @@ static void editor_command_vsplit(editor_t *editor, char *arg) {
 }
 
 static editor_command_t editor_commands[] = {
-  {"q", editor_command_close_window},
-  {"q!", editor_command_force_close_window},
-  {"qa", editor_command_quit},
-  {"qa!", editor_command_force_quit},
-  {"w", editor_save_buffer},
-  {"wq", editor_command_write_quit},
-  {"e", editor_command_edit},
-  {"so", editor_command_source},
-  {"set", editor_command_set},
-  {"vsp", editor_command_vsplit},
-  {NULL, NULL}
+  {"quit", "q", editor_command_close_window},
+  {"quit!", "q!", editor_command_force_close_window},
+  {"qall", "qa", editor_command_quit},
+  {"qall!", "qa!", editor_command_force_quit},
+  {"write", "w", editor_save_buffer},
+  {"wq", "wq", editor_command_write_quit},
+  {"edit", "e", editor_command_edit},
+  {"source", "so", editor_command_source},
+  {"set", "set", editor_command_set},
+  {"vsplit", "vsp", editor_command_vsplit},
+  {NULL, NULL, NULL}
 };
 
 void editor_execute_command(editor_t *editor, char *command) {
   if (!*command) {
     return;
   }
-  char *cmd = strtok(command, " ");
+  char *name = strtok(command, " ");
   char *arg = strtok(NULL, " ");
   for (int i = 0; editor_commands[i].name; ++i) {
-    if (!strcmp(cmd, editor_commands[i].name)) {
-      editor_commands[i].action(editor, arg);
+    editor_command_t *cmd = &editor_commands[i];
+    if (!strcmp(name, cmd->name) || !strcmp(name, cmd->shortname)) {
+      cmd->action(editor, arg);
       return;
     }
   }

@@ -135,7 +135,7 @@ void editor_open(editor_t *editor, char *path) {
       editor_status_msg(editor, "\"%s\" [New File]", path);
     } else {
       buffer = buffer_open(path);
-      editor_status_msg(editor, "\"%s\" %zu, %zu",
+      editor_status_msg(editor, "\"%s\" %zuL, %zuC",
           path, gb_nlines(buffer->text), gb_size(buffer->text));
     }
     list_append(editor->buffers, buffer);

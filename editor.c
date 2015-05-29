@@ -404,14 +404,16 @@ void editor_execute_command(editor_t *editor, char *command) {
   }
 
   int line = atoi(name);
-  if (line) {
-    char buf[32];
+  char buf[32];
+  if (line > 0) {
     snprintf(buf, 32, "%dG", line);
     editor_send_keys(editor, buf);
-    return;
+  } else if (line < 0) {
+    snprintf(buf, 32, "%dk", line);
+    editor_send_keys(editor, buf);
+  } else {
+    editor_status_err(editor, "Not an editor command: %s", command);
   }
-
-  editor_status_err(editor, "Not an editor command: %s", command);
 }
 
 void editor_draw(editor_t *editor) {

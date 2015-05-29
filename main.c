@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
 
   if (file) {
     editor_open(&editor, file);
-    if (line && (!*line || atoi(line))) {
+    if (line && (!*line || atoi(line) > 0)) {
       char buf[32];
       snprintf(buf, 32, "%sG", line);
       editor_send_keys(&editor, buf);

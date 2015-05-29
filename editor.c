@@ -402,6 +402,15 @@ void editor_execute_command(editor_t *editor, char *command) {
       return;
     }
   }
+
+  int line = atoi(name);
+  if (line) {
+    char buf[32];
+    snprintf(buf, 32, "%dG", line);
+    editor_send_keys(editor, buf);
+    return;
+  }
+
   editor_status_err(editor, "Not an editor command: %s", command);
 }
 

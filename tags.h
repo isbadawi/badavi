@@ -2,6 +2,7 @@
 #define _tags_h_included
 
 #include <stddef.h>
+#include <time.h>
 
 typedef struct {
   char *name;
@@ -12,10 +13,12 @@ typedef struct {
 typedef struct {
   tag_t *tags;
   size_t len;
+
+  char *file;
+  time_t loaded_at;
 } tags_t;
 
-tags_t *tags_create(void);
-void tags_load(tags_t *tags, char *file);
+tags_t *tags_create(char *path);
 tag_t *tags_find(tags_t *tags, char *name);
 
 #endif

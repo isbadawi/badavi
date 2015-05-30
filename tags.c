@@ -5,13 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-tags_t *tags_create(void) {
-  tags_t *tags = malloc(sizeof(*tags));
-  tags->tags = NULL;
-  tags->len = 0;
-  return tags;
-}
-
+#include <sys/stat.h>
 
 static char *escape_regex(char *regex) {
   // Worst case, every char is escaped...
@@ -31,11 +25,28 @@ static char *escape_regex(char *regex) {
   return result;
 }
 
-void tags_load(tags_t *tags, char *file) {
-  FILE *fp = fopen(file, "r");
+static void tags_clear(tags_t *tags) {
+  for (size_t i = 0; i < tags->len; ++i) {
+    tag_t *tag = &tags->tags[i];
+    free(tag->name);
+    free(tag->path);
+    free(tag->cmd);
+  }
+  if (tags->len) {
+    free(tags->tags);
+  }
+  tags->tags = NULL;
+  tags->len = 0;
+  tags->loaded_at = 0;
+}
+
+static void tags_load(tags_t *tags) {
+  FILE *fp = fopen(tags->file, "r");
   if (!fp) {
     return;
   }
+
+  tags->loaded_at = time(0);
 
   size_t nlines = 0;
   size_t n = 0;
@@ -48,8 +59,11 @@ void tags_load(tags_t *tags, char *file) {
   }
   fseek(fp, 0, SEEK_SET);
 
-  tags->len = nlines;
+  if (tags->len) {
+    tags_clear(tags);
+  }
   tags->tags = malloc(sizeof(*tags->tags) * nlines);
+  tags->len = nlines;
 
   size_t i = 0;
   while ((len = getline(&line, &n, fp)) != -1) {
@@ -71,10 +85,30 @@ void tags_load(tags_t *tags, char *file) {
   fclose(fp);
 }
 
+tags_t *tags_create(char *file) {
+  tags_t *tags = malloc(sizeof(*tags));
+  tags_clear(tags);
+  tags->file = file;
+
+  tags_load(tags);
+  return tags;
+}
+
 static int tag_compare(const void *lhs, const void *rhs) {
   return strcmp((const char*) lhs, ((const tag_t*) rhs)->name);
 }
 
 tag_t *tags_find(tags_t *tags, char *name) {
+  struct stat info;
+  int err = stat(tags->file, &info);
+  if (err) {
+    tags_clear(tags);
+    return NULL;
+  }
+
+  if (difftime(info.st_mtime, tags->loaded_at) > 0) {
+    tags_load(tags);
+  }
+
   return bsearch(name, tags->tags, tags->len, sizeof(tag_t), tag_compare);
 }

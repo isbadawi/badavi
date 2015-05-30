@@ -64,8 +64,7 @@ void editor_init(editor_t *editor) {
     editor->registers[i].buf = buf_create(1);
   }
 
-  editor->tags = tags_create();
-  tags_load(editor->tags, "tags");
+  editor->tags = tags_create("tags");
 
   editor->count = 0;
   editor->motion = NULL;

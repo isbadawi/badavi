@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <signal.h>
 
@@ -43,17 +44,22 @@ int main(int argc, char *argv[]) {
 
   char *file = NULL;
   char *line = NULL;
+  char *tag = NULL;
 
   for (int i = 1; i < argc; ++i) {
     char *arg = argv[i];
-    if (*arg == '+') {
+    if (!strcmp(arg, "-t")) {
+      tag = argv[++i];
+    } else if (*arg == '+') {
       line = arg + 1;
     } else {
       file = arg;
     }
   }
 
-  if (file) {
+  if (tag) {
+    editor_jump_to_tag(&editor, tag);
+  } else if (file) {
     editor_open(&editor, file);
     if (line && (!*line || atoi(line) > 0)) {
       char buf[32];

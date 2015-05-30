@@ -7,6 +7,7 @@
 #include "buf.h"
 #include "window.h"
 #include "list.h"
+#include "tags.h"
 
 struct editing_mode_t;
 typedef struct editing_mode_t editing_mode_t;
@@ -48,6 +49,9 @@ typedef struct {
 
   // An array of registers.
   editor_register_t *registers;
+
+  // List of loaded ctags.
+  tags_t *tags;
 
   // The width and height of the screen.
   size_t width;
@@ -98,5 +102,7 @@ void editor_add_action(editor_t *editor, edit_action_t action);
 
 window_t *editor_left_window(editor_t *editor, window_t *window);
 window_t *editor_right_window(editor_t *editor, window_t *window);
+
+void editor_jump_to_tag(editor_t *editor, char *tag);
 
 #endif

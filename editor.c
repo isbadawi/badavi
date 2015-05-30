@@ -64,6 +64,9 @@ void editor_init(editor_t *editor) {
     editor->registers[i].buf = buf_create(1);
   }
 
+  editor->tags = tags_create();
+  tags_load(editor->tags, "tags");
+
   editor->count = 0;
   editor->motion = NULL;
   editor->register_ = '"';
@@ -375,6 +378,26 @@ static void editor_command_vsplit(editor_t *editor, char *arg) {
   }
 }
 
+void editor_jump_to_tag(editor_t *editor, char *name) {
+  tag_t *tag = tags_find(editor->tags, name);
+  if (!tag) {
+    editor_status_err(editor, "tag not found: %s", name);
+    return;
+  }
+
+  editor_command_edit(editor, tag->path);
+  editor_send_keys(editor, tag->cmd);
+}
+
+static void editor_command_tag(editor_t *editor, char *arg) {
+  if (!arg) {
+    editor_status_err(editor, "Argument required");
+    return;
+  }
+
+  editor_jump_to_tag(editor, arg);
+}
+
 static editor_command_t editor_commands[] = {
   {"quit", "q", editor_command_close_window},
   {"quit!", "q!", editor_command_force_close_window},
@@ -386,6 +409,7 @@ static editor_command_t editor_commands[] = {
   {"source", "so", editor_command_source},
   {"set", "set", editor_command_set},
   {"vsplit", "vsp", editor_command_vsplit},
+  {"tag", "tag", editor_command_tag},
   {NULL, NULL, NULL}
 };
 

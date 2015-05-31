@@ -27,12 +27,12 @@ region is saved into the unnamed register, used by `p` to paste text. Named
 registers from `a` to `z` are also implemented, and can be specified by
 prefixing the operator (or `p`) with `"a` through `"z`.
 
-* Regex search with `/` (forwards) or `?` (backwards). Standard POSIX regexes
-are used, so the syntax is not exactly the same as vim's. For instance, word
+* Search forwards with `/`, backwards with `?`. Standard POSIX regexes are
+used, so the syntax is not exactly the same as vim's. For instance, word
 boundaries are specified with `[[:<:]]` and `[[:>:]]` instead of `\<` and
 `\>`. `n` and `N` can be used to cycle through matches. `*` and `#` can be
-used to search forwards or backwards for the next occurrence of the word under
-the cursor.
+used to search forwards or backwards for the next occurrence of the word
+under the cursor.
 
 * Undo (`u`) and redo (`<c-r>`) (only single-level for now, unlike vim).
 
@@ -41,7 +41,7 @@ the current directory (`tags` option not supported yet). The `:tag` command
 jumps to the specified tag, and `<c-]>` jumps to the tag of the word under
 the cursor. `<c-t>` and `:tag` can be used to walk up and down the tag stack.
 The `-t` command line option can also be passed in to start editing at the
-given tag, `badavi -t main`.
+given tag, as in e.g. `badavi -t main`.
 
 ### Building
 

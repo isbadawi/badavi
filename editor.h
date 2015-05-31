@@ -105,4 +105,7 @@ window_t *editor_right_window(editor_t *editor, window_t *window);
 
 void editor_jump_to_tag(editor_t *editor, char *tag);
 
+void editor_tag_stack_prev(editor_t *editor);
+void editor_tag_stack_next(editor_t *editor);
+
 #endif

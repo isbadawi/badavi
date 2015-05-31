@@ -24,6 +24,9 @@ window_t *window_create(buffer_t *buffer, size_t x, size_t y, size_t w, size_t h
   window->w = w;
   window->h = h;
 
+  window->tag_stack = list_create();
+  window->tag = NULL;
+
   return window;
 }
 

@@ -143,6 +143,9 @@ void editor_open(editor_t *editor, char *path) {
     list_append(editor->buffers, buffer);
   }
   editor->window->buffer = buffer;
+  editor->window->cursor = 0;
+  editor->window->top = 0;
+  editor->window->left = 0;
 }
 
 void editor_push_mode(editor_t *editor, editing_mode_t *mode) {
@@ -384,13 +387,73 @@ void editor_jump_to_tag(editor_t *editor, char *name) {
     return;
   }
 
+  tag_jump_t *jump = malloc(sizeof(*jump));
+  jump->buffer = editor->window->buffer;
+  jump->cursor = editor->window->cursor;
+  jump->tag = tag;
+
+  if (editor->window->tag) {
+    list_insert_after(editor->window->tag_stack, editor->window->tag, jump);
+
+    // TODO(isbadawi): Hack & memory leak because our list is inconvenient...
+    tag_jump_t *j;
+    list_t *list = editor->window->tag_stack;
+    LIST_FOREACH(list, j) {
+      if (j == jump) {
+        list->iter->next = list->tail;
+        list->tail->prev = list->iter;
+        break;
+      }
+    }
+
+  } else {
+    list_append(editor->window->tag_stack, jump);
+  }
+  editor->window->tag = jump;
+
   editor_command_edit(editor, tag->path);
   editor_send_keys(editor, tag->cmd);
 }
 
+void editor_tag_stack_prev(editor_t *editor) {
+  if (list_empty(editor->window->tag_stack)) {
+    editor_status_err(editor, "tag stack empty");
+  } else if (!editor->window->tag) {
+    editor_status_err(editor, "at bottom of tag stack");
+  } else {
+    editor_status_msg(editor, "");
+    editor->window->buffer = editor->window->tag->buffer;
+    editor->window->cursor = editor->window->tag->cursor;
+    editor->window->tag =
+      list_prev(editor->window->tag_stack, editor->window->tag);
+  }
+}
+
+void editor_tag_stack_next(editor_t *editor) {
+  if (list_empty(editor->window->tag_stack)) {
+    editor_status_err(editor, "tag stack empty");
+    return;
+  }
+
+  tag_jump_t *next;
+  if (!editor->window->tag) {
+    next = editor->window->tag_stack->head->next->data;
+  } else {
+    next = list_next(editor->window->tag_stack, editor->window->tag);
+  }
+  if (!next) {
+    editor_status_err(editor, "at top of tag stack");
+    return;
+  }
+
+  editor_command_edit(editor, next->tag->path);
+  editor_send_keys(editor, next->tag->cmd);
+  editor->window->tag = next;
+}
+
 static void editor_command_tag(editor_t *editor, char *arg) {
   if (!arg) {
-    editor_status_err(editor, "Argument required");
+    editor_tag_stack_next(editor);
     return;
   }
 

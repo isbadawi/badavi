@@ -4,6 +4,14 @@
 #include <stddef.h>
 
 #include "buffer.h"
+#include "list.h"
+#include "tags.h"
+
+typedef struct {
+  buffer_t *buffer;
+  size_t cursor;
+  tag_t *tag;
+} tag_jump_t;
 
 typedef struct window_t {
   // The buffer being edited.
@@ -18,6 +26,9 @@ typedef struct window_t {
   size_t left;
   // The offset of the cursor.
   size_t cursor;
+
+  list_t *tag_stack;
+  tag_jump_t *tag;
 } window_t;
 
 window_t *window_create(buffer_t *buffer, size_t x, size_t y, size_t w, size_t h);

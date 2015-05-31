@@ -27,6 +27,15 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   case TB_KEY_CTRL_R:
     editor_redo(editor);
     return;
+  case TB_KEY_CTRL_RSQ_BRACKET: {
+    char word[256];
+    motion_word_under_cursor(editor->window, word);
+    editor_jump_to_tag(editor, word);
+    return;
+  }
+  case TB_KEY_CTRL_T:
+    editor_tag_stack_prev(editor);
+    return;
   case TB_KEY_CTRL_H: {
     window_t *left = editor_left_window(editor, editor->window);
     if (left) {

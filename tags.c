@@ -14,7 +14,7 @@ static char *escape_regex(char *regex) {
   char *dest = result;
   for (char *src = regex; *src; ++src) {
     switch (*src) {
-    case '*': case '+': case '(': case ')':
+    case '*': case '+': case '(': case ')': case '[': case ']':
       *dest++ = '\\';
       // fallthrough
     default:

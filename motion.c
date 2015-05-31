@@ -417,9 +417,10 @@ size_t motion_apply(editor_t *editor) {
   return ctx.pos;
 }
 
-void motion_word_under_cursor(window_t *window, char *buf) {
+size_t motion_word_under_cursor(window_t *window, char *buf) {
   motion_context_t ctx = {window->cursor, window, NULL};
   size_t start = is_word_start(ctx) ? ctx.pos : prev_word_start(ctx);
   size_t end = is_word_end(ctx) ? ctx.pos : next_word_end(ctx);
   gb_getstring(window->buffer->text, start, end - start + 1, buf);
+  return start;
 }

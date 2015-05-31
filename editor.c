@@ -85,37 +85,72 @@ buf_t *editor_get_register(editor_t *editor, char name) {
 #define SEARCH_PATTERN_MAXLEN 256
 
 // TODO(isbadawi): Searching should be a motion.
-void editor_search(editor_t *editor) {
+void editor_search(editor_t *editor, editor_search_direction_t direction) {
   buf_t *reg = editor_get_register(editor, '/');
   if (reg->len == 0) {
     editor_status_err(editor, "No previous regular expression");
     return;
   }
 
-  gapbuf_t *gb = editor->window->buffer->text;
-  size_t *cursor = &editor->window->cursor;
-
   char pattern[SEARCH_PATTERN_MAXLEN];
   memcpy(pattern, reg->buf, reg->len);
   pattern[reg->len] = '\0';
 
+  gapbuf_t *gb = editor->window->buffer->text;
   gb_search_result_t result;
-  gb_search_forwards(gb, pattern, *cursor + 1, &result);
-  switch (result.status) {
-  case GB_SEARCH_BAD_REGEX:
-    editor_status_err(editor, "Bad regex \"%s\": %s", pattern, result.v.error);
+  gb_search(gb, pattern, &result);
+
+  if (!result.matches) {
+    editor_status_err(editor, "Bad regex \"%s\": %s", pattern, result.error);
     return;
-  case GB_SEARCH_NO_MATCH:
-    editor_status_msg(editor, "search hit BOTTOM, continuing at TOP");
-    gb_search_forwards(gb, pattern, 0, &result);
-    if (result.status == GB_SEARCH_NO_MATCH) {
-      editor_status_err(editor, "Pattern not found: \"%s\"", pattern);
-      return;
-    }
-    // fallthrough
-  case GB_SEARCH_MATCH:
-    *cursor = result.v.match.start;
   }
+
+  if (list_empty(result.matches)) {
+    editor_status_err(editor, "Pattern not found: \"%s\"", pattern);
+    return;
+  }
+
+  gb_match_t *match = NULL;
+  gb_match_t *m;
+  if (direction == EDITOR_SEARCH_FORWARDS) {
+    LIST_FOREACH(result.matches, m) {
+      if (m->start > editor->window->cursor) {
+        match = m;
+        break;
+      }
+    }
+
+    if (!match) {
+      editor_status_msg(editor, "search hit BOTTOM, continuing at TOP");
+      match = result.matches->head->next->data;
+    }
+  } else {
+    gb_match_t *last = NULL;
+    LIST_FOREACH(result.matches, m) {
+      if (last && last->start < editor->window->cursor &&
+          m->start >= editor->window->cursor) {
+        match = last;
+        break;
+      }
+      last = m;
+    }
+    if (last->start < editor->window->cursor) {
+      match = last;
+    }
+    if (!match) {
+      editor_status_msg(editor, "search hit TOP, continuing at BOTTOM");
+      match = result.matches->tail->prev->data;
+    }
+  }
+
+  editor->window->cursor = match->start;
+
+  // TODO(isbadawi): Remember matches -- can do hlsearch, or cache searches
+  // if the buffer hasn't changed.
+  LIST_FOREACH(result.matches, m) {
+    free(m);
+  }
+  list_clear(result.matches);
 }
 
 static buffer_t *editor_get_buffer_by_name(editor_t* editor, char *name) {

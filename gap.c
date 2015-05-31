@@ -267,10 +267,9 @@ static bool gb_should_ignore_case(char *pattern) {
   return true;
 }
 
-void gb_search_forwards(gapbuf_t *gb, char *pattern, size_t start,
-                        gb_search_result_t *result) {
+void gb_search(gapbuf_t *gb, char *pattern, gb_search_result_t *result) {
   // Move the gap so the searched region is contiguous.
-  gb_mvgap(gb, start);
+  gb_mvgap(gb, 0);
 
   regex_t regex;
   int flags = REG_EXTENDED | REG_NEWLINE;
@@ -279,27 +278,32 @@ void gb_search_forwards(gapbuf_t *gb, char *pattern, size_t start,
   }
   int err = regcomp(&regex, pattern, flags);
   if (err) {
-    result->status = GB_SEARCH_BAD_REGEX;
-    regerror(err, &regex, result->v.error, sizeof result->v.error);
+    result->matches = NULL;
+    regerror(err, &regex, result->error, sizeof(result->error));
     return;
   }
 
-  // regexec assumes the string is at the beginning of a line unless told
-  // otherwise. This affects regexes that use ^.
-  flags = 0;
-  if (start > 0 && gb_getchar(gb, start - 1) != '\n') {
-    flags |= REG_NOTBOL;
-  }
+  result->matches = list_create();
 
-  regmatch_t match;
-  int nomatch = regexec(&regex, gb->gapend, 1, &match, flags);
+  int nomatch = 0;
+  size_t start = 0;
+  while (!nomatch) {
+    regmatch_t match;
+    // regexec assumes the string is at the beginning of a line unless told
+    // otherwise. This affects regexes that use ^.
+    flags = 0;
+    if (start > 0 && gb_getchar(gb, start - 1) != '\n') {
+      flags |= REG_NOTBOL;
+    }
+
+    nomatch = regexec(&regex, gb->gapend + start, 1, &match, flags);
+    if (!nomatch) {
+      gb_match_t *region = malloc(sizeof(*region));
+      region->start = start + (size_t) match.rm_so;
+      region->len = (size_t) (match.rm_eo - match.rm_so);
+      list_append(result->matches, region);
+      start = start + (size_t) match.rm_eo;
+    }
+  }
   regfree(&regex);
-
-  if (nomatch) {
-    result->status = GB_SEARCH_NO_MATCH;
-  } else {
-    result->status = GB_SEARCH_MATCH;
-    result->v.match.start = (size_t) ((gb->gapstart - gb->bufstart) + match.rm_so);
-    result->v.match.len = (size_t) (match.rm_eo - match.rm_so);
-  }
 }

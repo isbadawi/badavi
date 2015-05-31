@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include "buf.h"
+#include "list.h"
 
 // A "gap buffer" or "split buffer". It's a big buffer that internally
 // is separated into two buffers with a gap in the middle -- this allows
@@ -66,21 +67,17 @@ void gb_pos_to_linecol(gapbuf_t *gb, size_t pos, size_t *line, size_t *offset);
 size_t gb_linecol_to_pos(gapbuf_t *gb, size_t line, size_t offset);
 
 typedef struct {
-  enum {
-    GB_SEARCH_BAD_REGEX,
-    GB_SEARCH_NO_MATCH,
-    GB_SEARCH_MATCH,
-  } status;
+  size_t start;
+  size_t len;
+} gb_match_t;
 
-  union {
-    char error[48];
-    struct { size_t start; size_t len; } match;
-  } v;
+typedef struct {
+  char error[48];
+  list_t *matches;
 } gb_search_result_t;
 
-// Search forward from offset start for a match for the regex. Fills in a
-// gb_search_t structure describing the outcome.
-void gb_search_forwards(gapbuf_t *gb, char *regex, size_t start,
-                        gb_search_result_t *result);
+// Finds all matches for the given regex in the buffer. Fills in a
+// gb_search_result_t structure describing the outcome.
+void gb_search(gapbuf_t *gb, char *regex, gb_search_result_t *result);
 
 #endif

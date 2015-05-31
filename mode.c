@@ -87,19 +87,33 @@ static void cmdline_mode_key_pressed(editor_t *editor, struct tb_event *ev) {
   buf_append(editor->status, s);
 }
 
-static void search_mode_cmdline_cb(editor_t *editor, char *command) {
+static void forward_search_mode_cmdline_cb(editor_t *editor, char *command) {
   if (*command) {
     buf_t *reg = editor_get_register(editor, '/');
     buf_clear(reg);
     buf_append(reg, command);
   }
-  // Search anyway -- empty pattern means repeat the last search.
-  editor_search(editor);
+  editor_search(editor, EDITOR_SEARCH_FORWARDS);
 }
 
-static cmdline_mode_t search_impl = {
+static void backward_search_mode_cmdline_cb(editor_t *editor, char *command) {
+  if (*command) {
+    buf_t *reg = editor_get_register(editor, '/');
+    buf_clear(reg);
+    buf_append(reg, command);
+  }
+  editor_search(editor, EDITOR_SEARCH_BACKWARDS);
+}
+
+
+static cmdline_mode_t forward_search_impl = {
   {cmdline_mode_entered, cmdline_mode_key_pressed, NULL},
-  '/', search_mode_cmdline_cb
+  '/', forward_search_mode_cmdline_cb
+};
+
+static cmdline_mode_t backward_search_impl = {
+  {cmdline_mode_entered, cmdline_mode_key_pressed, NULL},
+  '?', backward_search_mode_cmdline_cb
 };
 
 static cmdline_mode_t command_impl = {
@@ -107,8 +121,12 @@ static cmdline_mode_t command_impl = {
   ':', editor_execute_command
 };
 
-editing_mode_t *search_mode(void) {
-  return (editing_mode_t*) &search_impl;
+editing_mode_t *search_mode(char direction) {
+  if (direction == '/') {
+    return (editing_mode_t*) &forward_search_impl;
+  } else {
+    return (editing_mode_t*) &backward_search_impl;
+  }
 }
 
 editing_mode_t *command_mode(void) {

@@ -72,15 +72,20 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   case ':':
     editor_push_mode(editor, command_mode());
     break;
-  case '/':
-    editor_push_mode(editor, search_mode());
+  case '/': case '?':
+    editor_push_mode(editor, search_mode((char) ev->ch));
     break;
-  case '*': {
+  case '*': case '#': {
     char word[256];
-    motion_word_under_cursor(editor->window, word);
+    size_t start = motion_word_under_cursor(editor->window, word);
     buf_t *reg = editor_get_register(editor, '/');
     buf_printf(reg, "[[:<:]]%s[[:>:]]", word);
-    editor_search(editor);
+    if (ev->ch == '*') {
+      editor_search(editor, EDITOR_SEARCH_FORWARDS);
+    } else {
+      editor->window->cursor = start;
+      editor_search(editor, EDITOR_SEARCH_BACKWARDS);
+    }
     break;
   }
   case 'p': {
@@ -99,7 +104,8 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     break;
   }
   case 'u': editor_undo(editor); break;
-  case 'n': editor_search(editor); break;
+  case 'n': editor_search(editor, EDITOR_SEARCH_FORWARDS); break;
+  case 'N': editor_search(editor, EDITOR_SEARCH_BACKWARDS); break;
   case 'a': editor_send_keys(editor, "li"); break;
   case 'I': editor_send_keys(editor, "0i"); break;
   case 'A': editor_send_keys(editor, "$i"); break;

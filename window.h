@@ -2,12 +2,6 @@
 
 #include <stddef.h>
 
-struct tag_jump_t {
-  struct buffer_t *buffer;
-  size_t cursor;
-  struct tag_t *tag;
-};
-
 struct window_t {
   // The buffer being edited.
   struct buffer_t *buffer;

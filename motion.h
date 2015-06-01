@@ -1,5 +1,4 @@
-#ifndef _motion_h_included
-#define _motion_h_included
+#pragma once
 
 #include <stddef.h>
 
@@ -31,5 +30,3 @@ size_t motion_apply(editor_t *editor);
 // TODO(isbadawi): This is an awkward place to put this.
 // But a lot of knowledge about words lives in motion.c right now.
 size_t motion_word_under_cursor(window_t *window, char *buf);
-
-#endif

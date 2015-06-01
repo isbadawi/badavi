@@ -1,5 +1,4 @@
-#ifndef _buffer_h_included
-#define _buffer_h_included
+#pragma once
 
 #include <stdbool.h>
 
@@ -38,5 +37,3 @@ int buffer_write(buffer_t *buffer);
 
 // Writes to the contents of the given buffer to the path.
 int buffer_saveas(buffer_t *buffer, char *path);
-
-#endif

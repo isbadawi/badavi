@@ -1,5 +1,4 @@
-#ifndef _buf_h_included
-#define _buf_h_included
+#pragma once
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -44,5 +43,3 @@ void intbuf_free(intbuf_t *buf);
 void intbuf_insert(intbuf_t *buf, unsigned int i, size_t pos);
 void intbuf_add(intbuf_t *buf, unsigned int i);
 void intbuf_remove(intbuf_t *buf, size_t pos);
-
-#endif

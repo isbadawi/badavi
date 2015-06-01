@@ -1,5 +1,4 @@
-#ifndef _list_h_included
-#define _list_h_included
+#pragma once
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -50,5 +49,3 @@ void *list_next(list_t *list, void *data);
 void list_insert_after(list_t *list, void *el, void *data);
 void list_insert_before(list_t *list, void *el, void *data);
 size_t list_size(list_t *list);
-
-#endif

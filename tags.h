@@ -1,5 +1,4 @@
-#ifndef _tags_h_included
-#define _tags_h_included
+#pragma once
 
 #include <stddef.h>
 #include <time.h>
@@ -20,5 +19,3 @@ typedef struct {
 
 tags_t *tags_create(char *path);
 tag_t *tags_find(tags_t *tags, char *name);
-
-#endif

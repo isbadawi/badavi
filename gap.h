@@ -1,5 +1,4 @@
-#ifndef _gap_h_included
-#define _gap_h_included
+#pragma once
 
 #include <stdio.h>
 #include <stddef.h>
@@ -79,5 +78,3 @@ typedef struct {
 // Finds all matches for the given regex in the buffer. Fills in a
 // gb_search_result_t structure describing the outcome.
 void gb_search(gapbuf_t *gb, char *regex, gb_search_result_t *result);
-
-#endif

@@ -1,8 +1,6 @@
-#ifndef _undo_h_included
-#define _undo_h_included
+#pragma once
 
 #include "editor.h"
-
 #include "buf.h"
 
 // A single edit action -- either an insert or delete.
@@ -23,5 +21,3 @@ void editor_redo(editor_t *editor);
 void editor_start_action_group(editor_t *editor);
 // Add a new action to the current action group.
 void editor_add_action(editor_t *editor, edit_action_t action);
-
-#endif

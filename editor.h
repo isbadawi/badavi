@@ -1,5 +1,4 @@
-#ifndef _editor_h_included
-#define _editor_h_included
+#pragma once
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -93,5 +92,3 @@ void editor_jump_to_tag(editor_t *editor, char *tag);
 
 void editor_tag_stack_prev(editor_t *editor);
 void editor_tag_stack_next(editor_t *editor);
-
-#endif

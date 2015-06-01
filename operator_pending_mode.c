@@ -8,6 +8,7 @@
 #include "editor.h"
 #include "gap.h"
 #include "motion.h"
+#include "undo.h"
 #include "util.h"
 
 typedef struct {

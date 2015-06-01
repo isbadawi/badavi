@@ -8,6 +8,7 @@
 #include "buf.h"
 #include "editor.h"
 #include "motion.h"
+#include "undo.h"
 
 static bool is_last_line(gapbuf_t *gb, size_t pos) {
   return pos > gb_size(gb) - gb->lines->buf[gb->lines->len - 1];

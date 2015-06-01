@@ -5,6 +5,7 @@
 #include "buffer.h"
 #include "gap.h"
 #include "editor.h"
+#include "undo.h"
 
 static void insert_mode_entered(editor_t *editor) {
   editor_status_msg(editor, "-- INSERT --");

@@ -1,37 +1,40 @@
 #include "mode.h"
 
 #include <ctype.h>
-#include <stdlib.h>
+#include <stdbool.h>
+#include <stddef.h>
 
 #include <termbox.h>
 
+#include "buf.h"
+#include "buffer.h"
 #include "editor.h"
 #include "gap.h"
 #include "motion.h"
+#include "window.h"
 #include "undo.h"
 #include "util.h"
 
-typedef struct {
+struct region_t {
   size_t start;
   size_t end;
-} region_t;
+};
 
-static region_t region_create(size_t start, size_t end) {
-  region_t region = {min(start, end), max(start, end)};
+static struct region_t region_create(size_t start, size_t end) {
+  struct region_t region = {min(start, end), max(start, end)};
   return region;
 }
 
-typedef void (op_t) (editor_t *editor, region_t);
+typedef void (op_t) (struct editor_t *editor, struct region_t);
 
-typedef struct {
-  editing_mode_t mode;
+struct operator_pending_mode_t {
+  struct editing_mode_t mode;
   op_t* op;
-} operator_pending_mode_t;
+};
 
-
-static void yank_op(editor_t *editor, region_t region) {
-  buf_t *reg = editor_get_register(editor, editor->register_);
-  gapbuf_t *gb = editor->window->buffer->text;
+static void yank_op(struct editor_t *editor, struct region_t region) {
+  struct buf_t *reg = editor_get_register(editor, editor->register_);
+  struct gapbuf_t *gb = editor->window->buffer->text;
 
   size_t n = region.end - region.start;
   buf_grow(reg, n + 1);
@@ -40,11 +43,11 @@ static void yank_op(editor_t *editor, region_t region) {
   editor_pop_mode(editor);
 }
 
-static void delete_op(editor_t *editor, region_t region) {
+static void delete_op(struct editor_t *editor, struct region_t region) {
   yank_op(editor, region);
-  gapbuf_t *gb = editor->window->buffer->text;
+  struct gapbuf_t *gb = editor->window->buffer->text;
 
-  buf_t *buf = buf_create(region.end - region.start + 1);
+  struct buf_t *buf = buf_create(region.end - region.start + 1);
   gb_getstring(gb, region.start, region.end - region.start, buf->buf);
   buf->len = region.end - region.start;
   buf->buf[buf->len] = '\0';
@@ -60,7 +63,7 @@ static void delete_op(editor_t *editor, region_t region) {
   editor->window->buffer->dirty = true;
 }
 
-static void change_op(editor_t *editor, region_t region) {
+static void change_op(struct editor_t *editor, struct region_t region) {
   delete_op(editor, region);
   editor_push_mode(editor, insert_mode());
 }
@@ -86,17 +89,16 @@ static op_t *op_find(char name) {
   return NULL;
 }
 
-static void entered(editor_t *editor) {
+static void entered(struct editor_t *editor) {
   if (!editor->motion) {
     return;
   }
 
-  gapbuf_t *gb = editor->window->buffer->text;
-  motion_t *motion = editor->motion;
+  struct gapbuf_t *gb = editor->window->buffer->text;
+  struct motion_t *motion = editor->motion;
 
-  region_t region = region_create(
+  struct region_t region = region_create(
       editor->window->cursor, motion_apply(editor));
-
 
   ssize_t last = gb_lastindexof(gb, '\n', region.start - 1);
   size_t next = gb_indexof(gb, '\n', region.end);
@@ -110,7 +112,7 @@ static void entered(editor_t *editor) {
     region.end = min(region.end + 1, next);
   }
 
-  operator_pending_mode_t* mode = (operator_pending_mode_t*) editor->mode;
+  struct operator_pending_mode_t* mode = (struct operator_pending_mode_t*) editor->mode;
   mode->op(editor, region);
   editor->register_ = '"';
 
@@ -120,7 +122,7 @@ static void entered(editor_t *editor) {
   }
 }
 
-static void key_pressed(editor_t *editor, struct tb_event *ev) {
+static void key_pressed(struct editor_t *editor, struct tb_event *ev) {
   if (ev->ch != '0' && isdigit((int) ev->ch)) {
     editor_push_mode(editor, digit_mode());
     editor_handle_key_press(editor, ev);
@@ -131,16 +133,16 @@ static void key_pressed(editor_t *editor, struct tb_event *ev) {
   }
 }
 
-static operator_pending_mode_t impl = {
+static struct operator_pending_mode_t impl = {
   {entered, key_pressed, NULL},
   NULL
 };
 
-editing_mode_t *operator_pending_mode(char op_name) {
+struct editing_mode_t *operator_pending_mode(char op_name) {
   op_t *op = op_find(op_name);
   if (!op) {
     return NULL;
   }
   impl.op = op;
-  return (editing_mode_t*) &impl;
+  return (struct editing_mode_t*) &impl;
 }

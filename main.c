@@ -15,7 +15,7 @@
 // Not 100% sure why we need to shutdown termbox, but the terminal gets all
 // weird if we don't. Mainly copied this approach from here:
 // https://github.com/nsf/godit/blob/master/suspend_linux.go
-static void suspend(editor_t *editor) {
+static void suspend(struct editor_t *editor) {
   tb_shutdown();
 
   raise(SIGTSTP);
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
   }
   atexit(tb_shutdown);
 
-  editor_t editor;
+  struct editor_t editor;
   editor_init(&editor);
 
   char *file = NULL;

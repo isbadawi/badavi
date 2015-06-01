@@ -1,6 +1,5 @@
 #include "tags.h"
 
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,9 +24,9 @@ static char *escape_regex(char *regex) {
   return result;
 }
 
-static void tags_clear(tags_t *tags) {
+static void tags_clear(struct tags_t *tags) {
   for (size_t i = 0; i < tags->len; ++i) {
-    tag_t *tag = &tags->tags[i];
+    struct tag_t *tag = &tags->tags[i];
     free(tag->name);
     free(tag->path);
     free(tag->cmd);
@@ -40,7 +39,7 @@ static void tags_clear(tags_t *tags) {
   tags->loaded_at = 0;
 }
 
-static void tags_load(tags_t *tags) {
+static void tags_load(struct tags_t *tags) {
   FILE *fp = fopen(tags->file, "r");
   if (!fp) {
     return;
@@ -71,7 +70,7 @@ static void tags_load(tags_t *tags) {
     if (*line == '!') {
       continue;
     }
-    tag_t *tag = &tags->tags[i++];
+    struct tag_t *tag = &tags->tags[i++];
     tag->name = strdup(strtok(line, "\t"));
     tag->path = strdup(strtok(NULL, "\t"));
     tag->cmd = escape_regex(strtok(NULL, "\""));
@@ -85,8 +84,8 @@ static void tags_load(tags_t *tags) {
   fclose(fp);
 }
 
-tags_t *tags_create(char *file) {
-  tags_t *tags = malloc(sizeof(*tags));
+struct tags_t *tags_create(char *file) {
+  struct tags_t *tags = malloc(sizeof(*tags));
   tags_clear(tags);
   tags->file = file;
 
@@ -95,10 +94,10 @@ tags_t *tags_create(char *file) {
 }
 
 static int tag_compare(const void *lhs, const void *rhs) {
-  return strcmp((const char*) lhs, ((const tag_t*) rhs)->name);
+  return strcmp((const char*) lhs, ((const struct tag_t*) rhs)->name);
 }
 
-tag_t *tags_find(tags_t *tags, char *name) {
+struct tag_t *tags_find(struct tags_t *tags, char *name) {
   struct stat info;
   int err = stat(tags->file, &info);
   if (err) {
@@ -110,5 +109,5 @@ tag_t *tags_find(tags_t *tags, char *name) {
     tags_load(tags);
   }
 
-  return bsearch(name, tags->tags, tags->len, sizeof(tag_t), tag_compare);
+  return bsearch(name, tags->tags, tags->len, sizeof(struct tag_t), tag_compare);
 }

@@ -2,19 +2,15 @@
 
 #include <stddef.h>
 
-#include "buffer.h"
-#include "list.h"
-#include "tags.h"
-
-typedef struct {
-  buffer_t *buffer;
+struct tag_jump_t {
+  struct buffer_t *buffer;
   size_t cursor;
-  tag_t *tag;
-} tag_jump_t;
+  struct tag_t *tag;
+};
 
-typedef struct window_t {
+struct window_t {
   // The buffer being edited.
-  buffer_t *buffer;
+  struct buffer_t *buffer;
   // The position and size of the window.
   size_t x;
   size_t y;
@@ -26,10 +22,10 @@ typedef struct window_t {
   // The offset of the cursor.
   size_t cursor;
 
-  list_t *tag_stack;
-  tag_jump_t *tag;
-} window_t;
+  struct list_t *tag_stack;
+  struct tag_jump_t *tag;
+};
 
-window_t *window_create(buffer_t *buffer, size_t x, size_t y, size_t w, size_t h);
-void window_draw(window_t *window);
-void window_draw_cursor(window_t *window);
+struct window_t *window_create(struct buffer_t *buffer, size_t x, size_t y, size_t w, size_t h);
+void window_draw(struct window_t *window);
+void window_draw_cursor(struct window_t *window);

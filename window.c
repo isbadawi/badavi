@@ -5,11 +5,15 @@
 
 #include <termbox.h>
 
+#include "buf.h"
+#include "buffer.h"
+#include "gap.h"
+#include "list.h"
 #include "options.h"
 #include "util.h"
 
-window_t *window_create(buffer_t *buffer, size_t x, size_t y, size_t w, size_t h) {
-  window_t *window = malloc(sizeof(window_t));
+struct window_t *window_create(struct buffer_t *buffer, size_t x, size_t y, size_t w, size_t h) {
+  struct window_t *window = malloc(sizeof(struct window_t));
   if (!window) {
     return NULL;
   }
@@ -32,7 +36,7 @@ window_t *window_create(buffer_t *buffer, size_t x, size_t y, size_t w, size_t h
 
 // Number of columns to use for the line number (including the trailing space).
 // TODO(isbadawi): This might not be exactly correct for relativenumber mode.
-static size_t window_numberwidth(window_t* window) {
+static size_t window_numberwidth(struct window_t* window) {
   if (!option_get_bool("number") && !option_get_bool("relativenumber")) {
     return 0;
   }
@@ -44,7 +48,7 @@ static size_t window_numberwidth(window_t* window) {
   return max((size_t) option_get_int("numberwidth"), maxwidth + 1);
 }
 
-static void window_ensure_cursor_visible(window_t *window) {
+static void window_ensure_cursor_visible(struct window_t *window) {
   size_t x, y;
   gb_pos_to_linecol(window->buffer->text, window->cursor, &y, &x);
 
@@ -59,7 +63,7 @@ static void window_ensure_cursor_visible(window_t *window) {
   window->top = (size_t) ((ssize_t) max((ssize_t) min(window->top, y), (ssize_t) (y - h + 1)));
 }
 
-static void window_change_cell(window_t *window, size_t x, size_t y, char c,
+static void window_change_cell(struct window_t *window, size_t x, size_t y, char c,
                                int fg, int bg) {
   tb_change_cell(
       (int) (window_numberwidth(window) + window->x + x),
@@ -67,8 +71,8 @@ static void window_change_cell(window_t *window, size_t x, size_t y, char c,
       (uint32_t) c, (uint16_t) fg, (uint16_t) bg);
 }
 
-void window_draw_cursor(window_t *window) {
-  gapbuf_t *gb = window->buffer->text;
+void window_draw_cursor(struct window_t *window) {
+  struct gapbuf_t *gb = window->buffer->text;
   char c = gb_getchar(gb, window->cursor);
   size_t x, y;
   gb_pos_to_linecol(gb, window->cursor, &y, &x);
@@ -81,9 +85,9 @@ void window_draw_cursor(window_t *window) {
       TB_WHITE);
 }
 
-void window_draw(window_t *window) {
+void window_draw(struct window_t *window) {
   window_ensure_cursor_visible(window);
-  gapbuf_t *gb = window->buffer->text;
+  struct gapbuf_t *gb = window->buffer->text;
 
   size_t cursorline, cursorcol;
   gb_pos_to_linecol(gb, window->cursor, &cursorline, &cursorcol);

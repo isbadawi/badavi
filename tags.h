@@ -3,19 +3,19 @@
 #include <stddef.h>
 #include <time.h>
 
-typedef struct {
+struct tag_t {
   char *name;
   char *path;
   char *cmd;
-} tag_t;
+};
 
-typedef struct {
-  tag_t *tags;
+struct tags_t {
+  struct tag_t *tags;
   size_t len;
 
   char *file;
   time_t loaded_at;
-} tags_t;
+};
 
-tags_t *tags_create(char *path);
-tag_t *tags_find(tags_t *tags, char *name);
+struct tags_t *tags_create(char *path);
+struct tag_t *tags_find(struct tags_t *tags, char *name);

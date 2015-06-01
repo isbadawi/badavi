@@ -2,25 +2,29 @@
 
 #include <ctype.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #include <termbox.h>
 
 #include "buf.h"
+#include "buffer.h"
 #include "editor.h"
+#include "gap.h"
 #include "motion.h"
+#include "window.h"
 #include "undo.h"
 
-static bool is_last_line(gapbuf_t *gb, size_t pos) {
+static bool is_last_line(struct gapbuf_t *gb, size_t pos) {
   return pos > gb_size(gb) - gb->lines->buf[gb->lines->len - 1];
 }
 
-static void normal_mode_entered(editor_t *editor) {
+static void normal_mode_entered(struct editor_t *editor) {
   if (editor->motion) {
     editor->window->cursor = motion_apply(editor);
   }
 }
 
-static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
+static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev) {
   switch (ev->key) {
   case TB_KEY_CTRL_C:
     editor_status_msg(editor, "Type :q<Enter> to exit badavi");
@@ -38,14 +42,14 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     editor_tag_stack_prev(editor);
     return;
   case TB_KEY_CTRL_H: {
-    window_t *left = editor_left_window(editor, editor->window);
+    struct window_t *left = editor_left_window(editor, editor->window);
     if (left) {
       editor->window = left;
     }
     return;
   }
   case TB_KEY_CTRL_L: {
-    window_t *right = editor_right_window(editor, editor->window);
+    struct window_t *right = editor_right_window(editor, editor->window);
     if (right) {
       editor->window = right;
     }
@@ -59,7 +63,7 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     return;
   }
 
-  gapbuf_t *gb = editor->window->buffer->text;
+  struct gapbuf_t *gb = editor->window->buffer->text;
   size_t *cursor = &editor->window->cursor;
   switch (ev->ch) {
   case 0:
@@ -79,7 +83,7 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   case '*': case '#': {
     char word[256];
     size_t start = motion_word_under_cursor(editor->window, word);
-    buf_t *reg = editor_get_register(editor, '/');
+    struct buf_t *reg = editor_get_register(editor, '/');
     buf_printf(reg, "[[:<:]]%s[[:>:]]", word);
     if (ev->ch == '*') {
       editor_search(editor, EDITOR_SEARCH_FORWARDS);
@@ -90,11 +94,11 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     break;
   }
   case 'p': {
-    buf_t *reg = editor_get_register(editor, editor->register_);
+    struct buf_t *reg = editor_get_register(editor, editor->register_);
     size_t where = gb_getchar(gb, *cursor) == '\n' ? *cursor : *cursor + 1;
     gb_putstring(gb, reg->buf, reg->len, where);
     *cursor = where + reg->len - 1;
-    edit_action_t action = {
+    struct edit_action_t action = {
       .type = EDIT_ACTION_INSERT,
       .pos = where,
       .buf = buf_copy(reg)
@@ -121,7 +125,7 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
     }
     break;
   default: {
-    editing_mode_t *mode = operator_pending_mode((char) ev->ch);
+    struct editing_mode_t *mode = operator_pending_mode((char) ev->ch);
     if (mode) {
       editor_push_mode(editor, mode);
     } else {
@@ -132,12 +136,12 @@ static void normal_mode_key_pressed(editor_t* editor, struct tb_event* ev) {
   }
 }
 
-static editing_mode_t impl = {
+static struct editing_mode_t impl = {
   normal_mode_entered,
   normal_mode_key_pressed,
   NULL
 };
 
-editing_mode_t *normal_mode(void) {
+struct editing_mode_t *normal_mode(void) {
   return &impl;
 }

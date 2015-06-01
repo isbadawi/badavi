@@ -6,7 +6,7 @@
 
 #include "util.h"
 
-bool buf_grow(buf_t *buf, size_t cap) {
+bool buf_grow(struct buf_t *buf, size_t cap) {
   if (buf->cap >= cap) {
     return true;
   }
@@ -18,8 +18,8 @@ bool buf_grow(buf_t *buf, size_t cap) {
   return true;
 }
 
-buf_t *buf_create(size_t cap) {
-  buf_t *buf = malloc(sizeof(buf_t));
+struct buf_t *buf_create(size_t cap) {
+  struct buf_t *buf = malloc(sizeof(struct buf_t));
   if (!buf) {
     return NULL;
   }
@@ -36,8 +36,8 @@ buf_t *buf_create(size_t cap) {
   return buf;
 }
 
-buf_t *buf_from_cstr(char *s) {
-  buf_t *buf = buf_create(max(1, strlen(s)) * 2);
+struct buf_t *buf_from_cstr(char *s) {
+  struct buf_t *buf = buf_create(max(1, strlen(s)) * 2);
   if (!buf) {
     return NULL;
   }
@@ -46,25 +46,25 @@ buf_t *buf_from_cstr(char *s) {
   return buf;
 }
 
-buf_t *buf_from_char(char c) {
+struct buf_t *buf_from_char(char c) {
   char s[2] = {c, '\0'};
   return buf_from_cstr(s);
 }
 
-buf_t *buf_copy(buf_t *buf) {
+struct buf_t *buf_copy(struct buf_t *buf) {
   return buf_from_cstr(buf->buf);
 }
 
-void buf_free(buf_t *buf) {
+void buf_free(struct buf_t *buf) {
   free(buf->buf);
 }
 
-void buf_clear(buf_t *buf) {
+void buf_clear(struct buf_t *buf) {
   buf->buf[0] = '\0';
   buf->len = 0;
 }
 
-bool buf_insert(buf_t *buf, char *s, size_t pos) {
+bool buf_insert(struct buf_t *buf, char *s, size_t pos) {
   size_t len = strlen(s);
   size_t new_len = buf->len + len;
 
@@ -93,11 +93,11 @@ bool buf_insert(buf_t *buf, char *s, size_t pos) {
   return true;
 }
 
-bool buf_append(buf_t *buf, char *s) {
+bool buf_append(struct buf_t *buf, char *s) {
   return buf_insert(buf, s, buf->len);
 }
 
-bool buf_delete(buf_t *buf, size_t pos, size_t len) {
+bool buf_delete(struct buf_t *buf, size_t pos, size_t len) {
   if (pos >= buf->len || pos + len > buf->len) {
     return false;
   }
@@ -112,14 +112,14 @@ bool buf_delete(buf_t *buf, size_t pos, size_t len) {
   return true;
 }
 
-void buf_printf(buf_t *buf, const char *format, ...) {
+void buf_printf(struct buf_t *buf, const char *format, ...) {
   va_list args;
   va_start(args, format);
   buf_vprintf(buf, format, args);
   va_end(args);
 }
 
-void buf_vprintf(buf_t *buf, const char *format, va_list args) {
+void buf_vprintf(struct buf_t *buf, const char *format, va_list args) {
   va_list args_copy;
   va_copy(args_copy, args);
   // Try once...
@@ -138,7 +138,7 @@ void buf_vprintf(buf_t *buf, const char *format, va_list args) {
 }
 
 
-static bool intbuf_grow(intbuf_t *buf, size_t cap) {
+static bool intbuf_grow(struct intbuf_t *buf, size_t cap) {
   buf->buf = realloc(buf->buf, cap * sizeof(unsigned int));
   if (!buf->buf) {
     return false;
@@ -147,8 +147,8 @@ static bool intbuf_grow(intbuf_t *buf, size_t cap) {
   return true;
 }
 
-intbuf_t *intbuf_create(size_t cap) {
-  intbuf_t *buf = malloc(sizeof(intbuf_t));
+struct intbuf_t *intbuf_create(size_t cap) {
+  struct intbuf_t *buf = malloc(sizeof(struct intbuf_t));
   if (!buf) {
     return NULL;
   }
@@ -164,11 +164,11 @@ intbuf_t *intbuf_create(size_t cap) {
   return buf;
 }
 
-void intbuf_free(intbuf_t *buf) {
+void intbuf_free(struct intbuf_t *buf) {
   free(buf->buf);
 }
 
-void intbuf_insert(intbuf_t *buf, unsigned int i, size_t pos) {
+void intbuf_insert(struct intbuf_t *buf, unsigned int i, size_t pos) {
   if (buf->len == buf->cap) {
     intbuf_grow(buf, 2 * buf->cap);
   }
@@ -177,10 +177,10 @@ void intbuf_insert(intbuf_t *buf, unsigned int i, size_t pos) {
   buf->buf[pos] = i;
 }
 
-void intbuf_add(intbuf_t *buf, unsigned int i) {
+void intbuf_add(struct intbuf_t *buf, unsigned int i) {
   intbuf_insert(buf, i, buf->len);
 }
 
-void intbuf_remove(intbuf_t *buf, size_t pos) {
+void intbuf_remove(struct intbuf_t *buf, size_t pos) {
   memmove(buf->buf + pos, buf->buf + pos + 1, (buf->len-- - pos) * sizeof(unsigned int));
 }

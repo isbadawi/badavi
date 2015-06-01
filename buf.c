@@ -68,11 +68,12 @@ bool buf_insert(struct buf_t *buf, char *s, size_t pos) {
   size_t len = strlen(s);
   size_t new_len = buf->len + len;
 
-  if (new_len + 1 >= buf->cap) {
-    while (new_len + 1 >= buf->cap) {
-      buf->cap *= 2;
+  size_t new_cap = buf->cap;
+  if (new_len + 1 >= new_cap) {
+    while (new_len + 1 >= new_cap) {
+      new_cap *= 2;
     }
-    if (!buf_grow(buf, buf->cap)) {
+    if (!buf_grow(buf, new_cap)) {
       return false;
     }
   }

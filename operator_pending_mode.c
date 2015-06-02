@@ -51,7 +51,7 @@ static void delete_op(struct editor_t *editor, struct region_t region) {
   gb_getstring(gb, region.start, region.end - region.start, buf->buf);
   buf->len = region.end - region.start;
   buf->buf[buf->len] = '\0';
-  edit_action_t action = {
+  struct edit_action_t action = {
     .type = EDIT_ACTION_DELETE,
     .pos = region.start,
     .buf = buf
@@ -68,12 +68,7 @@ static void change_op(struct editor_t *editor, struct region_t region) {
   editor_push_mode(editor, insert_mode());
 }
 
-typedef struct {
-  char name;
-  op_t* op;
-} op_table_entry_t;
-
-static op_table_entry_t op_table[] = {
+static struct { char name; op_t *op; } op_table[] = {
   {'d', delete_op},
   {'c', change_op},
   {'y', yank_op},

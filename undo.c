@@ -20,7 +20,7 @@ void editor_undo(struct editor_t* editor) {
   struct list_t *group = list_pop(buffer->undo_stack);
 
   struct gapbuf_t *gb = buffer->text;
-  edit_action_t *action;
+  struct edit_action_t *action;
   LIST_FOREACH(group, action) {
     switch (action->type) {
     case EDIT_ACTION_INSERT:
@@ -47,7 +47,7 @@ void editor_redo(struct editor_t* editor) {
   struct list_t *group = list_pop(buffer->redo_stack);
 
   struct gapbuf_t *gb = buffer->text;
-  edit_action_t *action;
+  struct edit_action_t *action;
   LIST_FOREACH_REVERSE(group, action) {
     switch (action->type) {
     case EDIT_ACTION_INSERT:
@@ -68,7 +68,7 @@ void editor_start_action_group(struct editor_t *editor) {
   struct buffer_t *buffer = editor->window->buffer;
   struct list_t *group;
   LIST_FOREACH(buffer->redo_stack, group) {
-    edit_action_t *action;
+    struct edit_action_t *action;
     LIST_FOREACH(group, action) {
       buf_free(action->buf);
       free(action);
@@ -80,9 +80,9 @@ void editor_start_action_group(struct editor_t *editor) {
   list_prepend(buffer->undo_stack, list_create());
 }
 
-void editor_add_action(struct editor_t *editor, edit_action_t action) {
+void editor_add_action(struct editor_t *editor, struct edit_action_t action) {
   struct buffer_t *buffer = editor->window->buffer;
-  edit_action_t *action_copy = malloc(sizeof(edit_action_t));
+  struct edit_action_t *action_copy = malloc(sizeof(struct edit_action_t));
   memcpy(action_copy, &action, sizeof action);
   struct list_t *group = list_peek(buffer->undo_stack);
   list_prepend(group, action_copy);

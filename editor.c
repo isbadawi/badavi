@@ -100,7 +100,7 @@ void editor_search(struct editor_t *editor, enum editor_search_direction_t direc
   pattern[reg->len] = '\0';
 
   struct gapbuf_t *gb = editor->window->buffer->text;
-  gb_search_result_t result;
+  struct gb_search_result_t result;
   gb_search(gb, pattern, &result);
 
   if (!result.matches) {
@@ -113,8 +113,8 @@ void editor_search(struct editor_t *editor, enum editor_search_direction_t direc
     return;
   }
 
-  gb_match_t *match = NULL;
-  gb_match_t *m;
+  struct gb_match_t *match = NULL;
+  struct gb_match_t *m;
   if (direction == EDITOR_SEARCH_FORWARDS) {
     LIST_FOREACH(result.matches, m) {
       if (m->start > editor->window->cursor) {
@@ -128,7 +128,7 @@ void editor_search(struct editor_t *editor, enum editor_search_direction_t direc
       match = result.matches->head->next->data;
     }
   } else {
-    gb_match_t *last = NULL;
+    struct gb_match_t *last = NULL;
     LIST_FOREACH(result.matches, m) {
       if (last && last->start < editor->window->cursor &&
           m->start >= editor->window->cursor) {
@@ -238,11 +238,11 @@ void editor_equalize_windows(struct editor_t *editor) {
   last->w += (editor->width - nwindows) % nwindows + 1;
 }
 
-typedef struct {
+struct editor_command_t {
   const char *name;
   const char *shortname;
   void (*action)(struct editor_t*, char*);
-} editor_command_t;
+};
 
 static void editor_command_quit(struct editor_t *editor, char __unused *arg) {
   struct buffer_t *b;
@@ -426,7 +426,7 @@ static void editor_command_tag(struct editor_t *editor, char *arg) {
   }
 }
 
-static editor_command_t editor_commands[] = {
+static struct editor_command_t editor_commands[] = {
   {"quit", "q", editor_command_close_window},
   {"quit!", "q!", editor_command_force_close_window},
   {"qall", "qa", editor_command_quit},
@@ -448,7 +448,7 @@ void editor_execute_command(struct editor_t *editor, char *command) {
   char *name = strtok(command, " ");
   char *arg = strtok(NULL, " ");
   for (int i = 0; editor_commands[i].name; ++i) {
-    editor_command_t *cmd = &editor_commands[i];
+    struct editor_command_t *cmd = &editor_commands[i];
     if (!strcmp(name, cmd->name) || !strcmp(name, cmd->shortname)) {
       cmd->action(editor, arg);
       return;

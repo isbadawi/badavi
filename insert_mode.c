@@ -34,7 +34,7 @@ static void insert_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
     return;
   case TB_KEY_BACKSPACE2:
     if (*cursor > 0) {
-      edit_action_t action = {
+      struct edit_action_t action = {
         .type = EDIT_ACTION_DELETE,
         .pos = *cursor - 1,
         .buf = buf_from_char(gb_getchar(gb, *cursor - 1))
@@ -48,7 +48,7 @@ static void insert_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
   case TB_KEY_SPACE: ch = ' '; break;
   default: ch = (char) ev->ch; break;
   }
-  edit_action_t action = {
+  struct edit_action_t action = {
     .type = EDIT_ACTION_INSERT,
     .pos = *cursor,
     .buf = buf_from_char(ch)

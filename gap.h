@@ -63,16 +63,16 @@ void gb_pos_to_linecol(struct gapbuf_t *gb, size_t pos, size_t *line, size_t *of
 // Vice versa.
 size_t gb_linecol_to_pos(struct gapbuf_t *gb, size_t line, size_t offset);
 
-typedef struct {
+struct gb_match_t {
   size_t start;
   size_t len;
-} gb_match_t;
+};
 
-typedef struct {
+struct gb_search_result_t {
   char error[48];
   struct list_t *matches;
-} gb_search_result_t;
+};
 
 // Finds all matches for the given regex in the buffer. Fills in a
 // gb_search_result_t structure describing the outcome.
-void gb_search(struct gapbuf_t *gb, char *regex, gb_search_result_t *result);
+void gb_search(struct gapbuf_t *gb, char *regex, struct gb_search_result_t *result);

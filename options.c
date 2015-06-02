@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-typedef struct {
+struct option_t {
   const char *name;
 
   enum option_type_t {
@@ -17,14 +17,14 @@ typedef struct {
     bool b;
     int i;
   } value;
-} option_t;
+};
 
 #define OPTION(name, type, defaultval) {#name, type, {defaultval}}
 
 #define BOOL_OPTION(name, defaultval) OPTION(name, OPTION_TYPE_BOOL, defaultval)
 #define INT_OPTION(name, defaultval) OPTION(name, OPTION_TYPE_INT, defaultval)
 
-static option_t option_table[] = {
+static struct option_t option_table[] = {
   INT_OPTION(numberwidth, 4),
   BOOL_OPTION(number, false),
   BOOL_OPTION(relativenumber, false),
@@ -35,7 +35,7 @@ static option_t option_table[] = {
   {NULL, OPTION_TYPE_INT, {-1}},
 };
 
-static option_t *option_find(const char *name) {
+static struct option_t *option_find(const char *name) {
   for (int i = 0; option_table[i].name; ++i) {
     if (!strcmp(option_table[i].name, name)) {
       return &option_table[i];
@@ -45,7 +45,7 @@ static option_t *option_find(const char *name) {
 }
 
 static bool option_has_type(const char *name, enum option_type_t type) {
-  option_t *option = option_find(name);
+  struct option_t *option = option_find(name);
   return option && option->type == type;
 }
 

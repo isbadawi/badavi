@@ -42,17 +42,14 @@ struct editing_mode_t *quote_mode(void) {
   return &quote_mode_impl;
 }
 
-typedef void (cmdline_mode_func_t) (struct editor_t*, char*);
-
-typedef struct {
+struct cmdline_mode_t {
   struct editing_mode_t mode;
   char prompt;
-  cmdline_mode_func_t *cb;
-} cmdline_mode_t;
-
+  void (*cb)(struct editor_t*, char*);
+};
 
 static void cmdline_mode_entered(struct editor_t *editor) {
-  cmdline_mode_t *mode = (cmdline_mode_t*) editor->mode;
+  struct cmdline_mode_t *mode = (struct cmdline_mode_t*) editor->mode;
   editor_status_msg(editor, "%c", mode->prompt);
 }
 
@@ -71,7 +68,7 @@ static void cmdline_mode_key_pressed(struct editor_t *editor, struct tb_event *e
     }
     return;
   case TB_KEY_ENTER: {
-    cmdline_mode_t *mode = (cmdline_mode_t*) editor->mode;
+    struct cmdline_mode_t *mode = (struct cmdline_mode_t*) editor->mode;
     char *command = strndup(editor->status->buf + 1, editor->status->len - 1);
     editor_pop_mode(editor);
     mode->cb(editor, command);
@@ -107,17 +104,17 @@ static void backward_search_mode_cmdline_cb(struct editor_t *editor, char *comma
 }
 
 
-static cmdline_mode_t forward_search_impl = {
+static struct cmdline_mode_t forward_search_impl = {
   {cmdline_mode_entered, cmdline_mode_key_pressed, NULL},
   '/', forward_search_mode_cmdline_cb
 };
 
-static cmdline_mode_t backward_search_impl = {
+static struct cmdline_mode_t backward_search_impl = {
   {cmdline_mode_entered, cmdline_mode_key_pressed, NULL},
   '?', backward_search_mode_cmdline_cb
 };
 
-static cmdline_mode_t command_impl = {
+static struct cmdline_mode_t command_impl = {
   {cmdline_mode_entered, cmdline_mode_key_pressed, NULL},
   ':', editor_execute_command
 };

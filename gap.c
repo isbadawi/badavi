@@ -269,7 +269,7 @@ static bool gb_should_ignore_case(char *pattern) {
   return true;
 }
 
-void gb_search(struct gapbuf_t *gb, char *pattern, gb_search_result_t *result) {
+void gb_search(struct gapbuf_t *gb, char *pattern, struct gb_search_result_t *result) {
   // Move the gap so the searched region is contiguous.
   gb_mvgap(gb, 0);
 
@@ -300,7 +300,7 @@ void gb_search(struct gapbuf_t *gb, char *pattern, gb_search_result_t *result) {
 
     nomatch = regexec(&regex, gb->gapend + start, 1, &match, flags);
     if (!nomatch) {
-      gb_match_t *region = malloc(sizeof(*region));
+      struct gb_match_t *region = malloc(sizeof(*region));
       region->start = start + (size_t) match.rm_so;
       region->len = (size_t) (match.rm_eo - match.rm_so);
       list_append(result->matches, region);

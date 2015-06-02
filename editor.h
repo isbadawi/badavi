@@ -76,8 +76,3 @@ void editor_equalize_windows(struct editor_t *editor);
 
 struct window_t *editor_left_window(struct editor_t *editor, struct window_t *window);
 struct window_t *editor_right_window(struct editor_t *editor, struct window_t *window);
-
-void editor_jump_to_tag(struct editor_t *editor, char *tag);
-
-void editor_tag_stack_prev(struct editor_t *editor);
-void editor_tag_stack_next(struct editor_t *editor);

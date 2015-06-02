@@ -7,6 +7,7 @@
 #include <termbox.h>
 
 #include "editor.h"
+#include "tags.h"
 #include "util.h"
 
 // termbox catches ctrl-z as a regular key event. To suspend the process as

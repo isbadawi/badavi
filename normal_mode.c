@@ -11,6 +11,7 @@
 #include "editor.h"
 #include "gap.h"
 #include "motion.h"
+#include "tags.h"
 #include "window.h"
 #include "undo.h"
 

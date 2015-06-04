@@ -78,7 +78,7 @@ void window_draw_cursor(struct window_t *window) {
       x - window->left,
       y - window->top,
       c == '\n' ? ' ' : c,
-      TB_DEFAULT,
+      TB_BLACK,
       TB_WHITE);
 }
 

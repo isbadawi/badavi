@@ -1,7 +1,8 @@
 #include "util.h"
 
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 static FILE *DEBUG_FP;
 
@@ -19,4 +20,22 @@ void debug(const char *format, ...) {
   vfprintf(DEBUG_FP, format, args);
   va_end(args);
   fflush(DEBUG_FP);
+}
+
+void *xmalloc(size_t size) {
+  void *mem = malloc(size);
+  if (!mem) {
+    fprintf(stderr, "failed to allocate memory (%zu bytes)", size);
+    abort();
+  }
+  return mem;
+}
+
+void *xrealloc(void *ptr, size_t size) {
+  void *mem = realloc(ptr, size);
+  if (size && !mem) {
+    fprintf(stderr, "failed to allocate memory (%zu bytes)", size);
+    abort();
+  }
+  return mem;
 }

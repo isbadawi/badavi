@@ -8,12 +8,13 @@
 
 #include "editor.h"
 #include "list.h"
+#include "util.h"
 #include "window.h"
 
 static char *escape_regex(char *regex) {
   // Worst case, every char is escaped...
   size_t len = strlen(regex);
-  char *result = malloc(len * 2 + 1);
+  char *result = xmalloc(len * 2 + 1);
   char *dest = result;
   for (char *src = regex; *src; ++src) {
     switch (*src) {
@@ -65,7 +66,7 @@ static void tags_load(struct tags_t *tags) {
   if (tags->len) {
     tags_clear(tags);
   }
-  tags->tags = malloc(sizeof(*tags->tags) * nlines);
+  tags->tags = xmalloc(sizeof(*tags->tags) * nlines);
   tags->len = nlines;
 
   size_t i = 0;
@@ -89,7 +90,7 @@ static void tags_load(struct tags_t *tags) {
 }
 
 struct tags_t *tags_create(char *file) {
-  struct tags_t *tags = malloc(sizeof(*tags));
+  struct tags_t *tags = xmalloc(sizeof(*tags));
   tags_clear(tags);
   tags->file = file;
 
@@ -123,7 +124,7 @@ void editor_jump_to_tag(struct editor_t *editor, char *name) {
     return;
   }
 
-  struct tag_jump_t *jump = malloc(sizeof(*jump));
+  struct tag_jump_t *jump = xmalloc(sizeof(*jump));
   jump->buffer = editor->window->buffer;
   jump->cursor = editor->window->cursor;
   jump->tag = tag;

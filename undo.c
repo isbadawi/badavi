@@ -8,6 +8,7 @@
 #include "editor.h"
 #include "gap.h"
 #include "list.h"
+#include "util.h"
 #include "window.h"
 
 void editor_undo(struct editor_t* editor) {
@@ -82,8 +83,8 @@ void editor_start_action_group(struct editor_t *editor) {
 
 void editor_add_action(struct editor_t *editor, struct edit_action_t action) {
   struct buffer_t *buffer = editor->window->buffer;
-  struct edit_action_t *action_copy = malloc(sizeof(struct edit_action_t));
-  memcpy(action_copy, &action, sizeof action);
+  struct edit_action_t *action_copy = xmalloc(sizeof(*action_copy));
+  memcpy(action_copy, &action, sizeof(action));
   struct list_t *group = list_peek(buffer->undo_stack);
   list_prepend(group, action_copy);
 }

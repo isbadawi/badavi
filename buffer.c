@@ -1,17 +1,14 @@
 #include "buffer.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "gap.h"
 #include "list.h"
+#include "util.h"
 
 static struct buffer_t *buffer_of(char *path, struct gapbuf_t *gb) {
-  struct buffer_t *buffer = malloc(sizeof(struct buffer_t));
-  if (!buffer) {
-    return NULL;
-  }
+  struct buffer_t *buffer = xmalloc(sizeof(*buffer));
 
   buffer->text = gb;
   strcpy(buffer->name, path ? path : "");
@@ -24,8 +21,7 @@ static struct buffer_t *buffer_of(char *path, struct gapbuf_t *gb) {
 }
 
 struct buffer_t *buffer_create(char *path) {
-  struct gapbuf_t *gb = gb_create();
-  return gb ? buffer_of(path, gb) : NULL;
+  return buffer_of(path, gb_create());
 }
 
 struct buffer_t *buffer_open(char *path) {
@@ -37,7 +33,7 @@ struct buffer_t *buffer_open(char *path) {
   struct gapbuf_t *gb = gb_load(fp);
   fclose(fp);
 
-  return gb ? buffer_of(path, gb) : NULL;
+  return buffer_of(path, gb);
 }
 
 int buffer_write(struct buffer_t *buffer) {

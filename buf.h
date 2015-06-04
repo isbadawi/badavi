@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stdarg.h>
-#include <stdbool.h>
 #include <stddef.h>
 
 // buf_t is a simple growable string.
@@ -18,10 +17,10 @@ struct buf_t *buf_copy(struct buf_t *buf);
 void buf_free(struct buf_t *buf);
 
 void buf_clear(struct buf_t *buf);
-bool buf_grow(struct buf_t *buf, size_t cap);
-bool buf_delete(struct buf_t *buf, size_t pos, size_t len);
-bool buf_insert(struct buf_t *buf, char *s, size_t pos);
-bool buf_append(struct buf_t *buf, char *s);
+void buf_grow(struct buf_t *buf, size_t cap);
+void buf_delete(struct buf_t *buf, size_t pos, size_t len);
+void buf_insert(struct buf_t *buf, char *s, size_t pos);
+void buf_append(struct buf_t *buf, char *s);
 
 // Write the formatted data to buf (overwriting what was there),
 // automatically growing it if needed.

@@ -13,10 +13,7 @@
 #include "util.h"
 
 struct window_t *window_create(struct buffer_t *buffer, size_t x, size_t y, size_t w, size_t h) {
-  struct window_t *window = malloc(sizeof(struct window_t));
-  if (!window) {
-    return NULL;
-  }
+  struct window_t *window = xmalloc(sizeof(*window));
 
   window->buffer = buffer;
   window->top = 0;

@@ -9,21 +9,14 @@
 #include "buf.h"
 #include "list.h"
 #include "options.h"
+#include "util.h"
 
 #define GAPSIZE 1024
 
 struct gapbuf_t *gb_create(void) {
-  struct gapbuf_t *gb = malloc(sizeof(*gb));
-  if (!gb) {
-    return NULL;
-  }
+  struct gapbuf_t *gb = xmalloc(sizeof(*gb));
 
-  gb->bufstart = malloc(1 + GAPSIZE);
-  if (!gb->bufstart) {
-    free(gb);
-    return NULL;
-  }
-
+  gb->bufstart = xmalloc(1 + GAPSIZE);
   gb->gapstart = gb->bufstart;
   gb->gapend = gb->gapstart + GAPSIZE;
   gb->bufend = gb->bufstart + GAPSIZE + 1;
@@ -35,22 +28,14 @@ struct gapbuf_t *gb_create(void) {
 }
 
 struct gapbuf_t *gb_load(FILE *fp) {
-  struct gapbuf_t *gb = malloc(sizeof(*gb));
-  if (!gb) {
-    return NULL;
-  }
+  struct gapbuf_t *gb = xmalloc(sizeof(*gb));
 
   struct stat info;
   fstat(fileno(fp), &info);
   size_t filesize = (size_t) info.st_size;
   size_t bufsize = filesize + GAPSIZE;
 
-  gb->bufstart = malloc(bufsize);
-  if (!gb->bufstart) {
-    free(gb);
-    return NULL;
-  }
-
+  gb->bufstart = xmalloc(bufsize);
   gb->gapstart = gb->bufstart;
   gb->gapend = gb->bufstart + GAPSIZE;
   gb->bufend = gb->bufstart + bufsize;
@@ -73,6 +58,7 @@ struct gapbuf_t *gb_load(FILE *fp) {
 void gb_free(struct gapbuf_t *gb) {
   free(gb->bufstart);
   intbuf_free(gb->lines);
+  free(gb);
 }
 
 size_t gb_size(struct gapbuf_t *gb) {
@@ -300,7 +286,7 @@ void gb_search(struct gapbuf_t *gb, char *pattern, struct gb_search_result_t *re
 
     nomatch = regexec(&regex, gb->gapend + start, 1, &match, flags);
     if (!nomatch) {
-      struct gb_match_t *region = malloc(sizeof(*region));
+      struct gb_match_t *region = xmalloc(sizeof(*region));
       region->start = start + (size_t) match.rm_so;
       region->len = (size_t) (match.rm_eo - match.rm_so);
       list_append(result->matches, region);

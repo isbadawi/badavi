@@ -6,30 +6,17 @@
 
 #include "util.h"
 
-bool buf_grow(struct buf_t *buf, size_t cap) {
-  if (buf->cap >= cap) {
-    return true;
-  }
-  buf->buf = realloc(buf->buf, cap);
-  if (!buf->buf) {
-    return false;
-  }
+void buf_grow(struct buf_t *buf, size_t cap) {
+  buf->buf = xrealloc(buf->buf, cap);
   buf->cap = cap;
-  return true;
 }
 
 struct buf_t *buf_create(size_t cap) {
-  struct buf_t *buf = malloc(sizeof(struct buf_t));
-  if (!buf) {
-    return NULL;
-  }
-  buf->buf = NULL;
+  struct buf_t *buf = xmalloc(sizeof(*buf));
 
+  buf->buf = NULL;
   buf->cap = 0;
-  if (!buf_grow(buf, cap)) {
-    free(buf);
-    return NULL;
-  }
+  buf_grow(buf, cap);
 
   buf_clear(buf);
   buf->cap = cap;
@@ -38,10 +25,6 @@ struct buf_t *buf_create(size_t cap) {
 
 struct buf_t *buf_from_cstr(char *s) {
   struct buf_t *buf = buf_create(max(1, strlen(s)) * 2);
-  if (!buf) {
-    return NULL;
-  }
-
   buf_append(buf, s);
   return buf;
 }
@@ -57,6 +40,7 @@ struct buf_t *buf_copy(struct buf_t *buf) {
 
 void buf_free(struct buf_t *buf) {
   free(buf->buf);
+  free(buf);
 }
 
 void buf_clear(struct buf_t *buf) {
@@ -64,7 +48,7 @@ void buf_clear(struct buf_t *buf) {
   buf->len = 0;
 }
 
-bool buf_insert(struct buf_t *buf, char *s, size_t pos) {
+void buf_insert(struct buf_t *buf, char *s, size_t pos) {
   size_t len = strlen(s);
   size_t new_len = buf->len + len;
 
@@ -73,9 +57,7 @@ bool buf_insert(struct buf_t *buf, char *s, size_t pos) {
     while (new_len + 1 >= new_cap) {
       new_cap *= 2;
     }
-    if (!buf_grow(buf, new_cap)) {
-      return false;
-    }
+    buf_grow(buf, new_cap);
   }
 
   // Move the bit after the insertion...
@@ -91,16 +73,15 @@ bool buf_insert(struct buf_t *buf, char *s, size_t pos) {
       len);
 
   buf->len += len;
-  return true;
 }
 
-bool buf_append(struct buf_t *buf, char *s) {
-  return buf_insert(buf, s, buf->len);
+void buf_append(struct buf_t *buf, char *s) {
+  buf_insert(buf, s, buf->len);
 }
 
-bool buf_delete(struct buf_t *buf, size_t pos, size_t len) {
+void buf_delete(struct buf_t *buf, size_t pos, size_t len) {
   if (pos >= buf->len || pos + len > buf->len) {
-    return false;
+    return;
   }
 
   memmove(
@@ -110,7 +91,6 @@ bool buf_delete(struct buf_t *buf, size_t pos, size_t len) {
 
   buf->len -= len;
   buf->buf[buf->len] = '\0';
-  return true;
 }
 
 void buf_printf(struct buf_t *buf, const char *format, ...) {
@@ -139,26 +119,17 @@ void buf_vprintf(struct buf_t *buf, const char *format, va_list args) {
 }
 
 
-static bool intbuf_grow(struct intbuf_t *buf, size_t cap) {
-  buf->buf = realloc(buf->buf, cap * sizeof(unsigned int));
-  if (!buf->buf) {
-    return false;
-  }
+static void intbuf_grow(struct intbuf_t *buf, size_t cap) {
+  buf->buf = xrealloc(buf->buf, cap * sizeof(*buf->buf));
   buf->cap = cap;
-  return true;
 }
 
 struct intbuf_t *intbuf_create(size_t cap) {
-  struct intbuf_t *buf = malloc(sizeof(struct intbuf_t));
-  if (!buf) {
-    return NULL;
-  }
-  buf->buf = NULL;
+  struct intbuf_t *buf = xmalloc(sizeof(*buf));
 
-  if (!intbuf_grow(buf, cap)) {
-    free(buf);
-    return NULL;
-  }
+  buf->buf = NULL;
+  buf->cap = 0;
+  intbuf_grow(buf, cap);
 
   buf->len = 0;
   buf->cap = cap;
@@ -167,6 +138,7 @@ struct intbuf_t *intbuf_create(size_t cap) {
 
 void intbuf_free(struct intbuf_t *buf) {
   free(buf->buf);
+  free(buf);
 }
 
 void intbuf_insert(struct intbuf_t *buf, unsigned int i, size_t pos) {
@@ -174,7 +146,7 @@ void intbuf_insert(struct intbuf_t *buf, unsigned int i, size_t pos) {
     intbuf_grow(buf, 2 * buf->cap);
   }
 
-  memmove(buf->buf + pos + 1, buf->buf + pos, (buf->len++ - pos) * sizeof(unsigned int));
+  memmove(buf->buf + pos + 1, buf->buf + pos, (buf->len++ - pos) * sizeof(*buf->buf));
   buf->buf[pos] = i;
 }
 
@@ -183,5 +155,5 @@ void intbuf_add(struct intbuf_t *buf, unsigned int i) {
 }
 
 void intbuf_remove(struct intbuf_t *buf, size_t pos) {
-  memmove(buf->buf + pos, buf->buf + pos + 1, (buf->len-- - pos) * sizeof(unsigned int));
+  memmove(buf->buf + pos, buf->buf + pos + 1, (buf->len-- - pos) * sizeof(*buf->buf));
 }

@@ -2,13 +2,12 @@
 
 #include <stdlib.h>
 
+#include "util.h"
+
 static struct list_node_t *list_node_create(void *data,
                                      struct list_node_t *prev,
                                      struct list_node_t *next) {
-  struct list_node_t *node = malloc(sizeof(struct list_node_t));
-  if (!node) {
-    return NULL;
-  }
+  struct list_node_t *node = xmalloc(sizeof(struct list_node_t));
   node->data = data;
   node->prev = prev;
   node->next = next;
@@ -16,10 +15,7 @@ static struct list_node_t *list_node_create(void *data,
 }
 
 struct list_t *list_create(void) {
-  struct list_t *list = malloc(sizeof(struct list_t));
-  if (!list) {
-    return NULL;
-  }
+  struct list_t *list = xmalloc(sizeof(*list));
   list->tail = list_node_create(NULL, NULL, NULL);
   list->head = list_node_create(NULL, NULL, list->tail);
   list->tail->prev = list->head;

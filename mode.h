@@ -4,7 +4,7 @@ struct editor_t;
 struct tb_event;
 
 struct editing_mode_t {
-  // Called when the editor switches into this mode.
+  // Called when the editor switches into this mode (optional).
   void (*entered)(struct editor_t*);
   // Called when this mode is active and a key is pressed.
   void (*key_pressed)(struct editor_t*, struct tb_event*);

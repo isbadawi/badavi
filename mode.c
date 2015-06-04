@@ -9,9 +9,6 @@
 #include "buf.h"
 #include "editor.h"
 
-static void no_op(struct editor_t __unused *editor) {
-}
-
 static void digit_pressed(struct editor_t *editor, struct tb_event *ev) {
   if (!isdigit((int) ev->ch)) {
     editor_pop_mode(editor);
@@ -22,7 +19,7 @@ static void digit_pressed(struct editor_t *editor, struct tb_event *ev) {
   editor->count += ev->ch - '0';
 }
 
-static struct editing_mode_t digit_mode_impl = {no_op, digit_pressed, NULL};
+static struct editing_mode_t digit_mode_impl = {NULL, digit_pressed, NULL};
 
 struct editing_mode_t *digit_mode(void) {
   return &digit_mode_impl;
@@ -36,7 +33,7 @@ static void quote_pressed(struct editor_t *editor, struct tb_event *ev) {
   editor_pop_mode(editor);
 }
 
-static struct editing_mode_t quote_mode_impl = {no_op, quote_pressed, NULL};
+static struct editing_mode_t quote_mode_impl = {NULL, quote_pressed, NULL};
 
 struct editing_mode_t *quote_mode(void) {
   return &quote_mode_impl;

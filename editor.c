@@ -189,13 +189,17 @@ void editor_open(struct editor_t *editor, char *path) {
 void editor_push_mode(struct editor_t *editor, struct editing_mode_t *mode) {
   mode->parent = editor->mode;
   editor->mode = mode;
-  editor->mode->entered(editor);
+  if (editor->mode->entered) {
+    editor->mode->entered(editor);
+  }
 }
 
 void editor_pop_mode(struct editor_t *editor) {
   if (editor->mode->parent) {
     editor->mode = editor->mode->parent;
-    editor->mode->entered(editor);
+    if (editor->mode->entered) {
+      editor->mode->entered(editor);
+    }
   }
 }
 

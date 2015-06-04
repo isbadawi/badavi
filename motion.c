@@ -262,9 +262,6 @@ static struct motion_t *motion_find(struct motion_t *table, char name) {
   return NULL;
 }
 
-static void no_op(struct editor_t __unused *editor) {
-}
-
 static void g_pressed(struct editor_t *editor, struct tb_event *ev) {
   struct motion_t *motion = motion_find(g_motion_table, (char) ev->ch);
   if (motion) {
@@ -274,7 +271,7 @@ static void g_pressed(struct editor_t *editor, struct tb_event *ev) {
   editor_pop_mode(editor);
 }
 
-static struct editing_mode_t g_mode = {no_op, g_pressed, NULL};
+static struct editing_mode_t g_mode = {NULL, g_pressed, NULL};
 
 struct till_mode_t {
   struct editing_mode_t mode;
@@ -367,7 +364,7 @@ static void till_key_pressed(struct editor_t *editor, struct tb_event *ev) {
 }
 
 static struct till_mode_t till_mode_impl = {
-  {no_op, till_key_pressed, NULL},
+  {NULL, till_key_pressed, NULL},
   -1
 };
 
@@ -393,7 +390,7 @@ static void key_pressed(struct editor_t *editor, struct tb_event *ev) {
   return;
 }
 
-static struct editing_mode_t impl = {no_op, key_pressed, NULL};
+static struct editing_mode_t impl = {NULL, key_pressed, NULL};
 
 struct editing_mode_t *motion_mode(void) {
   return &impl;

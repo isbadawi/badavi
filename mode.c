@@ -8,6 +8,7 @@
 
 #include "buf.h"
 #include "editor.h"
+#include "util.h"
 
 static void digit_pressed(struct editor_t *editor, struct tb_event *ev) {
   if (!isdigit((int) ev->ch)) {
@@ -52,6 +53,7 @@ static void cmdline_mode_entered(struct editor_t *editor) {
 
 static void cmdline_mode_key_pressed(struct editor_t *editor, struct tb_event *ev) {
   char ch;
+  struct cmdline_mode_t *mode = (struct cmdline_mode_t*) editor->mode;
   switch (ev->key) {
   case TB_KEY_ESC: case TB_KEY_CTRL_C:
     buf_clear(editor->status);
@@ -65,8 +67,7 @@ static void cmdline_mode_key_pressed(struct editor_t *editor, struct tb_event *e
     }
     return;
   case TB_KEY_ENTER: {
-    struct cmdline_mode_t *mode = (struct cmdline_mode_t*) editor->mode;
-    char *command = strndup(editor->status->buf + 1, editor->status->len - 1);
+    char *command = xstrdup(editor->status->buf + 1);
     editor_pop_mode(editor);
     mode->cb(editor, command);
     free(command);

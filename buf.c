@@ -73,6 +73,7 @@ void buf_insert(struct buf_t *buf, char *s, size_t pos) {
       len);
 
   buf->len += len;
+  buf->buf[buf->len] = '\0';
 }
 
 void buf_append(struct buf_t *buf, char *s) {

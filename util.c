@@ -3,6 +3,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 static FILE *DEBUG_FP;
 
@@ -38,4 +39,13 @@ void *xrealloc(void *ptr, size_t size) {
     abort();
   }
   return mem;
+}
+
+char *xstrdup(const char *s) {
+  char *copy = strdup(s);
+  if (!copy) {
+    fprintf(stderr, "failed to allocate memory (%zu bytes)", strlen(s) + 1);
+    abort();
+  }
+  return copy;
 }

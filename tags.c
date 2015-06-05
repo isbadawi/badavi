@@ -76,8 +76,8 @@ static void tags_load(struct tags_t *tags) {
       continue;
     }
     struct tag_t *tag = &tags->tags[i++];
-    tag->name = strdup(strtok(line, "\t"));
-    tag->path = strdup(strtok(NULL, "\t"));
+    tag->name = xstrdup(strtok(line, "\t"));
+    tag->path = xstrdup(strtok(NULL, "\t"));
     tag->cmd = escape_regex(strtok(NULL, "\""));
     // TODO(isbadawi): Hack since we don't have ex mode...
     size_t cmdlen = strlen(tag->cmd);

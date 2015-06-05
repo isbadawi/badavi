@@ -13,3 +13,4 @@ void debug(const char *format, ...);
 
 void *xmalloc(size_t size);
 void *xrealloc(void *ptr, size_t size);
+char *xstrdup(const char *s);

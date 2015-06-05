@@ -118,14 +118,9 @@ static void entered(struct editor_t *editor) {
 }
 
 static void key_pressed(struct editor_t *editor, struct tb_event *ev) {
-  if (ev->ch != '0' && isdigit((int) ev->ch)) {
-    editor_push_mode(editor, digit_mode());
-    editor_handle_key_press(editor, ev);
-    return;
-  } else {
-    editor_push_mode(editor, motion_mode());
-    editor_handle_key_press(editor, ev);
-  }
+  bool digit = ev->ch != '0' && isdigit((int) ev->ch);
+  editor_push_mode(editor, digit ? digit_mode() : motion_mode());
+  editor_handle_key_press(editor, ev);
 }
 
 static struct operator_pending_mode_t impl = {

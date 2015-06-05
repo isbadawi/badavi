@@ -290,7 +290,7 @@ void gb_search(struct gapbuf_t *gb, char *pattern, struct gb_search_result_t *re
       region->start = start + (size_t) match.rm_so;
       region->len = (size_t) (match.rm_eo - match.rm_so);
       list_append(result->matches, region);
-      start = start + (size_t) match.rm_eo;
+      start += max(1, (size_t) match.rm_eo);
     }
   }
   regfree(&regex);

@@ -120,11 +120,11 @@ static void cmdline_mode_key_pressed(struct editor_t *editor, struct tb_event *e
 static void search_done_cb(struct editor_t *editor, char *command,
                            enum editor_search_direction_t direction) {
   if (*command) {
-    struct buf_t *reg = editor_get_register(editor, '/');
-    buf_clear(reg);
-    buf_append(reg, command);
+    editor_search(editor, command, direction);
+    buf_printf(editor_get_register(editor, '/'), "%s", command);
+  } else {
+    editor_search(editor, NULL, direction);
   }
-  editor_search(editor, direction);
 }
 
 static void search_char_cb(struct editor_t *editor, char *command,
@@ -132,12 +132,9 @@ static void search_char_cb(struct editor_t *editor, char *command,
   if (!option_get_bool("incsearch") || !*command) {
     return;
   }
-  struct buf_t *reg = editor_get_register(editor, '/');
-  buf_clear(reg);
-  buf_append(reg, command);
   struct cmdline_mode_t *mode = (struct cmdline_mode_t*) editor->mode;
   editor->window->cursor = mode->cursor;
-  editor_search(editor, direction);
+  editor_search(editor, command, direction);
 }
 
 static void forward_search_done_cb(struct editor_t *editor, char *command) {

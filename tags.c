@@ -79,11 +79,7 @@ static void tags_load(struct tags_t *tags) {
     tag->name = xstrdup(strtok(line, "\t"));
     tag->path = xstrdup(strtok(NULL, "\t"));
     tag->cmd = escape_regex(strtok(NULL, "\""));
-    // TODO(isbadawi): Hack since we don't have ex mode...
-    size_t cmdlen = strlen(tag->cmd);
-    tag->cmd = realloc(tag->cmd, cmdlen + 3);
-    tag->cmd[cmdlen - 2] = '\0';
-    strcat(tag->cmd, "<cr>");
+    tag->cmd[strlen(tag->cmd) - 2] = '\0';
   }
   free(line);
   fclose(fp);
@@ -149,7 +145,7 @@ void editor_jump_to_tag(struct editor_t *editor, char *name) {
   editor->window->tag = jump;
 
   editor_open(editor, tag->path);
-  editor_send_keys(editor, tag->cmd);
+  editor_search(editor, tag->cmd + 1, EDITOR_SEARCH_FORWARDS);
 }
 
 void editor_tag_stack_prev(struct editor_t *editor) {
@@ -184,6 +180,6 @@ void editor_tag_stack_next(struct editor_t *editor) {
   }
 
   editor_open(editor, next->tag->path);
-  editor_send_keys(editor, next->tag->cmd);
+  editor_search(editor, next->tag->cmd + 1, EDITOR_SEARCH_FORWARDS);
   editor->window->tag = next;
 }

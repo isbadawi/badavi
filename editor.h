@@ -62,7 +62,11 @@ enum editor_search_direction_t {
   EDITOR_SEARCH_FORWARDS,
   EDITOR_SEARCH_BACKWARDS
 };
-void editor_search(struct editor_t *editor, enum editor_search_direction_t direction);
+// Search for the given pattern in the currently opened buffer, changing
+// the position of the cursor. If pattern is NULL, will instead search for
+// the pattern stored in the last-search-pattern register (/).
+void editor_search(struct editor_t *editor, char *pattern,
+                   enum editor_search_direction_t direction);
 
 struct tb_event;
 void editor_handle_key_press(struct editor_t *editor, struct tb_event *ev);

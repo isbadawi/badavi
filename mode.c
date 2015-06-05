@@ -20,7 +20,12 @@ static void digit_pressed(struct editor_t *editor, struct tb_event *ev) {
   editor->count += ev->ch - '0';
 }
 
-static struct editing_mode_t digit_mode_impl = {NULL, digit_pressed, NULL};
+static struct editing_mode_t digit_mode_impl = {
+  .entered = NULL,
+  .exited = NULL,
+  .key_pressed = digit_pressed,
+  .parent = NULL
+};
 
 struct editing_mode_t *digit_mode(void) {
   return &digit_mode_impl;
@@ -34,7 +39,12 @@ static void quote_pressed(struct editor_t *editor, struct tb_event *ev) {
   editor_pop_mode(editor);
 }
 
-static struct editing_mode_t quote_mode_impl = {NULL, quote_pressed, NULL};
+static struct editing_mode_t quote_mode_impl = {
+  .entered = NULL,
+  .exited = NULL,
+  .key_pressed = quote_pressed,
+  .parent = NULL
+};
 
 struct editing_mode_t *quote_mode(void) {
   return &quote_mode_impl;
@@ -49,6 +59,9 @@ struct cmdline_mode_t {
 static void cmdline_mode_entered(struct editor_t *editor) {
   struct cmdline_mode_t *mode = (struct cmdline_mode_t*) editor->mode;
   editor_status_msg(editor, "%c", mode->prompt);
+}
+
+static void cmdline_mode_exited(struct editor_t __unused *editor) {
 }
 
 static void cmdline_mode_key_pressed(struct editor_t *editor, struct tb_event *ev) {
@@ -101,19 +114,27 @@ static void backward_search_mode_cmdline_cb(struct editor_t *editor, char *comma
   editor_search(editor, EDITOR_SEARCH_BACKWARDS);
 }
 
+#define CMDLINE_MODE_INIT \
+  { \
+    .entered = cmdline_mode_entered, \
+    .exited = cmdline_mode_exited, \
+    .key_pressed = cmdline_mode_key_pressed, \
+    .parent = NULL \
+  }
+
 
 static struct cmdline_mode_t forward_search_impl = {
-  {cmdline_mode_entered, cmdline_mode_key_pressed, NULL},
+  CMDLINE_MODE_INIT,
   '/', forward_search_mode_cmdline_cb
 };
 
 static struct cmdline_mode_t backward_search_impl = {
-  {cmdline_mode_entered, cmdline_mode_key_pressed, NULL},
+  CMDLINE_MODE_INIT,
   '?', backward_search_mode_cmdline_cb
 };
 
 static struct cmdline_mode_t command_impl = {
-  {cmdline_mode_entered, cmdline_mode_key_pressed, NULL},
+  CMDLINE_MODE_INIT,
   ':', editor_execute_command
 };
 

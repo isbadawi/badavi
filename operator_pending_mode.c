@@ -124,7 +124,12 @@ static void key_pressed(struct editor_t *editor, struct tb_event *ev) {
 }
 
 static struct operator_pending_mode_t impl = {
-  {entered, key_pressed, NULL},
+  {
+    .entered = entered,
+    .exited = NULL,
+    .key_pressed = key_pressed,
+    NULL
+  },
   NULL
 };
 

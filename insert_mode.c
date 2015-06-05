@@ -15,6 +15,18 @@ static void insert_mode_entered(struct editor_t *editor) {
   editor_start_action_group(editor);
 }
 
+static void insert_mode_exited(struct editor_t *editor) {
+  // If we exit insert mode without making changes, let's not add a
+  // useless undo action.
+  // TODO(isbadawi): Maybe this belongs in an "editor_end_action_group"
+  struct list_t *undo_stack = editor->window->buffer->undo_stack;
+  if (list_empty(list_peek(undo_stack))) {
+    list_pop(undo_stack);
+  }
+
+  editor_status_msg(editor, "");
+}
+
 static void insert_mode_key_pressed(struct editor_t* editor, struct tb_event* ev) {
   struct buffer_t *buffer = editor->window->buffer;
   struct gapbuf_t *gb = buffer->text;
@@ -22,14 +34,6 @@ static void insert_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
   char ch;
   switch (ev->key) {
   case TB_KEY_ESC: case TB_KEY_CTRL_C:
-    // If we exit insert mode without making changes, let's not add a
-    // useless undo action.
-    // TODO(isbadawi): Maybe this belongs in an "editor_end_action_group"
-    if (list_empty(list_peek(buffer->undo_stack))) {
-      list_pop(buffer->undo_stack);
-    }
-
-    editor_status_msg(editor, "");
     editor_pop_mode(editor);
     return;
   case TB_KEY_BACKSPACE2:
@@ -59,9 +63,10 @@ static void insert_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
 }
 
 static struct editing_mode_t impl = {
-  insert_mode_entered,
-  insert_mode_key_pressed,
-  NULL
+  .entered = insert_mode_entered,
+  .exited = insert_mode_exited,
+  .key_pressed = insert_mode_key_pressed,
+  .parent = NULL
 };
 
 struct editing_mode_t *insert_mode(void) {

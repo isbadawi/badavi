@@ -190,6 +190,9 @@ void editor_push_mode(struct editor_t *editor, struct editing_mode_t *mode) {
 }
 
 void editor_pop_mode(struct editor_t *editor) {
+  if (editor->mode->exited) {
+    editor->mode->exited(editor);
+  }
   if (editor->mode->parent) {
     editor->mode = editor->mode->parent;
     if (editor->mode->entered) {

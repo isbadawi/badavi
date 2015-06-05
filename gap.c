@@ -1,14 +1,10 @@
 #include "gap.h"
 
-#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <regex.h>
 
 #include "buf.h"
-#include "list.h"
-#include "options.h"
 #include "util.h"
 
 #define GAPSIZE 1024
@@ -99,7 +95,7 @@ void gb_getstring(struct gapbuf_t *gb, size_t pos, size_t n, char *buf) {
 }
 
 // Moves the gap so that gb->bufstart + pos == gb->gapstart.
-static void gb_mvgap(struct gapbuf_t *gb, size_t pos) {
+void gb_mvgap(struct gapbuf_t *gb, size_t pos) {
   char *point = gb->bufstart + gb_index(gb, pos);
   if (gb->gapend <= point) {
     ptrdiff_t n = point - gb->gapend;
@@ -237,61 +233,4 @@ size_t gb_linecol_to_pos(struct gapbuf_t *gb, size_t line, size_t column) {
     offset += gb->lines->buf[i] + 1;
   }
   return offset + column;
-}
-
-static bool gb_should_ignore_case(char *pattern) {
-  if (!option_get_bool("ignorecase")) {
-    return false;
-  }
-  if (!option_get_bool("smartcase")) {
-    return true;
-  }
-
-  for (char *p = pattern; *p; ++p) {
-    if (isupper((int) *p)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-void gb_search(struct gapbuf_t *gb, char *pattern, struct gb_search_result_t *result) {
-  // Move the gap so the searched region is contiguous.
-  gb_mvgap(gb, 0);
-
-  regex_t regex;
-  int flags = REG_EXTENDED | REG_NEWLINE;
-  if (gb_should_ignore_case(pattern)) {
-    flags |= REG_ICASE;
-  }
-  int err = regcomp(&regex, pattern, flags);
-  if (err) {
-    result->matches = NULL;
-    regerror(err, &regex, result->error, sizeof(result->error));
-    return;
-  }
-
-  result->matches = list_create();
-
-  int nomatch = 0;
-  size_t start = 0;
-  while (!nomatch) {
-    regmatch_t match;
-    // regexec assumes the string is at the beginning of a line unless told
-    // otherwise. This affects regexes that use ^.
-    flags = 0;
-    if (start > 0 && gb_getchar(gb, start - 1) != '\n') {
-      flags |= REG_NOTBOL;
-    }
-
-    nomatch = regexec(&regex, gb->gapend + start, 1, &match, flags);
-    if (!nomatch) {
-      struct gb_match_t *region = xmalloc(sizeof(*region));
-      region->start = start + (size_t) match.rm_so;
-      region->len = (size_t) (match.rm_eo - match.rm_so);
-      list_append(result->matches, region);
-      start += max(1, (size_t) match.rm_eo);
-    }
-  }
-  regfree(&regex);
 }

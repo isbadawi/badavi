@@ -1,14 +1,16 @@
 #include "mode.h"
 
 #include <ctype.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <termbox.h>
 
 #include "buf.h"
 #include "editor.h"
 #include "options.h"
+#include "search.h"
 #include "util.h"
 #include "window.h"
 
@@ -118,7 +120,7 @@ static void cmdline_mode_key_pressed(struct editor_t *editor, struct tb_event *e
 }
 
 static void search_done_cb(struct editor_t *editor, char *command,
-                           enum editor_search_direction_t direction) {
+                           enum search_direction_t direction) {
   if (*command) {
     editor_search(editor, command, direction);
     buf_printf(editor_get_register(editor, '/'), "%s", command);
@@ -128,7 +130,7 @@ static void search_done_cb(struct editor_t *editor, char *command,
 }
 
 static void search_char_cb(struct editor_t *editor, char *command,
-                           enum editor_search_direction_t direction) {
+                           enum search_direction_t direction) {
   if (!option_get_bool("incsearch") || !*command) {
     return;
   }
@@ -138,19 +140,19 @@ static void search_char_cb(struct editor_t *editor, char *command,
 }
 
 static void forward_search_done_cb(struct editor_t *editor, char *command) {
-  search_done_cb(editor, command, EDITOR_SEARCH_FORWARDS);
+  search_done_cb(editor, command, SEARCH_FORWARDS);
 }
 
 static void forward_search_char_cb(struct editor_t *editor, char *command) {
-  search_char_cb(editor, command, EDITOR_SEARCH_FORWARDS);
+  search_char_cb(editor, command, SEARCH_FORWARDS);
 }
 
 static void backward_search_done_cb(struct editor_t *editor, char *command) {
-  search_done_cb(editor, command, EDITOR_SEARCH_BACKWARDS);
+  search_done_cb(editor, command, SEARCH_BACKWARDS);
 }
 
 static void backward_search_char_cb(struct editor_t *editor, char *command) {
-  search_char_cb(editor, command, EDITOR_SEARCH_BACKWARDS);
+  search_char_cb(editor, command, SEARCH_BACKWARDS);
 }
 
 #define CMDLINE_MODE_INIT \

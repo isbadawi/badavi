@@ -8,7 +8,9 @@
 
 #include "buf.h"
 #include "editor.h"
+#include "options.h"
 #include "util.h"
+#include "window.h"
 
 static void digit_pressed(struct editor_t *editor, struct tb_event *ev) {
   if (!isdigit((int) ev->ch)) {
@@ -52,16 +54,26 @@ struct editing_mode_t *quote_mode(void) {
 
 struct cmdline_mode_t {
   struct editing_mode_t mode;
+  // The position of the cursor when the mode was entered.
+  size_t cursor;
   char prompt;
-  void (*cb)(struct editor_t*, char*);
+  // Called once the user presses enter, with the complete command.
+  void (*done_cb)(struct editor_t*, char*);
+  // Called after every character typed, with the command so far.
+  void (*char_cb)(struct editor_t*, char*);
 };
 
 static void cmdline_mode_entered(struct editor_t *editor) {
   struct cmdline_mode_t *mode = (struct cmdline_mode_t*) editor->mode;
   editor_status_msg(editor, "%c", mode->prompt);
+  mode->cursor = editor->window->cursor;
+  editor->status_silence = true;
 }
 
-static void cmdline_mode_exited(struct editor_t __unused *editor) {
+static void cmdline_mode_exited(struct editor_t *editor) {
+  struct cmdline_mode_t *mode = (struct cmdline_mode_t*) editor->mode;
+  editor->window->cursor = mode->cursor;
+  editor->status_silence = false;
 }
 
 static void cmdline_mode_key_pressed(struct editor_t *editor, struct tb_event *ev) {
@@ -77,12 +89,16 @@ static void cmdline_mode_key_pressed(struct editor_t *editor, struct tb_event *e
     if (editor->status->len == 0) {
       editor_pop_mode(editor);
       return;
+    } else if (mode->char_cb) {
+      char *command = xstrdup(editor->status->buf + 1);
+      mode->char_cb(editor, command);
+      free(command);
     }
     return;
   case TB_KEY_ENTER: {
     char *command = xstrdup(editor->status->buf + 1);
     editor_pop_mode(editor);
-    mode->cb(editor, command);
+    mode->done_cb(editor, command);
     free(command);
     return;
   }
@@ -94,24 +110,50 @@ static void cmdline_mode_key_pressed(struct editor_t *editor, struct tb_event *e
   }
   char s[2] = {ch, '\0'};
   buf_append(editor->status, s);
+  if (mode->char_cb) {
+    char *command = xstrdup(editor->status->buf + 1);
+    mode->char_cb(editor, command);
+    free(command);
+  }
 }
 
-static void forward_search_mode_cmdline_cb(struct editor_t *editor, char *command) {
+static void search_done_cb(struct editor_t *editor, char *command,
+                           enum editor_search_direction_t direction) {
   if (*command) {
     struct buf_t *reg = editor_get_register(editor, '/');
     buf_clear(reg);
     buf_append(reg, command);
   }
-  editor_search(editor, EDITOR_SEARCH_FORWARDS);
+  editor_search(editor, direction);
 }
 
-static void backward_search_mode_cmdline_cb(struct editor_t *editor, char *command) {
-  if (*command) {
-    struct buf_t *reg = editor_get_register(editor, '/');
-    buf_clear(reg);
-    buf_append(reg, command);
+static void search_char_cb(struct editor_t *editor, char *command,
+                           enum editor_search_direction_t direction) {
+  if (!option_get_bool("incsearch") || !*command) {
+    return;
   }
-  editor_search(editor, EDITOR_SEARCH_BACKWARDS);
+  struct buf_t *reg = editor_get_register(editor, '/');
+  buf_clear(reg);
+  buf_append(reg, command);
+  struct cmdline_mode_t *mode = (struct cmdline_mode_t*) editor->mode;
+  editor->window->cursor = mode->cursor;
+  editor_search(editor, direction);
+}
+
+static void forward_search_done_cb(struct editor_t *editor, char *command) {
+  search_done_cb(editor, command, EDITOR_SEARCH_FORWARDS);
+}
+
+static void forward_search_char_cb(struct editor_t *editor, char *command) {
+  search_char_cb(editor, command, EDITOR_SEARCH_FORWARDS);
+}
+
+static void backward_search_done_cb(struct editor_t *editor, char *command) {
+  search_done_cb(editor, command, EDITOR_SEARCH_BACKWARDS);
+}
+
+static void backward_search_char_cb(struct editor_t *editor, char *command) {
+  search_char_cb(editor, command, EDITOR_SEARCH_BACKWARDS);
 }
 
 #define CMDLINE_MODE_INIT \
@@ -125,17 +167,17 @@ static void backward_search_mode_cmdline_cb(struct editor_t *editor, char *comma
 
 static struct cmdline_mode_t forward_search_impl = {
   CMDLINE_MODE_INIT,
-  '/', forward_search_mode_cmdline_cb
+  0, '/', forward_search_done_cb, forward_search_char_cb
 };
 
 static struct cmdline_mode_t backward_search_impl = {
   CMDLINE_MODE_INIT,
-  '?', backward_search_mode_cmdline_cb
+  0, '?', backward_search_done_cb, backward_search_char_cb
 };
 
 static struct cmdline_mode_t command_impl = {
   CMDLINE_MODE_INIT,
-  ':', editor_execute_command
+  0, ':', editor_execute_command, NULL
 };
 
 struct editing_mode_t *search_mode(char direction) {

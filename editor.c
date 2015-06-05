@@ -59,6 +59,7 @@ void editor_init(struct editor_t *editor) {
 
   editor->status = buf_create(editor->width);
   editor->status_error = false;
+  editor->status_silence = false;
 
   editor->mode = normal_mode();
 
@@ -553,6 +554,9 @@ void editor_send_keys(struct editor_t *editor, char *keys) {
 }
 
 void editor_status_msg(struct editor_t *editor, const char *format, ...) {
+  if (editor->status_silence) {
+    return;
+  }
   va_list args;
   va_start(args, format);
   buf_vprintf(editor->status, format, args);
@@ -561,6 +565,9 @@ void editor_status_msg(struct editor_t *editor, const char *format, ...) {
 }
 
 void editor_status_err(struct editor_t *editor, const char *format, ...) {
+  if (editor->status_silence) {
+    return;
+  }
   va_list args;
   va_start(args, format);
   buf_vprintf(editor->status, format, args);

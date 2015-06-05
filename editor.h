@@ -25,6 +25,8 @@ struct editor_t {
   struct buf_t* status;
   // Whether the status is an error.
   bool status_error;
+  // Whether the status should be displayed.
+  bool status_silence;
 
   // An array of registers.
   struct editor_register_t *registers;

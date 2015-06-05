@@ -85,8 +85,6 @@ struct buf_t *editor_get_register(struct editor_t *editor, char name) {
   return NULL;
 }
 
-#define SEARCH_PATTERN_MAXLEN 256
-
 // TODO(isbadawi): Searching should be a motion.
 void editor_search(struct editor_t *editor, enum editor_search_direction_t direction) {
   struct buf_t *reg = editor_get_register(editor, '/');
@@ -95,10 +93,7 @@ void editor_search(struct editor_t *editor, enum editor_search_direction_t direc
     return;
   }
 
-  char pattern[SEARCH_PATTERN_MAXLEN];
-  memcpy(pattern, reg->buf, reg->len);
-  pattern[reg->len] = '\0';
-
+  char *pattern = reg->buf;
   struct gapbuf_t *gb = editor->window->buffer->text;
   struct gb_search_result_t result;
   gb_search(gb, pattern, &result);

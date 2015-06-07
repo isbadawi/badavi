@@ -146,7 +146,7 @@ void editor_jump_to_tag(struct editor_t *editor, char *name) {
   editor->window->tag = jump;
 
   editor_open(editor, tag->path);
-  editor_search(editor, tag->cmd + 1, SEARCH_FORWARDS);
+  editor_search(editor, tag->cmd + 1, 0, SEARCH_FORWARDS);
 }
 
 void editor_tag_stack_prev(struct editor_t *editor) {
@@ -181,6 +181,6 @@ void editor_tag_stack_next(struct editor_t *editor) {
   }
 
   editor_open(editor, next->tag->path);
-  editor_search(editor, next->tag->cmd + 1, SEARCH_FORWARDS);
+  editor_search(editor, next->tag->cmd + 1, 0, SEARCH_FORWARDS);
   editor->window->tag = next;
 }

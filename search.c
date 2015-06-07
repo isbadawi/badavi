@@ -86,7 +86,7 @@ static void gb_search(struct gapbuf_t *gb, char *pattern,
 
 // TODO(isbadawi): Searching should be a motion.
 void editor_search(struct editor_t *editor, char *pattern,
-                   enum search_direction_t direction) {
+                   size_t start, enum search_direction_t direction) {
   if (!pattern) {
     struct buf_t *reg = editor_get_register(editor, '/');
     if (reg->len == 0) {
@@ -114,7 +114,7 @@ void editor_search(struct editor_t *editor, char *pattern,
   struct match_t *m;
   if (direction == SEARCH_FORWARDS) {
     LIST_FOREACH(result.matches, m) {
-      if (m->start > editor->window->cursor) {
+      if (m->start > start) {
         match = m;
         break;
       }
@@ -127,14 +127,13 @@ void editor_search(struct editor_t *editor, char *pattern,
   } else {
     struct match_t *last = NULL;
     LIST_FOREACH(result.matches, m) {
-      if (last && last->start < editor->window->cursor &&
-          m->start >= editor->window->cursor) {
+      if (last && last->start < start && start <= m->start) {
         match = last;
         break;
       }
       last = m;
     }
-    if (last->start < editor->window->cursor) {
+    if (last->start < start) {
       match = last;
     }
     if (!match) {

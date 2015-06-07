@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stddef.h>
+
 struct editor_t;
 
 enum search_direction_t {
@@ -11,4 +13,4 @@ enum search_direction_t {
 // the position of the cursor. If pattern is NULL, will instead search for
 // the pattern stored in the last-search-pattern register (/).
 void editor_search(struct editor_t *editor, char *pattern,
-                   enum search_direction_t direction);
+                   size_t start, enum search_direction_t direction);

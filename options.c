@@ -21,8 +21,8 @@ struct option_t {
 
 #define OPTION(name, type, defaultval) {#name, type, {defaultval}}
 
-#define BOOL_OPTION(name, defaultval) OPTION(name, OPTION_TYPE_BOOL, defaultval)
-#define INT_OPTION(name, defaultval) OPTION(name, OPTION_TYPE_INT, defaultval)
+#define BOOL_OPTION(name, defaultval) OPTION(name, OPTION_TYPE_BOOL, .b = defaultval)
+#define INT_OPTION(name, defaultval) OPTION(name, OPTION_TYPE_INT, .i = defaultval)
 
 static struct option_t option_table[] = {
   INT_OPTION(numberwidth, 4),

@@ -68,13 +68,13 @@ struct cmdline_mode_t {
 static void cmdline_mode_entered(struct editor_t *editor) {
   struct cmdline_mode_t *mode = (struct cmdline_mode_t*) editor->mode;
   editor_status_msg(editor, "%c", mode->prompt);
-  mode->cursor = editor->window->cursor;
+  mode->cursor = window_cursor(editor->window);
   editor->status_silence = true;
 }
 
 static void cmdline_mode_exited(struct editor_t *editor) {
   struct cmdline_mode_t *mode = (struct cmdline_mode_t*) editor->mode;
-  editor->window->cursor = mode->cursor;
+  window_set_cursor(editor->window, mode->cursor);
   editor->status_silence = false;
 }
 
@@ -121,11 +121,12 @@ static void cmdline_mode_key_pressed(struct editor_t *editor, struct tb_event *e
 
 static void search_done_cb(struct editor_t *editor, char *command,
                            enum search_direction_t direction) {
+  size_t cursor = window_cursor(editor->window);
   if (*command) {
-    editor_search(editor, command, editor->window->cursor, direction);
+    editor_search(editor, command, cursor, direction);
     buf_printf(editor_get_register(editor, '/'), "%s", command);
   } else {
-    editor_search(editor, NULL, editor->window->cursor, direction);
+    editor_search(editor, NULL, cursor, direction);
   }
 }
 

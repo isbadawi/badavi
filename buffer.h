@@ -20,6 +20,10 @@ struct buffer_t {
   // The elements are lists of actions.
   struct list_t *undo_stack;
   struct list_t *redo_stack;
+
+  // Marked regions, whose positions are updated as edits are made via
+  // buffer_do_insert and buffer_do_delete.
+  struct list_t *marks;
 };
 
 // Reads the given path into a struct buffer_t object. The path must exist.
@@ -45,11 +49,9 @@ void buffer_do_insert(struct buffer_t *buffer, struct buf_t *buf, size_t pos);
 void buffer_do_delete(struct buffer_t *buffer, size_t n, size_t pos);
 
 // Undo the last action group. Return false if there is nothing to undo.
-//  Fill the new position of the cursor. TODO(isbadawi): Replace with marks...
-bool buffer_undo(struct buffer_t *buffer, size_t *cursor);
+bool buffer_undo(struct buffer_t *buffer);
 // Redo the last undone action group. Return false if there is nothing to redo.
-//  Fill the new position of the cursor. TODO(isbadawi): Replace with marks...
-bool buffer_redo(struct buffer_t *buffer, size_t *cursor);
+bool buffer_redo(struct buffer_t *buffer);
 
 // Start a new action group, clearing the redo stack as a side effect.
 // Subsequent calls to buffer_do_insert or buffer_do_delete will add actions to

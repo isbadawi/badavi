@@ -123,7 +123,7 @@ void editor_jump_to_tag(struct editor_t *editor, char *name) {
 
   struct tag_jump_t *jump = xmalloc(sizeof(*jump));
   jump->buffer = editor->window->buffer;
-  jump->cursor = editor->window->cursor;
+  jump->cursor = window_cursor(editor->window);
   jump->tag = tag;
 
   if (editor->window->tag) {
@@ -156,8 +156,8 @@ void editor_tag_stack_prev(struct editor_t *editor) {
     editor_status_err(editor, "at bottom of tag stack");
   } else {
     editor_status_msg(editor, "");
-    editor->window->buffer = editor->window->tag->buffer;
-    editor->window->cursor = editor->window->tag->cursor;
+    window_set_buffer(editor->window, editor->window->tag->buffer);
+    window_set_cursor(editor->window, editor->window->tag->cursor);
     editor->window->tag =
       list_prev(editor->window->tag_stack, editor->window->tag);
   }

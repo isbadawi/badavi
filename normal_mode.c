@@ -21,7 +21,7 @@ static bool is_last_line(struct gapbuf_t *gb, size_t pos) {
 
 static void normal_mode_entered(struct editor_t *editor) {
   if (editor->motion) {
-    editor->window->cursor = motion_apply(editor);
+    window_set_cursor(editor->window, motion_apply(editor));
   }
 }
 
@@ -65,7 +65,7 @@ static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
   }
 
   struct gapbuf_t *gb = editor->window->buffer->text;
-  size_t *cursor = &editor->window->cursor;
+  size_t cursor = window_cursor(editor->window);
   switch (ev->ch) {
   case 0:
     break;
@@ -87,7 +87,7 @@ static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
     char pattern[256];
     snprintf(pattern, 256, "[[:<:]]%s[[:>:]]", word);
     if (ev->ch == '*') {
-      editor_search(editor, pattern, *cursor, SEARCH_FORWARDS);
+      editor_search(editor, pattern, cursor, SEARCH_FORWARDS);
     } else {
       editor_search(editor, pattern, start, SEARCH_BACKWARDS);
     }
@@ -95,16 +95,15 @@ static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
   }
   case 'p': {
     struct buf_t *reg = editor_get_register(editor, editor->register_);
-    size_t where = gb_getchar(gb, *cursor) == '\n' ? *cursor : *cursor + 1;
+    size_t where = gb_getchar(gb, cursor) == '\n' ? cursor : cursor + 1;
     buffer_start_action_group(editor->window->buffer);
     buffer_do_insert(editor->window->buffer, buf_copy(reg), where);
-    *cursor = where + reg->len - 1;
     editor->register_ = '"';
     break;
   }
   case 'u': editor_undo(editor); break;
-  case 'n': editor_search(editor, NULL, *cursor, SEARCH_FORWARDS); break;
-  case 'N': editor_search(editor, NULL, *cursor, SEARCH_BACKWARDS); break;
+  case 'n': editor_search(editor, NULL, cursor, SEARCH_FORWARDS); break;
+  case 'N': editor_search(editor, NULL, cursor, SEARCH_BACKWARDS); break;
   case 'a': editor_send_keys(editor, "li"); break;
   case 'I': editor_send_keys(editor, "0i"); break;
   case 'A': editor_send_keys(editor, "$i"); break;
@@ -114,7 +113,7 @@ static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
   case 'D': editor_send_keys(editor, "d$"); break;
   case 'C': editor_send_keys(editor, "c$"); break;
   case 'J':
-    if (!is_last_line(gb, *cursor)) {
+    if (!is_last_line(gb, cursor)) {
       editor_send_keys(editor, "A <esc>jI<bs><esc>");
     }
     break;

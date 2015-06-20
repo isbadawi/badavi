@@ -110,10 +110,7 @@ void editor_open(struct editor_t *editor, char *path) {
     }
     list_append(editor->buffers, buffer);
   }
-  editor->window->buffer = buffer;
-  editor->window->cursor = 0;
-  editor->window->top = 0;
-  editor->window->left = 0;
+  window_set_buffer(editor->window, buffer);
 }
 
 void editor_push_mode(struct editor_t *editor, struct editing_mode_t *mode) {
@@ -510,13 +507,13 @@ void editor_status_err(struct editor_t *editor, const char *format, ...) {
 }
 
 void editor_undo(struct editor_t *editor) {
-  if (!buffer_undo(editor->window->buffer, &editor->window->cursor)) {
+  if (!buffer_undo(editor->window->buffer)) {
     editor_status_msg(editor, "Already at oldest change");
   }
 }
 
 void editor_redo(struct editor_t *editor) {
-  if (!buffer_redo(editor->window->buffer, &editor->window->cursor)) {
+  if (!buffer_redo(editor->window->buffer)) {
     editor_status_msg(editor, "Already at newest change");
   }
 }

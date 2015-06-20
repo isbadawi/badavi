@@ -15,10 +15,8 @@
 struct window_t *window_create(struct buffer_t *buffer, size_t x, size_t y, size_t w, size_t h) {
   struct window_t *window = xmalloc(sizeof(*window));
 
-  window->buffer = buffer;
-  window->top = 0;
-  window->left = 0;
-  window->cursor = 0;
+  window->buffer = NULL;
+  window_set_buffer(window, buffer);
 
   window->x = x;
   window->y = y;
@@ -29,6 +27,28 @@ struct window_t *window_create(struct buffer_t *buffer, size_t x, size_t y, size
   window->tag = NULL;
 
   return window;
+}
+
+void window_set_buffer(struct window_t *window, struct buffer_t* buffer) {
+  if (window->buffer) {
+    list_remove(window->buffer->marks, window->cursor);
+    free(window->cursor);
+  }
+
+  window->buffer = buffer;
+  window->top = 0;
+  window->left = 0;
+  window->cursor = region_create(0, 1);
+  list_append(buffer->marks, window->cursor);
+}
+
+size_t window_cursor(struct window_t *window) {
+  return window->cursor->start;
+}
+
+void window_set_cursor(struct window_t *window, size_t pos) {
+  window->cursor->start = pos;
+  window->cursor->end = pos + 1;
 }
 
 // Number of columns to use for the line number (including the trailing space).
@@ -47,7 +67,7 @@ static size_t window_numberwidth(struct window_t* window) {
 
 static void window_ensure_cursor_visible(struct window_t *window) {
   size_t x, y;
-  gb_pos_to_linecol(window->buffer->text, window->cursor, &y, &x);
+  gb_pos_to_linecol(window->buffer->text, window_cursor(window), &y, &x);
 
   size_t w = window->w - window_numberwidth(window);
   size_t h = window->h;
@@ -69,10 +89,11 @@ static void window_change_cell(struct window_t *window, size_t x, size_t y, char
 }
 
 void window_draw_cursor(struct window_t *window) {
+  size_t cursor = window_cursor(window);
   struct gapbuf_t *gb = window->buffer->text;
-  char c = gb_getchar(gb, window->cursor);
+  char c = gb_getchar(gb, cursor);
   size_t x, y;
-  gb_pos_to_linecol(gb, window->cursor, &y, &x);
+  gb_pos_to_linecol(gb, cursor, &y, &x);
 
   window_change_cell(window,
       x - window->left,
@@ -87,7 +108,7 @@ void window_draw(struct window_t *window) {
   struct gapbuf_t *gb = window->buffer->text;
 
   size_t cursorline, cursorcol;
-  gb_pos_to_linecol(gb, window->cursor, &cursorline, &cursorcol);
+  gb_pos_to_linecol(gb, window_cursor(window), &cursorline, &cursorcol);
 
   bool number = option_get_bool("number");
   bool relativenumber = option_get_bool("relativenumber");

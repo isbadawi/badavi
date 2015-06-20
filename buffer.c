@@ -1,5 +1,6 @@
 #include "buffer.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +19,8 @@ static struct buffer_t *buffer_of(char *path, struct gapbuf_t *gb) {
 
   buffer->undo_stack = list_create();
   buffer->redo_stack = list_create();
+
+  buffer->marks = list_create();
 
   return buffer;
 }
@@ -70,6 +73,31 @@ struct edit_action_t {
   struct buf_t *buf;
 };
 
+static void buffer_update_marks_after_insert(
+    struct buffer_t *buffer, size_t pos, size_t n) {
+  struct region_t *region;
+  LIST_FOREACH(buffer->marks, region) {
+    assert(region->end - region->start == 1);
+    if (pos <= region->start) {
+      region->start += n;
+      region->end += n;
+    }
+  }
+}
+
+static void buffer_update_marks_after_delete(
+    struct buffer_t *buffer, size_t pos, size_t n) {
+  struct region_t *region;
+  LIST_FOREACH(buffer->marks, region) {
+    assert(region->end - region->start == 1);
+    if (pos <= region->start) {
+      size_t diff = min(n, region->start - pos);
+      region->start -= diff;
+      region->end -= diff;
+    }
+  }
+}
+
 void buffer_do_insert(struct buffer_t *buffer, struct buf_t *buf, size_t pos) {
   struct edit_action_t *action = xmalloc(sizeof(*action));
   action->type = EDIT_ACTION_INSERT;
@@ -79,6 +107,8 @@ void buffer_do_insert(struct buffer_t *buffer, struct buf_t *buf, size_t pos) {
   list_prepend(group, action);
   gb_putstring(buffer->text, buf->buf, buf->len, pos);
   buffer->dirty = true;
+
+  buffer_update_marks_after_insert(buffer, pos, buf->len);
 }
 
 void buffer_do_delete(struct buffer_t *buffer, size_t n, size_t pos) {
@@ -93,9 +123,11 @@ void buffer_do_delete(struct buffer_t *buffer, size_t n, size_t pos) {
   list_prepend(group, action);
   gb_del(buffer->text, n, pos + n);
   buffer->dirty = true;
+
+  buffer_update_marks_after_delete(buffer, pos, n);
 }
 
-bool buffer_undo(struct buffer_t* buffer, size_t *cursor) {
+bool buffer_undo(struct buffer_t* buffer) {
   if (list_empty(buffer->undo_stack)) {
     return false;
   }
@@ -108,11 +140,11 @@ bool buffer_undo(struct buffer_t* buffer, size_t *cursor) {
     switch (action->type) {
     case EDIT_ACTION_INSERT:
       gb_del(gb, action->buf->len, action->pos + action->buf->len);
-      *cursor = action->pos;
+      buffer_update_marks_after_delete(buffer, action->pos, action->buf->len);
       break;
     case EDIT_ACTION_DELETE:
       gb_putstring(gb, action->buf->buf, action->buf->len, action->pos);
-      *cursor = action->pos;
+      buffer_update_marks_after_insert(buffer, action->pos, action->buf->len);
       break;
     }
   }
@@ -121,7 +153,7 @@ bool buffer_undo(struct buffer_t* buffer, size_t *cursor) {
   return true;
 }
 
-bool buffer_redo(struct buffer_t* buffer, size_t *cursor) {
+bool buffer_redo(struct buffer_t* buffer) {
   if (list_empty(buffer->redo_stack)) {
     return false;
   }
@@ -134,11 +166,11 @@ bool buffer_redo(struct buffer_t* buffer, size_t *cursor) {
     switch (action->type) {
     case EDIT_ACTION_INSERT:
       gb_putstring(gb, action->buf->buf, action->buf->len, action->pos);
-      *cursor = action->pos + action->buf->len;
+      buffer_update_marks_after_insert(buffer, action->pos, action->buf->len);
       break;
     case EDIT_ACTION_DELETE:
       gb_del(gb, action->buf->len, action->pos + action->buf->len);
-      *cursor = action->pos;
+      buffer_update_marks_after_delete(buffer, action->pos, action->buf->len);
       break;
     }
   }

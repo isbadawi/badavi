@@ -27,22 +27,22 @@ static void insert_mode_exited(struct editor_t *editor) {
 
 static void insert_mode_key_pressed(struct editor_t* editor, struct tb_event* ev) {
   struct buffer_t *buffer = editor->window->buffer;
-  size_t *cursor = &editor->window->cursor;
+  size_t cursor = window_cursor(editor->window);
   char ch;
   switch (ev->key) {
   case TB_KEY_ESC: case TB_KEY_CTRL_C:
     editor_pop_mode(editor);
     return;
   case TB_KEY_BACKSPACE2:
-    if (*cursor > 0) {
-      buffer_do_delete(buffer, 1, --(*cursor));
+    if (cursor > 0) {
+      buffer_do_delete(buffer, 1, cursor - 1);
     }
     return;
   case TB_KEY_ENTER: ch = '\n'; break;
   case TB_KEY_SPACE: ch = ' '; break;
   default: ch = (char) ev->ch; break;
   }
-  buffer_do_insert(buffer, buf_from_char(ch), (*cursor)++);
+  buffer_do_insert(buffer, buf_from_char(ch), cursor);
 }
 
 static struct editing_mode_t impl = {

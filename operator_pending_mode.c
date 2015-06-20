@@ -37,6 +37,7 @@ static void delete_op(struct editor_t *editor, struct region_t *region) {
   yank_op(editor, region);
   buffer_start_action_group(editor->window->buffer);
   buffer_do_delete(editor->window->buffer, region->end - region->start, region->start);
+  window_set_cursor(editor->window, region->start);
 }
 
 static void change_op(struct editor_t *editor, struct region_t *region) {
@@ -69,7 +70,7 @@ static void entered(struct editor_t *editor) {
   struct motion_t *motion = editor->motion;
 
   struct region_t *region = region_create(
-      editor->window->cursor, motion_apply(editor));
+      window_cursor(editor->window), motion_apply(editor));
 
   ssize_t last = gb_lastindexof(gb, '\n', region->start - 1);
   size_t next = gb_indexof(gb, '\n', region->end);
@@ -86,12 +87,7 @@ static void entered(struct editor_t *editor) {
   struct operator_pending_mode_t* mode = (struct operator_pending_mode_t*) editor->mode;
   mode->op(editor, region);
   free(region);
-
   editor->register_ = '"';
-  editor->window->cursor = region->start;
-  if (editor->window->cursor > gb_size(gb) - 1) {
-    editor->window->cursor = (size_t) (gb_lastindexof(gb, '\n', (size_t) (last - 1)) + 1);
-  }
 }
 
 static void key_pressed(struct editor_t *editor, struct tb_event *ev) {

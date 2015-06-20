@@ -415,7 +415,8 @@ size_t motion_apply(struct editor_t *editor) {
   struct motion_t *motion = editor->motion;
   unsigned int n = editor->count ? editor->count : 1;
 
-  struct motion_context_t ctx = {editor->window->cursor, editor->window, motion};
+  size_t cursor = window_cursor(editor->window);
+  struct motion_context_t ctx = {cursor, editor->window, motion};
 
   size_t nlines = gb_nlines(editor->window->buffer->text);
   // TODO(isbadawi): This is a hack to make G work correctly.
@@ -434,7 +435,7 @@ size_t motion_apply(struct editor_t *editor) {
 }
 
 size_t motion_word_under_cursor(struct window_t *window, char *buf) {
-  struct motion_context_t ctx = {window->cursor, window, NULL};
+  struct motion_context_t ctx = {window_cursor(window), window, NULL};
   size_t start = is_word_start(ctx) ? ctx.pos : prev_word_start(ctx);
   size_t end = is_word_end(ctx) ? ctx.pos : next_word_end(ctx);
   gb_getstring(window->buffer->text, start, end - start + 1, buf);

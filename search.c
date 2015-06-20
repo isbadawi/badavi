@@ -136,7 +136,7 @@ void editor_search(struct editor_t *editor, char *pattern,
     }
   }
 
-  editor->window->cursor = match->start;
+  window_set_cursor(editor->window, match->start);
 
   // TODO(isbadawi): Remember matches -- can do hlsearch, or cache searches
   // if the buffer hasn't changed.

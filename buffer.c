@@ -38,17 +38,17 @@ struct buffer_t *buffer_open(char *path) {
   return buffer_of(path, gb);
 }
 
-int buffer_write(struct buffer_t *buffer) {
+bool buffer_write(struct buffer_t *buffer) {
   if (!buffer->name[0]) {
-    return -1;
+    return false;
   }
   return buffer_saveas(buffer, buffer->name);
 }
 
-int buffer_saveas(struct buffer_t *buffer, char *path) {
+bool buffer_saveas(struct buffer_t *buffer, char *path) {
   FILE *fp = fopen(path, "w");
   if (!fp) {
-    return -1;
+    return false;
   }
 
   if (!buffer->name[0]) {
@@ -58,7 +58,7 @@ int buffer_saveas(struct buffer_t *buffer, char *path) {
   gb_save(buffer->text, fp);
   buffer->dirty = false;
   fclose(fp);
-  return 0;
+  return true;
 }
 
 // A single edit action -- either an insert or delete.

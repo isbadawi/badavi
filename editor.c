@@ -139,7 +139,7 @@ void editor_pop_mode(struct editor_t *editor) {
 void editor_save_buffer(struct editor_t *editor, char *path) {
   struct buffer_t *buffer = editor->window->buffer;
   char *name;
-  int rc;
+  bool rc;
   if (path) {
     rc = buffer_saveas(buffer, path);
     name = path;

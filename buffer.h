@@ -22,8 +22,6 @@ struct buffer_t {
   struct list_t *redo_stack;
 };
 
-// All functions returns 0 on success, negative number on error.
-
 // Reads the given path into a struct buffer_t object. The path must exist.
 // Returns NULL if buffer can't be opened or we're out of memory.
 struct buffer_t *buffer_open(char *path);
@@ -32,11 +30,12 @@ struct buffer_t *buffer_open(char *path);
 struct buffer_t *buffer_create(char *path);
 
 // Writes the contents of the given buffer to buffer->name.
-// Returns -1 if this buffer has no name.
-int buffer_write(struct buffer_t *buffer);
+// Returns false if this buffer has no name.
+bool buffer_write(struct buffer_t *buffer);
 
 // Writes to the contents of the given buffer to the path.
-int buffer_saveas(struct buffer_t *buffer, char *path);
+// Returns false if the file couldn't be opened for writing.
+bool buffer_saveas(struct buffer_t *buffer, char *path);
 
 // Insert the given buf into the buffer's text at offset pos,
 // updating the undo information along the way.

@@ -14,3 +14,10 @@ void debug(const char *format, ...);
 void *xmalloc(size_t size);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *s);
+
+struct region_t {
+  size_t start;
+  size_t end;
+};
+
+struct region_t *region_create(size_t start, size_t end);

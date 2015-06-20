@@ -32,11 +32,6 @@ static bool search_should_ignore_case(char *pattern) {
   return true;
 }
 
-struct match_t {
-  size_t start;
-  size_t len;
-};
-
 struct search_result_t {
   char error[48];
   struct list_t *matches;
@@ -74,9 +69,8 @@ static void gb_search(struct gapbuf_t *gb, char *pattern,
 
     nomatch = regexec(&regex, gb->gapend + start, 1, &match, flags);
     if (!nomatch) {
-      struct match_t *region = xmalloc(sizeof(*region));
-      region->start = start + (size_t) match.rm_so;
-      region->len = (size_t) (match.rm_eo - match.rm_so);
+      struct region_t *region = region_create(
+          start + (size_t) match.rm_so, start + (size_t) match.rm_eo);
       list_append(result->matches, region);
       start += max(1, (size_t) match.rm_eo);
     }
@@ -110,8 +104,8 @@ void editor_search(struct editor_t *editor, char *pattern,
     return;
   }
 
-  struct match_t *match = NULL;
-  struct match_t *m;
+  struct region_t *match = NULL;
+  struct region_t *m;
   if (direction == SEARCH_FORWARDS) {
     LIST_FOREACH(result.matches, m) {
       if (m->start > start) {
@@ -125,7 +119,7 @@ void editor_search(struct editor_t *editor, char *pattern,
       match = result.matches->head->next->data;
     }
   } else {
-    struct match_t *last = NULL;
+    struct region_t *last = NULL;
     LIST_FOREACH(result.matches, m) {
       if (last && last->start < start && start <= m->start) {
         match = last;

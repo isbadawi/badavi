@@ -49,3 +49,10 @@ char *xstrdup(const char *s) {
   }
   return copy;
 }
+
+struct region_t *region_create(size_t start, size_t end) {
+  struct region_t *region = xmalloc(sizeof(*region));
+  region->start = min(start, end);
+  region->end = max(start, end);
+  return region;
+}

@@ -72,3 +72,6 @@ void editor_equalize_windows(struct editor_t *editor);
 
 struct window_t *editor_left_window(struct editor_t *editor, struct window_t *window);
 struct window_t *editor_right_window(struct editor_t *editor, struct window_t *window);
+
+void editor_undo(struct editor_t *editor);
+void editor_redo(struct editor_t *editor);

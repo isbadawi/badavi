@@ -1,8 +1,11 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #define BUFFER_NAME_MAXLEN 255
+
+struct buf_t;
 
 // struct buffer_t is the in-memory text of a file.
 struct buffer_t {
@@ -34,3 +37,22 @@ int buffer_write(struct buffer_t *buffer);
 
 // Writes to the contents of the given buffer to the path.
 int buffer_saveas(struct buffer_t *buffer, char *path);
+
+// Insert the given buf into the buffer's text at offset pos,
+// updating the undo information along the way.
+void buffer_do_insert(struct buffer_t *buffer, struct buf_t *buf, size_t pos);
+// Delete n characters from the buffer's text starting at offset pos,
+// updating the undo information along the way.
+void buffer_do_delete(struct buffer_t *buffer, size_t n, size_t pos);
+
+// Undo the last action group. Return false if there is nothing to undo.
+//  Fill the new position of the cursor. TODO(isbadawi): Replace with marks...
+bool buffer_undo(struct buffer_t *buffer, size_t *cursor);
+// Redo the last undone action group. Return false if there is nothing to redo.
+//  Fill the new position of the cursor. TODO(isbadawi): Replace with marks...
+bool buffer_redo(struct buffer_t *buffer, size_t *cursor);
+
+// Start a new action group, clearing the redo stack as a side effect.
+// Subsequent calls to buffer_do_insert or buffer_do_delete will add actions to
+// this group, which will be the target of the next buffer_undo call.
+void buffer_start_action_group(struct buffer_t *buffer);

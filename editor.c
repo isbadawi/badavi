@@ -508,3 +508,15 @@ void editor_status_err(struct editor_t *editor, const char *format, ...) {
   va_end(args);
   editor->status_error = true;
 }
+
+void editor_undo(struct editor_t *editor) {
+  if (!buffer_undo(editor->window->buffer, &editor->window->cursor)) {
+    editor_status_msg(editor, "Already at oldest change");
+  }
+}
+
+void editor_redo(struct editor_t *editor) {
+  if (!buffer_redo(editor->window->buffer, &editor->window->cursor)) {
+    editor_status_msg(editor, "Already at newest change");
+  }
+}

@@ -23,14 +23,16 @@ struct list_t {
 
 #define LIST_FOREACH(list, i) \
   for (list->iter = list->head->next, \
-       i = list->iter->data; \
+       i = list->iter->data, \
+       i = i; \
        list->iter != list->tail; \
        list->iter = list->iter->next, \
        i = list->iter->data)
 
 #define LIST_FOREACH_REVERSE(list, i) \
   for (list->iter = list->tail->prev, \
-      i = list->iter->data; \
+      i = list->iter->data, \
+      i = i; \
       list->iter != list->head; \
       list->iter = list->iter->prev, \
       i = list->iter->data)

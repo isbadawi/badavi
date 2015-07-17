@@ -6,6 +6,7 @@
 
 #include <sys/stat.h>
 
+#include "buf.h"
 #include "editor.h"
 #include "list.h"
 #include "search.h"
@@ -155,7 +156,7 @@ void editor_tag_stack_prev(struct editor_t *editor) {
   } else if (!editor->window->tag) {
     editor_status_err(editor, "at bottom of tag stack");
   } else {
-    editor_status_msg(editor, "");
+    buf_clear(editor->status);
     window_set_buffer(editor->window, editor->window->tag->buffer);
     window_set_cursor(editor->window, editor->window->tag->cursor);
     editor->window->tag =

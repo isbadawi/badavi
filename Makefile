@@ -1,5 +1,10 @@
-CC = clang
-CFLAGS = -Weverything -Wno-padded -Werror -g
+ifneq (,$(findstring clang,$(realpath $(shell which $(CC)))))
+	WARNING_FLAGS = -Weverything -Wno-padded
+else
+	WARNING_FLAGS = -Wall -Wextra
+endif
+
+CFLAGS = $(WARNING_FLAGS) -Werror -D_GNU_SOURCE -std=c99 -g
 LDLIBS = -ltermbox
 OUTPUT_OPTION = -MMD -MP -o $@
 

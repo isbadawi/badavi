@@ -75,7 +75,7 @@ static void entered(struct editor_t *editor) {
   ssize_t last = gb_lastindexof(gb, '\n', region->start - 1);
   size_t next = gb_indexof(gb, '\n', region->end);
   if (motion->linewise) {
-    region->start = max(0, (size_t) (last + 1));
+    region->start = (size_t)(last + 1);
     region->end = min(gb_size(gb), next + 1);
   } else if (region->start == region->end) {
     editor_pop_mode(editor);

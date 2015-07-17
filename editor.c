@@ -43,7 +43,7 @@ static void editor_source_badavimrc(struct editor_t *editor) {
   char cmd[255];
   snprintf(cmd, 255, "source %s/.badavimrc", home);
   editor_execute_command(editor, cmd);
-  editor_status_msg(editor, "");
+  buf_clear(editor->status);
 }
 
 void editor_init(struct editor_t *editor) {

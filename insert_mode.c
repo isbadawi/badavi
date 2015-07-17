@@ -22,7 +22,7 @@ static void insert_mode_exited(struct editor_t *editor) {
     list_pop(undo_stack);
   }
 
-  editor_status_msg(editor, "");
+  buf_clear(editor->status);
 }
 
 static void insert_mode_key_pressed(struct editor_t* editor, struct tb_event* ev) {

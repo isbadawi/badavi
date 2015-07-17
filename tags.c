@@ -19,13 +19,10 @@ static char *escape_regex(char *regex) {
   char *result = xmalloc(len * 2 + 1);
   char *dest = result;
   for (char *src = regex; *src; ++src) {
-    switch (*src) {
-    case '*': case '+': case '(': case ')': case '[': case ']':
+    if (strchr("*+()[]{}", *src)) {
       *dest++ = '\\';
-      // fallthrough
-    default:
-      *dest++ = *src;
     }
+    *dest++ = *src;
   }
   *dest = '\0';
   return result;

@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
   atexit(tb_shutdown);
 
   struct editor_t editor;
-  editor_init(&editor);
+  editor_init(&editor, (size_t) tb_width(), (size_t) tb_height());
 
   char *file = NULL;
   char *line = NULL;

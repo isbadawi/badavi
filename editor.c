@@ -46,14 +46,14 @@ static void editor_source_badavimrc(struct editor_t *editor) {
   buf_clear(editor->status);
 }
 
-void editor_init(struct editor_t *editor) {
+void editor_init(struct editor_t *editor, size_t width, size_t height) {
   editor->buffers = list_create();
   struct buffer_t *buffer = buffer_create(NULL);
   list_append(editor->buffers, buffer);
 
   editor->windows = list_create();
-  editor->width = (size_t) tb_width();
-  editor->height = (size_t) tb_height();
+  editor->width = width;
+  editor->height = height;
   editor->window = window_create(buffer, 0, 0, editor->width, editor->height - 1);
   list_append(editor->windows, editor->window);
 

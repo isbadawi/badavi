@@ -45,7 +45,7 @@ struct editor_t {
   char register_;
 };
 
-void editor_init(struct editor_t *editor);
+void editor_init(struct editor_t *editor, size_t width, size_t height);
 
 void editor_open(struct editor_t *editor, char *path);
 

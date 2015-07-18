@@ -104,7 +104,9 @@ void buffer_do_insert(struct buffer_t *buffer, struct buf_t *buf, size_t pos) {
   action->pos = pos;
   action->buf = buf;
   struct list_t *group = list_peek(buffer->undo_stack);
-  list_prepend(group, action);
+  if (group) {
+    list_prepend(group, action);
+  }
   gb_putstring(buffer->text, buf->buf, buf->len, pos);
   buffer->dirty = true;
 
@@ -120,7 +122,9 @@ void buffer_do_delete(struct buffer_t *buffer, size_t n, size_t pos) {
   action->pos = pos;
   action->buf = buf;
   struct list_t *group = list_peek(buffer->undo_stack);
-  list_prepend(group, action);
+  if (group) {
+    list_prepend(group, action);
+  }
   gb_del(buffer->text, n, pos + n);
   buffer->dirty = true;
 

@@ -1,4 +1,8 @@
 badavi
+test
+coverage
 *.o
 *.d
 .clarcache
+*.gcda
+*.gcno

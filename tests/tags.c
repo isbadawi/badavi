@@ -11,7 +11,7 @@ static struct tags_t *tags = NULL;
 void test_tags__initialize(void) {
   cl_fixture_sandbox("tags");
   tags = tags_create("tags");
-  cl_assert_(tags && tags->len > 0, "couldn't read test tags file");
+  cl_assert(tags && tags->len > 0);
 }
 
 void test_tags__cleanup(void) {
@@ -22,13 +22,13 @@ void test_tags__cleanup(void) {
 
 void test_tags__find(void) {
   struct tag_t *main = tags_find(tags, "main");
-  cl_assert_(main, "expected tag 'main' to exist");
+  cl_assert(main);
   cl_assert_equal_s("main", main->name);
   cl_assert_equal_s("main.c", main->path);
   cl_assert_equal_s("/^int main\\(int argc, char \\*argv\\[\\]\\) \\{$", main->cmd);
 
   struct tag_t *garbage = tags_find(tags, "garbage");
-  cl_assert_(!garbage, "expected tag 'garbage' not to exist");
+  cl_assert(!garbage);
 }
 
 void test_tags__updated(void) {
@@ -36,13 +36,13 @@ void test_tags__updated(void) {
   sleep(1);
   utimes(tags->file, NULL);
   tags_find(tags, "main");
-  cl_assert_(tags->loaded_at > first_loaded, "expected reloaded tags file");
+  cl_assert(tags->loaded_at > first_loaded);
 }
 
 void test_tags__deleted(void) {
-  cl_assert_(tags->len > 0, "expected there to be tags initially");
+  cl_assert(tags->len > 0);
   remove(tags->file);
   struct tag_t *main = tags_find(tags, "main");
-  cl_assert_(!main, "expected tag not to be found after deleting file");
+  cl_assert(!main);
   cl_assert_equal_i(tags->len, 0);
 }

@@ -27,7 +27,7 @@ static void insert_text(size_t pos, const char *text) {
 void test_buffer__empty(void) {
   buffer = buffer_create(NULL);
   cl_assert_equal_s(buffer->name, "");
-  cl_assert_(!buffer->dirty, "expected fresh buffer not to be dirty");
+  cl_assert(!buffer->dirty);
   assert_contents("\n");
 }
 
@@ -35,7 +35,7 @@ void test_buffer__insert(void) {
   buffer = buffer_create(NULL);
   insert_text(0, "hello, world");
   assert_contents("hello, world\n");
-  cl_assert_(buffer->dirty, "expected buffer to be dirty after insertion");
+  cl_assert(buffer->dirty);
 }
 
 void test_buffer__undo_redo(void) {

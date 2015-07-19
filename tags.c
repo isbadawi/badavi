@@ -28,7 +28,7 @@ static char *escape_regex(char *regex) {
   return result;
 }
 
-static void tags_clear(struct tags_t *tags) {
+void tags_clear(struct tags_t *tags) {
   for (size_t i = 0; i < tags->len; ++i) {
     struct tag_t *tag = &tags->tags[i];
     free(tag->name);
@@ -48,8 +48,6 @@ static void tags_load(struct tags_t *tags) {
   if (!fp) {
     return;
   }
-
-  tags->loaded_at = time(0);
 
   size_t nlines = 0;
   size_t n = 0;
@@ -82,12 +80,16 @@ static void tags_load(struct tags_t *tags) {
   }
   free(line);
   fclose(fp);
+
+  tags->loaded_at = time(0);
 }
 
 struct tags_t *tags_create(char *file) {
   struct tags_t *tags = xmalloc(sizeof(*tags));
-  tags_clear(tags);
   tags->file = file;
+  tags->tags = NULL;
+  tags->len = 0;
+  tags->loaded_at = 0;
 
   tags_load(tags);
   return tags;

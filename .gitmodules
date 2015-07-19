@@ -1,0 +1,3 @@
+[submodule "tests/clar"]
+	path = tests/clar
+	url = https://github.com/vmg/clar

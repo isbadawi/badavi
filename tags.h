@@ -26,6 +26,7 @@ struct tags_t {
 };
 
 struct tags_t *tags_create(char *path);
+void tags_clear(struct tags_t *tags);
 struct tag_t *tags_find(struct tags_t *tags, char *name);
 
 void editor_jump_to_tag(struct editor_t *editor, char *tag);

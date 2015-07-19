@@ -1,4 +1,4 @@
 badavi
 *.o
 *.d
-*.dSYM
+.clarcache

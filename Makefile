@@ -24,3 +24,16 @@ tags: $(SRCS) $(HDRS)
 .PHONY: clean
 clean:
 	rm -f $(OBJS) $(DEPS)
+
+
+TEST_SRCS = $(wildcard tests/*.c) tests/clar/clar.c
+TEST_CFLAGS = -w -std=c99 -g $(LDLIBS) -I. -Itests/clar -g \
+	-DCLAR_FIXTURE_PATH=\"$(abspath tests/testdata)\"
+
+.PHONY: test
+test: $(TEST_SRCS) $(OBJS)
+	python tests/clar/generate.py tests
+	mv tests/clar.suite tests/clar
+	$(CC) -o test $(TEST_CFLAGS) $(TEST_SRCS) $(filter-out main.o,$(OBJS))
+	./test
+	rm test tests/clar/clar.suite

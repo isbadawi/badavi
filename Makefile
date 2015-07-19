@@ -30,7 +30,7 @@ tags: $(SRCS) $(HDRS)
 
 TEST_SRCS = $(wildcard tests/*.c)
 TEST_OBJS = $(TEST_SRCS:.c=.o)
-TEST_CFLAGS = -w -std=c99 -I. -Itests/clar -g \
+TEST_CFLAGS = -w -std=c99 -I. -Itests/clar -g -D_GNU_SOURCE \
 	-DCLAR_FIXTURE_PATH=\"$(abspath tests/testdata)\"
 
 tests/%.o: tests/%.c

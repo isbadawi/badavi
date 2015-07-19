@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <time.h>
-#include <unistd.h>
 
 static struct tags_t *tags = NULL;
 
@@ -32,8 +31,7 @@ void test_tags__find(void) {
 }
 
 void test_tags__updated(void) {
-  time_t first_loaded = tags->loaded_at;
-  sleep(1);
+  time_t first_loaded = --tags->loaded_at;
   utimes(tags->file, NULL);
   tags_find(tags, "main");
   cl_assert(tags->loaded_at > first_loaded);

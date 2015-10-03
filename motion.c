@@ -2,7 +2,6 @@
 
 #include <ctype.h>
 #include <stdbool.h>
-#include <string.h>
 
 #include <termbox.h>
 
@@ -10,7 +9,6 @@
 #include "buffer.h"
 #include "editor.h"
 #include "gap.h"
-#include "mode.h"
 #include "window.h"
 #include "util.h"
 

@@ -69,9 +69,14 @@ static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
   switch (ev->ch) {
   case 0:
     break;
-  case '"':
-    editor_push_mode(editor, quote_mode());
+  case '"': {
+    editor_waitkey(editor, ev);
+    char name = (char) tolower((int) ev->ch);
+    if (editor_get_register(editor, name)) {
+      editor->register_ = name;
+    }
     break;
+  }
   case 'i':
     editor_push_mode(editor, insert_mode());
     break;

@@ -35,25 +35,6 @@ struct editing_mode_t *digit_mode(void) {
   return &digit_mode_impl;
 }
 
-static void quote_pressed(struct editor_t *editor, struct tb_event *ev) {
-  char name = (char) tolower((int) ev->ch);
-  if (editor_get_register(editor, name)) {
-    editor->register_ = name;
-  }
-  editor_pop_mode(editor);
-}
-
-static struct editing_mode_t quote_mode_impl = {
-  .entered = NULL,
-  .exited = NULL,
-  .key_pressed = quote_pressed,
-  .parent = NULL
-};
-
-struct editing_mode_t *quote_mode(void) {
-  return &quote_mode_impl;
-}
-
 struct cmdline_mode_t {
   struct editing_mode_t mode;
   // The position of the cursor when the mode was entered.

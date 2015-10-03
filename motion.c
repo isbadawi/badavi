@@ -262,11 +262,6 @@ static struct motion_t *motion_find(struct motion_t *table, char name) {
   return NULL;
 }
 
-struct till_mode_t {
-  struct editing_mode_t mode;
-  char which; // t or T or f or F
-};
-
 struct till_motion_t {
   struct motion_t motion;
   char arg;
@@ -334,44 +329,25 @@ static size_t till_backward_exclusive(struct motion_context_t ctx) {
   return ctx.pos;
 }
 
-static void till_key_pressed(struct editor_t *editor, struct tb_event *ev) {
-  struct till_mode_t *till = (struct till_mode_t*) editor->mode;
-  till_motion_impl.motion.name = till->which;
-  switch (till->which) {
-    case 't': till_motion_impl.motion.op = till_forward_exclusive; break;
-    case 'T': till_motion_impl.motion.op = till_backward_exclusive; break;
-    case 'f': till_motion_impl.motion.op = till_forward_inclusive; break;
-    case 'F': till_motion_impl.motion.op = till_backward_inclusive; break;
-  }
-  till_motion_impl.arg = (char) ev->ch;
-  if (ev->key == TB_KEY_SPACE) {
-    till_motion_impl.arg = ' ';
-  }
-  editor->motion = (struct motion_t*) &till_motion_impl;
-  editor_pop_mode(editor);
-  editor_pop_mode(editor);
-}
-
-static struct till_mode_t till_mode_impl = {
-  {
-    .entered = NULL,
-    .exited = NULL,
-    .key_pressed = till_key_pressed,
-    .parent = NULL
-  },
-  -1
-};
-
-static struct editing_mode_t *till_mode(char which) {
-  till_mode_impl.which = which;
-  return (struct editing_mode_t*) &till_mode_impl;
-}
-
 static void key_pressed(struct editor_t *editor, struct tb_event *ev) {
   if (strchr("tTfF", (int) ev->ch)) {
-    editor_push_mode(editor, till_mode((char) ev->ch));
+    till_motion_impl.motion.name = (char) ev->ch;
+    switch (ev->ch) {
+      case 't': till_motion_impl.motion.op = till_forward_exclusive; break;
+      case 'T': till_motion_impl.motion.op = till_backward_exclusive; break;
+      case 'f': till_motion_impl.motion.op = till_forward_inclusive; break;
+      case 'F': till_motion_impl.motion.op = till_backward_inclusive; break;
+    }
+    editor_waitkey(editor, ev);
+    till_motion_impl.arg = (char) ev->ch;
+    if (ev->key == TB_KEY_SPACE) {
+      till_motion_impl.arg = ' ';
+    }
+    editor->motion = (struct motion_t*) &till_motion_impl;
+    editor_pop_mode(editor);
     return;
   }
+
   struct motion_t *table = motion_table;
   if (ev->ch == 'g') {
     table = g_motion_table;

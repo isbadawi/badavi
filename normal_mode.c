@@ -59,7 +59,12 @@ static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
   }
 
   if (ev->ch != '0' && isdigit((int) ev->ch)) {
-    editor_push_mode(editor, digit_mode());
+    editor->count = 0;
+    while (isdigit((int) ev->ch)) {
+      editor->count *= 10;
+      editor->count += ev->ch - '0';
+      editor_waitkey(editor, ev);
+    }
     editor_handle_key_press(editor, ev);
     return;
   }

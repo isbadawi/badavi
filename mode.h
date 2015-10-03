@@ -21,5 +21,4 @@ struct editing_mode_t *search_mode(char direction);
 struct editing_mode_t *operator_pending_mode(char op);
 
 // These are "utility modes" used to help process input.
-struct editing_mode_t *digit_mode(void);
 struct editing_mode_t *motion_mode(void);

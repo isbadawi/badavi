@@ -14,27 +14,6 @@
 #include "util.h"
 #include "window.h"
 
-static void digit_pressed(struct editor_t *editor, struct tb_event *ev) {
-  if (!isdigit((int) ev->ch)) {
-    editor_pop_mode(editor);
-    editor_handle_key_press(editor, ev);
-    return;
-  }
-  editor->count *= 10;
-  editor->count += ev->ch - '0';
-}
-
-static struct editing_mode_t digit_mode_impl = {
-  .entered = NULL,
-  .exited = NULL,
-  .key_pressed = digit_pressed,
-  .parent = NULL
-};
-
-struct editing_mode_t *digit_mode(void) {
-  return &digit_mode_impl;
-}
-
 struct cmdline_mode_t {
   struct editing_mode_t mode;
   // The position of the cursor when the mode was entered.

@@ -91,8 +91,18 @@ static void entered(struct editor_t *editor) {
 }
 
 static void key_pressed(struct editor_t *editor, struct tb_event *ev) {
-  bool digit = ev->ch != '0' && isdigit((int) ev->ch);
-  editor_push_mode(editor, digit ? digit_mode() : motion_mode());
+  if (ev->ch != '0' && isdigit((int) ev->ch)) {
+    editor->count = 0;
+    while (isdigit((int) ev->ch)) {
+      editor->count *= 10;
+      editor->count += ev->ch - '0';
+      editor_waitkey(editor, ev);
+    }
+    editor_handle_key_press(editor, ev);
+    return;
+  }
+
+  editor_push_mode(editor, motion_mode());
   editor_handle_key_press(editor, ev);
 }
 

@@ -262,22 +262,6 @@ static struct motion_t *motion_find(struct motion_t *table, char name) {
   return NULL;
 }
 
-static void g_pressed(struct editor_t *editor, struct tb_event *ev) {
-  struct motion_t *motion = motion_find(g_motion_table, (char) ev->ch);
-  if (motion) {
-    editor->motion = motion;
-  }
-  editor_pop_mode(editor);
-  editor_pop_mode(editor);
-}
-
-static struct editing_mode_t g_mode = {
-  .entered = NULL,
-  .exited = NULL,
-  .key_pressed = g_pressed,
-  .parent = NULL
-};
-
 struct till_mode_t {
   struct editing_mode_t mode;
   char which; // t or T or f or F
@@ -384,15 +368,16 @@ static struct editing_mode_t *till_mode(char which) {
 }
 
 static void key_pressed(struct editor_t *editor, struct tb_event *ev) {
-  if (ev->ch == 'g') {
-    editor_push_mode(editor, &g_mode);
-    return;
-  }
   if (strchr("tTfF", (int) ev->ch)) {
     editor_push_mode(editor, till_mode((char) ev->ch));
     return;
   }
-  struct motion_t *motion = motion_find(motion_table, (char) ev->ch);
+  struct motion_t *table = motion_table;
+  if (ev->ch == 'g') {
+    table = g_motion_table;
+    editor_waitkey(editor, ev);
+  }
+  struct motion_t *motion = motion_find(table, (char) ev->ch);
   if (motion) {
     editor->motion = motion;
   }

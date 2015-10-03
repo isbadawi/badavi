@@ -3,12 +3,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-struct editor_t;
-
 struct motion_context_t {
   size_t pos;
   struct window_t *window;
-  struct motion_t *motion;
+  struct editor_t *editor;
 };
 
 struct motion_t {

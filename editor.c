@@ -481,6 +481,16 @@ bool editor_waitkey(struct editor_t *editor, struct tb_event *ev) {
   return editor_waitkey(editor, ev);
 }
 
+char editor_getchar(struct editor_t *editor) {
+  struct tb_event ev;
+  editor_waitkey(editor, &ev);
+  char ch = (char) ev.ch;
+  if (ev.key == TB_KEY_SPACE) {
+    ch = ' ';
+  }
+  return ch;
+}
+
 void editor_handle_key_press(struct editor_t *editor, struct tb_event *ev) {
   editor->mode->key_pressed(editor, ev);
 }

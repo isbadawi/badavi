@@ -61,16 +61,26 @@ static op_t *op_find(char name) {
   return NULL;
 }
 
-static void entered(struct editor_t *editor) {
-  if (!editor->motion) {
+static void key_pressed(struct editor_t *editor, struct tb_event *ev) {
+  if (ev->ch != '0' && isdigit((int) ev->ch)) {
+    editor->count = 0;
+    while (isdigit((int) ev->ch)) {
+      editor->count *= 10;
+      editor->count += ev->ch - '0';
+      editor_waitkey(editor, ev);
+    }
+  }
+
+  struct motion_t *motion = motion_get(editor, ev);
+  if (!motion) {
+    editor_pop_mode(editor);
     return;
   }
 
   struct gapbuf_t *gb = editor->window->buffer->text;
-  struct motion_t *motion = editor->motion;
 
   struct region_t *region = region_create(
-      window_cursor(editor->window), motion_apply(editor));
+      window_cursor(editor->window), motion_apply(motion, editor));
 
   ssize_t last = gb_lastindexof(gb, '\n', region->start - 1);
   size_t next = gb_indexof(gb, '\n', region->end);
@@ -90,25 +100,9 @@ static void entered(struct editor_t *editor) {
   editor->register_ = '"';
 }
 
-static void key_pressed(struct editor_t *editor, struct tb_event *ev) {
-  if (ev->ch != '0' && isdigit((int) ev->ch)) {
-    editor->count = 0;
-    while (isdigit((int) ev->ch)) {
-      editor->count *= 10;
-      editor->count += ev->ch - '0';
-      editor_waitkey(editor, ev);
-    }
-    editor_handle_key_press(editor, ev);
-    return;
-  }
-
-  editor_push_mode(editor, motion_mode());
-  editor_handle_key_press(editor, ev);
-}
-
 static struct operator_pending_mode_t impl = {
   {
-    .entered = entered,
+    .entered = NULL,
     .exited = NULL,
     .key_pressed = key_pressed,
     NULL

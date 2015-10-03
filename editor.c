@@ -72,7 +72,6 @@ void editor_init(struct editor_t *editor, size_t width, size_t height) {
   editor->tags = tags_create("tags");
 
   editor->count = 0;
-  editor->motion = NULL;
   editor->register_ = '"';
 
   editor_source_badavimrc(editor);

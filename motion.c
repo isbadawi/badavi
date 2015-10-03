@@ -329,7 +329,7 @@ static size_t till_backward_exclusive(struct motion_context_t ctx) {
   return ctx.pos;
 }
 
-static void key_pressed(struct editor_t *editor, struct tb_event *ev) {
+struct motion_t *motion_get(struct editor_t *editor, struct tb_event *ev) {
   if (strchr("tTfF", (int) ev->ch)) {
     till_motion_impl.motion.name = (char) ev->ch;
     switch (ev->ch) {
@@ -343,9 +343,7 @@ static void key_pressed(struct editor_t *editor, struct tb_event *ev) {
     if (ev->key == TB_KEY_SPACE) {
       till_motion_impl.arg = ' ';
     }
-    editor->motion = (struct motion_t*) &till_motion_impl;
-    editor_pop_mode(editor);
-    return;
+    return (struct motion_t*) &till_motion_impl;
   }
 
   struct motion_t *table = motion_table;
@@ -353,27 +351,10 @@ static void key_pressed(struct editor_t *editor, struct tb_event *ev) {
     table = g_motion_table;
     editor_waitkey(editor, ev);
   }
-  struct motion_t *motion = motion_find(table, (char) ev->ch);
-  if (motion) {
-    editor->motion = motion;
-  }
-  editor_pop_mode(editor);
-  return;
+  return motion_find(table, (char) ev->ch);
 }
 
-static struct editing_mode_t impl = {
-  .entered = NULL,
-  .exited = NULL,
-  .key_pressed = key_pressed,
-  NULL
-};
-
-struct editing_mode_t *motion_mode(void) {
-  return &impl;
-}
-
-size_t motion_apply(struct editor_t *editor) {
-  struct motion_t *motion = editor->motion;
+size_t motion_apply(struct motion_t *motion, struct editor_t *editor) {
   unsigned int n = editor->count ? editor->count : 1;
 
   size_t cursor = window_cursor(editor->window);
@@ -391,7 +372,6 @@ size_t motion_apply(struct editor_t *editor) {
   }
 
   editor->count = 0;
-  editor->motion = NULL;
   return ctx.pos;
 }
 

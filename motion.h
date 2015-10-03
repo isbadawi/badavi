@@ -23,7 +23,10 @@ struct motion_t {
   bool exclusive;
 };
 
-size_t motion_apply(struct editor_t *editor);
+struct tb_event;
+struct motion_t *motion_get(struct editor_t *editor, struct tb_event *ev);
+
+size_t motion_apply(struct motion_t *motion, struct editor_t *editor);
 
 // TODO(isbadawi): This is an awkward place to put this.
 // But a lot of knowledge about words lives in motion.c right now.

@@ -41,7 +41,6 @@ struct editor_t {
   // Temporary input state.
   // TODO(isbadawi): This feels like a kludge but I don't know...
   unsigned int count;
-  struct motion_t *motion;
   char register_;
 };
 

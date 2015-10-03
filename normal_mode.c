@@ -19,13 +19,16 @@ static bool is_last_line(struct gapbuf_t *gb, size_t pos) {
   return pos > gb_size(gb) - gb->lines->buf[gb->lines->len - 1];
 }
 
-static void normal_mode_entered(struct editor_t *editor) {
-  if (editor->motion) {
-    window_set_cursor(editor->window, motion_apply(editor));
-  }
-}
-
 static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev) {
+  if (ev->ch != '0' && isdigit((int) ev->ch)) {
+    editor->count = 0;
+    while (isdigit((int) ev->ch)) {
+      editor->count *= 10;
+      editor->count += ev->ch - '0';
+      editor_waitkey(editor, ev);
+    }
+  }
+
   switch (ev->key) {
   case TB_KEY_CTRL_C:
     editor_status_msg(editor, "Type :q<Enter> to exit badavi");
@@ -56,17 +59,6 @@ static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
     }
     return;
   }
-  }
-
-  if (ev->ch != '0' && isdigit((int) ev->ch)) {
-    editor->count = 0;
-    while (isdigit((int) ev->ch)) {
-      editor->count *= 10;
-      editor->count += ev->ch - '0';
-      editor_waitkey(editor, ev);
-    }
-    editor_handle_key_press(editor, ev);
-    return;
   }
 
   struct gapbuf_t *gb = editor->window->buffer->text;
@@ -128,19 +120,21 @@ static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
     }
     break;
   default: {
+    struct motion_t *motion = motion_get(editor, ev);
+    if (motion) {
+      window_set_cursor(editor->window ,motion_apply(motion, editor));
+      break;
+    }
     struct editing_mode_t *mode = operator_pending_mode((char) ev->ch);
     if (mode) {
       editor_push_mode(editor, mode);
-    } else {
-      editor_push_mode(editor, motion_mode());
-      editor_handle_key_press(editor, ev);
     }
   }
   }
 }
 
 static struct editing_mode_t impl = {
-  .entered = normal_mode_entered,
+  .entered = NULL,
   .exited = NULL,
   .key_pressed = normal_mode_key_pressed,
   .parent = NULL

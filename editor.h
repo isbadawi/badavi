@@ -59,6 +59,7 @@ void editor_draw(struct editor_t *editor);
 struct buf_t *editor_get_register(struct editor_t *editor, char name);
 
 struct tb_event;
+bool editor_waitkey(struct editor_t *editor, struct tb_event *ev);
 void editor_handle_key_press(struct editor_t *editor, struct tb_event *ev);
 
 __attribute__((__format__(__printf__, 2, 3)))

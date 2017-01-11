@@ -126,23 +126,14 @@ void editor_jump_to_tag(struct editor_t *editor, char *name) {
   jump->cursor = window_cursor(editor->window);
   jump->tag = tag;
 
+  struct list_t *stack = editor->window->tag_stack;
   if (editor->window->tag) {
-    list_insert_after(editor->window->tag_stack, editor->window->tag, jump);
-
-    // TODO(isbadawi): Hack & memory leak because our list is inconvenient...
-    struct tag_jump_t *j;
-    struct list_t *list = editor->window->tag_stack;
-    LIST_FOREACH(list, j) {
-      if (j == jump) {
-        list->iter->next = list->tail;
-        list->tail->prev = list->iter;
-        break;
-      }
+    struct list_node_t *node = list_get_node(stack, editor->window->tag);
+    if (node->next != stack->tail) {
+      list_free(list_steal(node->next, stack->tail->prev), free);
     }
-
-  } else {
-    list_append(editor->window->tag_stack, jump);
   }
+  list_append(stack, jump);
   editor->window->tag = jump;
 
   editor_open(editor, tag->path);

@@ -40,6 +40,7 @@ struct list_t {
 typedef void (list_free_func_t)(void*);
 
 struct list_t *list_create(void);
+struct list_t *list_steal(struct list_node_t *start, struct list_node_t *end);
 void list_free(struct list_t *list, list_free_func_t *free_func);
 void list_prepend(struct list_t* list, void *data);
 void list_append(struct list_t* list, void *data);
@@ -53,3 +54,4 @@ void *list_next(struct list_t *list, void *data);
 void list_insert_after(struct list_t *list, void *el, void *data);
 void list_insert_before(struct list_t *list, void *el, void *data);
 size_t list_size(struct list_t *list);
+struct list_node_t *list_get_node(struct list_t *list, void *data);

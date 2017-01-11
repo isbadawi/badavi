@@ -22,6 +22,18 @@ struct list_t *list_create(void) {
   return list;
 }
 
+struct list_t *list_steal(struct list_node_t *start, struct list_node_t *end) {
+  start->prev->next = end->next;
+  end->next->prev = start->prev;
+
+  struct list_t *list = list_create();
+  list->head->next = start;
+  start->prev = list->head;
+  list->tail->prev = end;
+  end->next = list->tail;
+  return list;
+}
+
 void list_free(struct list_t *list, list_free_func_t *free_func) {
   list_clear(list, free_func);
   free(list->head);
@@ -57,7 +69,7 @@ static void *list_remove_node(struct list_node_t *node) {
   return data;
 }
 
-static struct list_node_t *list_get_node(struct list_t *list, void *data) {
+struct list_node_t *list_get_node(struct list_t *list, void *data) {
   void *p;
   LIST_FOREACH(list, p) {
     if (p == data) {

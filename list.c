@@ -22,8 +22,8 @@ struct list_t *list_create(void) {
   return list;
 }
 
-void list_free(struct list_t *list) {
-  list_clear(list);
+void list_free(struct list_t *list, list_free_func_t *free_func) {
+  list_clear(list, free_func);
   free(list->head);
   free(list->tail);
   free(list);
@@ -83,12 +83,15 @@ bool list_empty(struct list_t *list) {
   return list->head->next == list->tail;
 }
 
-void list_clear(struct list_t *list) {
+void list_clear(struct list_t *list, list_free_func_t *free_func) {
   void *data;
   struct list_node_t *prev = NULL;
   LIST_FOREACH(list, data) {
     if (prev) {
       free(prev);
+    }
+    if (free_func) {
+      free_func(data);
     }
     prev = list->iter;
   }

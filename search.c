@@ -140,8 +140,5 @@ void editor_search(struct editor_t *editor, char *pattern,
 
   // TODO(isbadawi): Remember matches -- can do hlsearch, or cache searches
   // if the buffer hasn't changed.
-  LIST_FOREACH(result.matches, m) {
-    free(m);
-  }
-  list_clear(result.matches);
+  list_clear(result.matches, free);
 }

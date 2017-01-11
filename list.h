@@ -37,15 +37,17 @@ struct list_t {
       list->iter = list->iter->prev, \
       i = list->iter->data)
 
+typedef void (list_free_func_t)(void*);
+
 struct list_t *list_create(void);
-void list_free(struct list_t *list);
+void list_free(struct list_t *list, list_free_func_t *free_func);
 void list_prepend(struct list_t* list, void *data);
 void list_append(struct list_t* list, void *data);
 void *list_pop(struct list_t *list);
 void list_remove(struct list_t *list, void *data);
 void *list_peek(struct list_t *list);
 bool list_empty(struct list_t *list);
-void list_clear(struct list_t *list);
+void list_clear(struct list_t *list, list_free_func_t *free_func);
 void *list_prev(struct list_t *list, void *data);
 void *list_next(struct list_t *list, void *data);
 void list_insert_after(struct list_t *list, void *el, void *data);

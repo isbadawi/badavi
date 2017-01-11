@@ -183,17 +183,18 @@ bool buffer_redo(struct buffer_t* buffer) {
   return true;
 }
 
-void buffer_start_action_group(struct buffer_t *buffer) {
-  struct list_t *group;
-  LIST_FOREACH(buffer->redo_stack, group) {
-    struct edit_action_t *action;
-    LIST_FOREACH(group, action) {
-      buf_free(action->buf);
-      free(action);
-    }
-    list_free(group);
-  }
-  list_clear(buffer->redo_stack);
+static void edit_action_free(void *p) {
+  struct edit_action_t *action = p;
+  buf_free(action->buf);
+  free(action);
+}
 
+static void edit_action_group_free(void *p) {
+  struct list_t *group = p;
+  list_free(group, edit_action_free);
+}
+
+void buffer_start_action_group(struct buffer_t *buffer) {
+  list_clear(buffer->redo_stack, edit_action_group_free);
   list_prepend(buffer->undo_stack, list_create());
 }

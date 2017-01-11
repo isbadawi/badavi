@@ -144,7 +144,7 @@ void editor_save_buffer(struct editor_t *editor, char *path) {
     rc = buffer_write(buffer);
     name = buffer->name;
   }
-  if (!rc) {
+  if (rc) {
     editor_status_msg(editor, "\"%s\" %zuL, %zuC written",
         name, gb_nlines(buffer->text), gb_size(buffer->text));
   } else {

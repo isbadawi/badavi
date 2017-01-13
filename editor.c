@@ -75,6 +75,8 @@ void editor_init(struct editor_t *editor, size_t width, size_t height) {
   editor->count = 0;
   editor->register_ = '"';
 
+  editor->synthetic_events = list_create();
+
   editor_source_badavimrc(editor);
 }
 
@@ -471,8 +473,18 @@ static void editor_suspend(struct editor_t *editor) {
   editor_draw(editor);
 }
 
+static int editor_poll_event(struct editor_t *editor, struct tb_event *ev) {
+  if (!list_empty(editor->synthetic_events)) {
+    struct tb_event *top = list_pop(editor->synthetic_events);
+    *ev = *top;
+    free(top);
+    return ev->type;
+  }
+  return tb_poll_event(ev);
+}
+
 bool editor_waitkey(struct editor_t *editor, struct tb_event *ev) {
-  if (tb_poll_event(ev) < 0) {
+  if (editor_poll_event(editor, ev) < 0) {
     return false;
   }
   if (ev->type == TB_EVENT_KEY && ev->key == TB_KEY_CTRL_Z) {
@@ -503,9 +515,10 @@ void editor_handle_key_press(struct editor_t *editor, struct tb_event *ev) {
 }
 
 void editor_send_keys(struct editor_t *editor, char *keys) {
-  struct tb_event ev;
+  struct tb_event *last = NULL;
   for (char *k = keys; *k; ++k) {
-    ev.key = 0;
+    struct tb_event *ev = xmalloc(sizeof(*ev));
+    ev->key = 0;
     switch (*k) {
     case '<': {
       char key[10];
@@ -513,11 +526,11 @@ void editor_send_keys(struct editor_t *editor, char *keys) {
       strncpy(key, k + 1, key_len);
       key[key_len] = '\0';
       if (!strcmp("cr", key)) {
-        ev.key = TB_KEY_ENTER;
+        ev->key = TB_KEY_ENTER;
       } else if (!strcmp("bs", key)) {
-        ev.key = TB_KEY_BACKSPACE2;
+        ev->key = TB_KEY_BACKSPACE2;
       } else if (!strcmp("esc", key)) {
-        ev.key = TB_KEY_ESC;
+        ev->key = TB_KEY_ESC;
       } else {
         debug("BUG: editor_send_keys got <%s>\n", key);
         exit(1);
@@ -526,12 +539,29 @@ void editor_send_keys(struct editor_t *editor, char *keys) {
       break;
     }
     case ' ':
-      ev.key = TB_KEY_SPACE;
+      ev->key = TB_KEY_SPACE;
       break;
     default:
-      ev.ch = (uint32_t) *k;
+      ev->ch = (uint32_t) *k;
       break;
     }
+    // n.b. We want to correctly handle the case where editor_send_keys
+    // indirectly recurses. For example 'o' is send_keys("A<cr>"), and 'A' is
+    // send_keys("$i"). So we need to insert all the events in order, but
+    // before any events that existed before we started this call. That's why
+    // this isn't just a call to list_append.
+    if (last) {
+      list_insert_after(editor->synthetic_events, last, ev);
+    } else {
+      list_prepend(editor->synthetic_events, ev);
+    }
+    last = ev;
+  }
+
+  struct tb_event ev;
+  while (!list_empty(editor->synthetic_events)) {
+    bool ok = editor_waitkey(editor, &ev);
+    assert(ok);
     editor_handle_key_press(editor, &ev);
   }
 }

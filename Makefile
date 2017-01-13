@@ -44,7 +44,7 @@ tests/clar/clar.suite: $(TEST_SRCS)
 	mv tests/clar.suite tests/clar
 
 test: $(OBJS) $(TEST_OBJS) tests/clar/clar.o
-	$(CC) -o test $(COVERAGE_FLAG) $(filter-out main.o,$^) $(LDLIBS)
+	$(CC) -o test $(LDFLAGS) $(COVERAGE_FLAG) $(filter-out main.o,$^) $(LDLIBS)
 
 .PHONY: coverage
 coverage:

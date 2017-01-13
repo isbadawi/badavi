@@ -10,7 +10,7 @@ else
 	COVERAGE_FLAG =
 endif
 
-CFLAGS = $(WARNING_FLAGS) $(COVERAGE_FLAG) -Werror -D_GNU_SOURCE -std=c99 -g
+CFLAGS = $(WARNING_FLAGS) $(COVERAGE_FLAG) -Werror -D_GNU_SOURCE -std=c99 -g $(EXTRA_FLAGS)
 LDLIBS = -ltermbox
 OUTPUT_OPTION = -MMD -MP -o $@
 
@@ -31,7 +31,7 @@ tags: $(SRCS) $(HDRS)
 TEST_SRCS = $(wildcard tests/*.c)
 TEST_OBJS = $(TEST_SRCS:.c=.o)
 TEST_CFLAGS = -w -std=c99 -I. -Itests/clar -g -D_GNU_SOURCE \
-	-DCLAR_FIXTURE_PATH=\"$(abspath tests/testdata)\"
+	-DCLAR_FIXTURE_PATH=\"$(abspath tests/testdata)\" $(EXTRA_FLAGS)
 
 tests/%.o: tests/%.c
 	$(CC) $(TEST_CFLAGS) -c -o $@ $^

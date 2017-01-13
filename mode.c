@@ -28,12 +28,14 @@ static void cmdline_mode_entered(struct editor_t *editor) {
   struct cmdline_mode_t *mode = (struct cmdline_mode_t*) editor->mode;
   editor_status_msg(editor, "%c", mode->prompt);
   mode->cursor = window_cursor(editor->window);
+  editor->status_cursor = 1;
   editor->status_silence = true;
 }
 
 static void cmdline_mode_exited(struct editor_t *editor) {
   struct cmdline_mode_t *mode = (struct cmdline_mode_t*) editor->mode;
   window_set_cursor(editor->window, mode->cursor);
+  editor->status_cursor = 0;
   editor->status_silence = false;
 }
 
@@ -45,8 +47,14 @@ static void cmdline_mode_key_pressed(struct editor_t *editor, struct tb_event *e
     buf_clear(editor->status);
     editor_pop_mode(editor);
     return;
+  case TB_KEY_ARROW_LEFT:
+    editor->status_cursor = max(editor->status_cursor - 1, 1);
+    return;
+  case TB_KEY_ARROW_RIGHT:
+    editor->status_cursor = min(editor->status_cursor + 1, editor->status->len);
+    return;
   case TB_KEY_BACKSPACE2:
-    buf_delete(editor->status, editor->status->len - 1, 1);
+    buf_delete(editor->status, --editor->status_cursor, 1);
     if (editor->status->len == 0) {
       editor_pop_mode(editor);
       return;
@@ -70,7 +78,7 @@ static void cmdline_mode_key_pressed(struct editor_t *editor, struct tb_event *e
     ch = (char) ev->ch;
   }
   char s[2] = {ch, '\0'};
-  buf_append(editor->status, s);
+  buf_insert(editor->status, s, editor->status_cursor++);
   if (mode->char_cb) {
     char *command = xstrdup(editor->status->buf + 1);
     mode->char_cb(editor, command);

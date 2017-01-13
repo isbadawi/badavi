@@ -27,6 +27,8 @@ struct editor_t {
   bool status_error;
   // Whether the status should be displayed.
   bool status_silence;
+  // The position of the cursor in cmdline mode.
+  size_t status_cursor;
 
   // An array of registers.
   struct editor_register_t *registers;

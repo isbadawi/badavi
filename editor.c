@@ -61,6 +61,7 @@ void editor_init(struct editor_t *editor, size_t width, size_t height) {
   editor->status = buf_create(editor->width);
   editor->status_error = false;
   editor->status_silence = false;
+  editor->status_cursor = 0;
 
   editor->mode = normal_mode();
 
@@ -441,6 +442,12 @@ void editor_draw(struct editor_t *editor) {
     tb_change_cell((int) x, (int) editor->height - 1, (uint32_t) editor->status->buf[x],
         editor->status_error ? TB_DEFAULT : TB_WHITE,
         editor->status_error ? TB_RED : TB_DEFAULT);
+  }
+
+  if (editor->status_cursor) {
+    tb_change_cell((int) editor->status_cursor, (int) editor->height - 1,
+        (uint32_t) editor->status->buf[editor->status_cursor],
+        TB_BLACK, TB_WHITE);
   }
 
   tb_present();

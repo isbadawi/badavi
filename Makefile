@@ -68,4 +68,4 @@ clean:
 	rm -f $(OBJS) $(DEPS) $(TEST_OBJS) \
 	$(SRCS:.c=.gcda) $(SRCS:.c=.gcno) \
 	tests/clar/clar.o tests/clar/clar.suite tests/.clarcache \
-	coverage.base coverage.run coverage.total $(PROG) $(PROG)_test
+	coverage.base coverage.run coverage.total $(PROG) $(TEST_PROG)

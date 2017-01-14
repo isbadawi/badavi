@@ -514,9 +514,9 @@ void editor_handle_key_press(struct editor_t *editor, struct tb_event *ev) {
   editor->mode->key_pressed(editor, ev);
 }
 
-void editor_send_keys(struct editor_t *editor, char *keys) {
+void editor_send_keys(struct editor_t *editor, const char *keys) {
   struct tb_event *last = NULL;
-  for (char *k = keys; *k; ++k) {
+  for (const char *k = keys; *k; ++k) {
     struct tb_event *ev = xmalloc(sizeof(*ev));
     ev->key = 0;
     switch (*k) {

@@ -73,7 +73,7 @@ void editor_status_msg(struct editor_t *editor, const char *format, ...);
 __attribute__((__format__(__printf__, 2, 3)))
 void editor_status_err(struct editor_t *editor, const char *format, ...);
 
-void editor_send_keys(struct editor_t *editor, char *keys);
+void editor_send_keys(struct editor_t *editor, const char *keys);
 
 void editor_equalize_windows(struct editor_t *editor);
 

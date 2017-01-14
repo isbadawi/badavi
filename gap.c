@@ -1,5 +1,6 @@
 #include "gap.h"
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -86,8 +87,10 @@ void gb_getstring(struct gapbuf_t *gb, size_t pos, size_t n, char *buf) {
   if (end < gb->gapstart || start >= gb->gapend) {
     memcpy(buf, start, n);
   } else {
-    ptrdiff_t l = gb->gapstart - start;
-    ptrdiff_t r = end - gb->gapend;
+    assert(gb->gapstart >= start);
+    assert(end >= gb->gapend);
+    size_t l = (size_t)(gb->gapstart - start);
+    size_t r = (size_t)(end - gb->gapend);
     memcpy(buf, start, l);
     memcpy(buf + l, gb->gapend, r);
   }
@@ -98,12 +101,12 @@ void gb_getstring(struct gapbuf_t *gb, size_t pos, size_t n, char *buf) {
 void gb_mvgap(struct gapbuf_t *gb, size_t pos) {
   char *point = gb->bufstart + gb_index(gb, pos);
   if (gb->gapend <= point) {
-    ptrdiff_t n = point - gb->gapend;
+    size_t n = (size_t)(point - gb->gapend);
     memcpy(gb->gapstart, gb->gapend, n);
     gb->gapstart += n;
     gb->gapend += n;
   } else if (point < gb->gapstart) {
-    ptrdiff_t n = gb->gapstart - point;
+    size_t n = (size_t)(gb->gapstart - point);
     memcpy(gb->gapend - n, point, n);
     gb->gapstart -= n;
     gb->gapend -= n;
@@ -130,8 +133,9 @@ static void gb_growgap(struct gapbuf_t *gb, size_t n) {
   gb->bufstart = realloc(gb->bufstart, newsize);
   gb->gapstart = gb->bufstart + leftsize;
   gb->gapend = gb->gapstart + newgapsize;
+  assert(rightsize >= 0);
   // Move the bit after the gap right by gapsize positions...
-  memcpy(gb->gapend, gb->gapstart + gapsize, rightsize);
+  memcpy(gb->gapend, gb->gapstart + gapsize, (size_t)rightsize);
   gb->bufend = gb->bufstart + newsize;
 }
 

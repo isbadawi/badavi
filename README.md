@@ -1,5 +1,7 @@
 # badavi
 
+[![Build Status](https://travis-ci.org/isbadawi/badavi.svg?branch=master)](https://travis-ci.org/isbadawi/badavi)
+
 `badavi` is a vi-like terminal mode text editor, implemented in C and using the
 [`termbox`](https://github.com/nsf/termbox) library to draw to the terminal.
 

@@ -12,11 +12,6 @@
 
 static struct editor_t *editor = NULL;
 
-void test_editor__initialize(void) {
-  editor = xmalloc(sizeof(*editor));
-  editor_init(editor, 600, 600);
-}
-
 static void type(const char *keys) {
   editor_send_keys(editor, keys);
 }
@@ -31,8 +26,15 @@ static void assert_buffer_contents(const char *text) {
   cl_assert_equal_s(buf->buf, text);
 }
 
-static void assert_cursor_position(size_t pos) {
-  cl_assert_equal_i(editor->window->cursor->start, pos);
+static void assert_cursor_at(
+    size_t expected_line, size_t expected_column) {
+  size_t actual_line, actual_column;
+  gb_pos_to_linecol(
+      editor->window->buffer->text,
+      editor->window->cursor->start,
+      &actual_line, &actual_column);
+  cl_assert_equal_i(expected_line, actual_line);
+  cl_assert_equal_i(expected_column, actual_column);
 }
 
 static void assert_cursor_over(char c) {
@@ -41,28 +43,29 @@ static void assert_cursor_over(char c) {
   cl_assert_equal_i(gb_getchar(text, cursor), c);
 }
 
-void test_editor__basic_editing(void) {
+void test_editor__initialize(void) {
+  editor = xmalloc(sizeof(*editor));
+  editor_init(editor, 600, 600);
   assert_buffer_contents("\n");
-  assert_cursor_position(0);
+  assert_cursor_at(0, 0);
+}
+
+void test_editor__basic_editing(void) {
   type("i");
   type("hello");
-  assert_cursor_position(5);
+  assert_cursor_at(0, 5);
   assert_buffer_contents("hello\n");
   type("<bs><bs><bs>");
-  assert_cursor_position(2);
+  assert_cursor_at(0, 2);
   assert_buffer_contents("he\n");
   type("<esc>hi");
   type("iv");
-  assert_cursor_position(3);
+  assert_cursor_at(0, 3);
   assert_buffer_contents("hive\n");
 }
 
 void test_editor__basic_motions(void) {
-  assert_buffer_contents("\n");
-  assert_cursor_position(0);
-  type("i");
-  type("the quick brown fox jumps over the lazy dog");
-  type("<esc>0");
+  type("ithe quick brown fox jumps over the lazy dog<esc>0");
   assert_cursor_over('t');
 
   type("w");  assert_cursor_over('q');
@@ -75,4 +78,41 @@ void test_editor__basic_motions(void) {
   type("Fh"); assert_cursor_over('h');
   type("4l"); assert_cursor_over('u');
   type("$b"); assert_cursor_over('d');
+}
+
+void test_editor__line_motions(void) {
+  type("ione\ntwo\nthree\nfour\nfive<esc>gg0");
+  assert_cursor_at(0, 0);
+
+  type("k"); assert_cursor_at(0, 0);
+  type("j"); assert_cursor_at(1, 0);
+  type("2j"); assert_cursor_at(3, 0);
+  type("gg"); assert_cursor_at(0, 0);
+  type("G"); assert_cursor_at(4, 0);
+  type("3G"); assert_cursor_at(2, 0);
+
+  type("gg0/our<cr>"); assert_cursor_at(3, 1);
+  type("G0?wo<cr>"); assert_cursor_at(1, 1);
+}
+
+void test_editor__yank_put(void) {
+  assert_buffer_contents("\n");
+  assert_cursor_at(0, 0);
+
+  type("ithe quick brown fox jumps over the lazy dog<esc>0");
+
+  // 'brown' in "a register
+  type("2w\"ayw");
+  // 'fox' in "b register
+  type("w\"byw");
+  // whole line in unnamed register
+  type("0d$");
+
+  type("\"bp\"ap");
+  type("o<esc>p");
+
+  assert_buffer_contents(
+      "fox brown \n"
+      "the quick brown fox jumps over the lazy dog\n"
+  );
 }

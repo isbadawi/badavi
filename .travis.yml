@@ -1,5 +1,9 @@
 language: c
 
+env:
+  global:
+    - LD_LIBRARY_PATH=/usr/local/lib
+
 os:
   - linux
   - osx

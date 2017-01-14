@@ -21,11 +21,11 @@ struct tags_t {
   struct tag_t *tags;
   size_t len;
 
-  char *file;
+  const char *file;
   time_t loaded_at;
 };
 
-struct tags_t *tags_create(char *path);
+struct tags_t *tags_create(const char *path);
 void tags_clear(struct tags_t *tags);
 struct tag_t *tags_find(struct tags_t *tags, char *name);
 

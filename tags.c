@@ -84,7 +84,7 @@ static void tags_load(struct tags_t *tags) {
   tags->loaded_at = time(0);
 }
 
-struct tags_t *tags_create(char *file) {
+struct tags_t *tags_create(const char *file) {
   struct tags_t *tags = xmalloc(sizeof(*tags));
   tags->file = file;
   tags->tags = NULL;

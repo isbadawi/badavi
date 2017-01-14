@@ -1,0 +1,15 @@
+language: c
+
+os:
+  - linux
+  - osx
+
+compiler:
+  - clang
+  - gcc
+
+install:
+  - git clone https://github.com/nsf/termbox
+  - pushd termbox && ./waf configure && ./waf && sudo ./waf install && popd
+
+script: make test

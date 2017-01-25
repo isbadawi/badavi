@@ -1,6 +1,7 @@
 #pragma once
 
 struct editor_t;
+struct region_t;
 struct tb_event;
 
 struct editing_mode_t {
@@ -16,6 +17,10 @@ struct editing_mode_t {
 
 struct editing_mode_t *normal_mode(void);
 struct editing_mode_t *insert_mode(void);
+struct editing_mode_t *visual_mode(void);
 struct editing_mode_t *command_mode(void);
 struct editing_mode_t *search_mode(char direction);
 struct editing_mode_t *operator_pending_mode(char op);
+
+typedef void (op_t) (struct editor_t*, struct region_t*);
+op_t *op_find(char name);

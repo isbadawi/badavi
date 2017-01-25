@@ -25,3 +25,4 @@ struct region_t {
 };
 
 struct region_t *region_create(size_t start, size_t end);
+struct region_t *region_set(struct region_t *region, size_t start, size_t end);

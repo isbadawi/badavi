@@ -77,6 +77,9 @@ static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
   case 'i':
     editor_push_mode(editor, insert_mode());
     break;
+  case 'v':
+    editor_push_mode(editor, visual_mode());
+    break;
   case ':':
     editor_push_mode(editor, command_mode());
     break;

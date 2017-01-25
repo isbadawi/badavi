@@ -14,8 +14,6 @@
 #include "window.h"
 #include "util.h"
 
-typedef void (op_t) (struct editor_t*, struct region_t*);
-
 struct operator_pending_mode_t {
   struct editing_mode_t mode;
   op_t* op;
@@ -30,6 +28,7 @@ static void yank_op(struct editor_t *editor, struct region_t *region) {
   gb_getstring(gb, region->start, n, reg->buf);
   reg->len = n;
   editor_pop_mode(editor);
+  editor->register_ = '"';
 }
 
 static void delete_op(struct editor_t *editor, struct region_t *region) {
@@ -51,7 +50,7 @@ static struct { char name; op_t *op; } op_table[] = {
   {-1, NULL}
 };
 
-static op_t *op_find(char name) {
+op_t *op_find(char name) {
   for (int i = 0; op_table[i].op; ++i) {
     if (op_table[i].name == name) {
       return op_table[i].op;
@@ -96,7 +95,6 @@ static void key_pressed(struct editor_t *editor, struct tb_event *ev) {
   struct operator_pending_mode_t* mode = (struct operator_pending_mode_t*) editor->mode;
   mode->op(editor, region);
   free(region);
-  editor->register_ = '"';
 }
 
 static struct operator_pending_mode_t impl = {

@@ -10,6 +10,8 @@ serious day-to-day editor, although who knows where it'll end up.
 
 ### Features supported so far
 
+* Normal, insert, and visual modes.
+
 * Basic motions -- `h`, `j`, `k`, `l`, `0`, `$`, `^`, `{`, `}`, `b`, `B`,
 `w`, `W`, `e`, `E`, `G`, `g_`, `ge`, `gE`, `gg`. Motions can be prefixed with
 an optional count.
@@ -24,10 +26,10 @@ as in vim, e.g. `:set nonumber`, `:set numberwidth=8`, etc. You can also put
 those commands in a `~/.badavimrc` file to execute them on startup.
 
 * Delete (`d`), change (`c`) and yank (`y`) operators, which can be applied to
-any of the motions. (Text objects aren't implemented yet). The affected
-region is saved into the unnamed register, used by `p` to paste text. Named
-registers from `a` to `z` are also implemented, and can be specified by
-prefixing the operator (or `p`) with `"a` through `"z`.
+any of the motions, or the visual mode selection. (Text objects aren't
+implemented yet). The affected region is saved into the unnamed register, used
+by `p` to paste text. Named registers from `a` to `z` are also implemented, and
+can be specified by prefixing the operator (or `p`) with `"a` through `"z`.
 
 * Search forwards with `/`, backwards with `?`. Standard POSIX regexes are
 used, so the syntax is not exactly the same as vim's. For instance, word

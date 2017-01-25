@@ -17,6 +17,7 @@ struct window_t *window_create(struct buffer_t *buffer, size_t x, size_t y, size
 
   window->buffer = NULL;
   window_set_buffer(window, buffer);
+  window->visual_mode_anchor = NULL;
 
   window->x = x;
   window->y = y;
@@ -121,6 +122,13 @@ void window_draw(struct window_t *window) {
   size_t topy = window->top;
   size_t topx = window->left;
   size_t rows = min(gb->lines->len - topy, h);
+
+  struct region_t selection;
+  if (window->visual_mode_anchor) {
+    region_set(&selection,
+        window->cursor->start, window->visual_mode_anchor->start);
+  }
+
   for (size_t y = 0; y < rows; ++y) {
     size_t absolute = window->top + y + 1;
     size_t relative = (size_t) labs((ssize_t)(absolute - cursorline - 1));
@@ -139,18 +147,32 @@ void window_draw(struct window_t *window) {
       } while (linenumber > 0);
     }
 
-    bool drawcursorline = relative == 0 && option_get_bool("cursorline");
-    int fg = drawcursorline ? (TB_WHITE | TB_UNDERLINE) : TB_WHITE;
+    bool drawcursorline = relative == 0 &&
+      option_get_bool("cursorline") &&
+      !window->visual_mode_anchor;
 
     size_t cols = (size_t) max(0, min((ssize_t) gb->lines->buf[y + topy] - (ssize_t) topx, (ssize_t) w));
     for (size_t x = 0; x < cols; ++x) {
-      char c = gb_getchar(gb, gb_linecol_to_pos(gb, y + topy, x + topx));
-      window_change_cell(window, x, y, c, fg, TB_DEFAULT);
+      int fg = TB_WHITE;
+      int bg = TB_DEFAULT;
+      size_t pos = gb_linecol_to_pos(gb, y + topy, x + topx);
+      if (window->visual_mode_anchor &&
+          selection.start <= pos && pos < selection.end) {
+        fg = TB_BLACK;
+        bg = TB_WHITE;
+      }
+
+      if (drawcursorline) {
+        fg |= TB_UNDERLINE;
+      }
+
+      char c = gb_getchar(gb, pos);
+      window_change_cell(window, x, y, c, fg, bg);
     }
 
     if (drawcursorline) {
       for (size_t x = cols; x < w; ++x) {
-        window_change_cell(window, x, y, ' ', fg, TB_DEFAULT);
+        window_change_cell(window, x, y, ' ', TB_WHITE | TB_UNDERLINE, TB_DEFAULT);
       }
     }
   }

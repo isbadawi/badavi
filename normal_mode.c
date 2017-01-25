@@ -122,7 +122,7 @@ static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
   default: {
     struct motion_t *motion = motion_get(editor, ev);
     if (motion) {
-      window_set_cursor(editor->window ,motion_apply(motion, editor));
+      window_set_cursor(editor->window, motion_apply(motion, editor));
       break;
     }
     struct editing_mode_t *mode = operator_pending_mode((char) ev->ch);

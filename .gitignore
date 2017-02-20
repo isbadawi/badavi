@@ -1,8 +1,4 @@
-badavi
-badavi_test
 coverage
-*.o
-*.d
-.clarcache
-*.gcda
-*.gcno
+coverage-build
+build
+tests/.clarcache

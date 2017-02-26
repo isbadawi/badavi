@@ -1,26 +1,28 @@
 #include "util.h"
 
+#include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-static FILE *DEBUG_FP;
-
-void debug_init(void) {
-  DEBUG_FP = fopen("log.txt", "w");
-}
-
-FILE *debug_fp(void) {
-  return DEBUG_FP;
-}
+#include <time.h>
 
 void debug(const char *format, ...) {
+  static FILE *debug_fp = NULL;
+  if (!debug_fp) {
+    time_t timestamp = time(0);
+    struct tm *now = localtime(&timestamp);
+    char name[64];
+    strftime(name, sizeof(name), "/tmp/badavi_log.%Y%m%d-%H%M%S.txt", now);
+    debug_fp = fopen(name, "w");
+    assert(debug_fp);
+  }
+
   va_list args;
   va_start(args, format);
-  vfprintf(DEBUG_FP, format, args);
+  vfprintf(debug_fp, format, args);
   va_end(args);
-  fflush(DEBUG_FP);
+  fflush(debug_fp);
 }
 
 void *xmalloc(size_t size) {

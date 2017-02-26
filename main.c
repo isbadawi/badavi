@@ -6,11 +6,8 @@
 
 #include "editor.h"
 #include "tags.h"
-#include "util.h"
 
 int main(int argc, char *argv[]) {
-  debug_init();
-
   int err = tb_init();
   if (err) {
     fprintf(stderr, "tb_init() failed with error code %d\n", err);

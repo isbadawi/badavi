@@ -66,7 +66,7 @@ endef
 # the shortest stem) is chosen.
 $(BUILD_DIR)/tests/%.o: tests/%.c \
 	| $(call mkdir_dep,$(BUILD_DIR)/tests)
-	$(CC) $(TEST_CFLAGS) -c -o $@ $^
+	$(CC) $(TEST_CFLAGS) -c -o $@ $<
 
 $(BUILD_DIR)/tests/clar/clar.o: $(BUILD_DIR)/tests/clar/clar.suite \
 	| $(call mkdir_dep,$(BUILD_DIR)/tests/clar)
@@ -77,7 +77,7 @@ $(BUILD_DIR)/tests/clar/clar.suite: $(TEST_SRCS) \
 	mv tests/clar.suite $@
 
 $(BUILD_DIR)/%.o: %.c | $(call mkdir_dep,$(BUILD_DIR))
-	$(CC) -MMD -MP -o $@ -c $^ $(CFLAGS)
+	$(CC) -MMD -MP -o $@ -c $< $(CFLAGS)
 
 -include $(DEPS)
 

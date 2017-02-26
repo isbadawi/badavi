@@ -51,7 +51,7 @@ coverage:
 mkdir_dep = $(eval $(call mkdir_template,$(1))) $(1)
 
 define mkdir_template
-ifeq (,$$(__mkdir_$(1)_defined__))
+ifndef __mkdir_$(1)_defined__
 __mkdir_$(1)_defined__ := 1
 
 $(1):

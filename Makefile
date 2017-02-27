@@ -24,7 +24,7 @@ TEST_OBJS := $(TEST_SRCS:.c=.o)
 TEST_OBJS := $(addprefix $(BUILD_DIR)/,$(TEST_OBJS))
 TEST_OBJS += $(filter-out $(BUILD_DIR)/main.o,$(OBJS))
 TEST_OBJS += $(BUILD_DIR)/tests/clar/clar.o
-TEST_CFLAGS := $(COMMON_FLAGS) -w -I. -Itests/clar -I$(BUILD_DIR)/tests/clar \
+TEST_CFLAGS := $(COMMON_CFLAGS) -w -I. -Itests/clar -I$(BUILD_DIR)/tests/clar \
 	-DCLAR_FIXTURE_PATH=\"$(abspath tests/testdata)\"
 
 .PHONY: $(PROG)

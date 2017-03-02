@@ -49,9 +49,7 @@ given tag, as in e.g. `badavi -t main`.
 
 ### Building
 
-Just run `make`. The only dependency is `termbox`, which is easy to find --
-packages surely exist for your favorite OS. On OS X, `brew install termbox`
-will do.
+Just run `make`.
 
 ### License
 

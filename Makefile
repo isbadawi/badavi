@@ -1,4 +1,11 @@
-COMMON_CFLAGS := -g -std=c99 -D_GNU_SOURCE $(EXTRA_CFLAGS)
+BUILD_DIR := build
+
+TERMBOX_DIR := vendor/termbox
+TERMBOX_HEADER := $(BUILD_DIR)/include/termbox.h
+TERMBOX_LIBRARY := $(BUILD_DIR)/lib/libtermbox.a
+TERMBOX := $(TERMBOX_HEADER) $(TERMBOX_LIBRARY)
+
+COMMON_CFLAGS := -g -std=c99 -D_GNU_SOURCE -isystem $(dir $(TERMBOX_HEADER))
 
 WARNING_CFLAGS := -Wall -Wextra
 ifneq (,$(findstring clang,$(realpath $(shell which $(CC)))))
@@ -8,8 +15,6 @@ WARNING_CFLAGS += -Werror
 
 COVERAGE_CFLAGS := $(if $(COVERAGE),-coverage)
 CFLAGS := $(COMMON_CFLAGS) $(WARNING_CFLAGS) $(COVERAGE_CFLAGS)
-LDLIBS := -ltermbox
-BUILD_DIR := build
 
 PROG := badavi
 SRCS := $(wildcard *.c)
@@ -60,11 +65,17 @@ $(1):
 endif
 endef
 
+$(TERMBOX): | $(call mkdir_dep,$(BUILD_DIR))
+	(cd $(TERMBOX_DIR) && \
+	  ./waf configure --prefix=$(abspath $(BUILD_DIR)) && \
+	  ./waf && \
+	  ./waf install --targets=termbox_static)
+
 # We define the rule for test objects first because in GNU make 3.81, when
 # multiple pattern rules match a target, the first one is chosen. This is
 # different than 3.82 and later, where the most specific one (i.e. the one with
 # the shortest stem) is chosen.
-$(BUILD_DIR)/tests/%.o: tests/%.c \
+$(BUILD_DIR)/tests/%.o: tests/%.c $(TERMBOX_HEADER) \
 	| $(call mkdir_dep,$(BUILD_DIR)/tests)
 	$(CC) $(TEST_CFLAGS) -c -o $@ $<
 
@@ -76,14 +87,15 @@ $(BUILD_DIR)/tests/clar/clar.suite: $(TEST_SRCS) \
 	python tests/clar/generate.py tests
 	mv tests/clar.suite $@
 
-$(BUILD_DIR)/%.o: %.c | $(call mkdir_dep,$(BUILD_DIR))
+$(BUILD_DIR)/%.o: %.c $(TERMBOX_HEADER) \
+	| $(call mkdir_dep,$(BUILD_DIR))
 	$(CC) -MMD -MP -o $@ -c $< $(CFLAGS)
 
 -include $(DEPS)
 
 define program_template
-$(1): $(2) | $$(call mkdir_dep,$(BUILD_DIR))
-	$(CC) -o $$@ $(LDFLAGS) $(COVERAGE_CFLAGS) $$^ $(LDLIBS)
+$(1): $(2) $(TERMBOX_LIBRARY) | $$(call mkdir_dep,$(BUILD_DIR))
+	$(CC) -o $$@ $(COVERAGE_CFLAGS) $$^
 endef
 $(eval $(call program_template,$(BUILD_DIR)/$(PROG),$(OBJS)))
 $(eval $(call program_template,$(BUILD_DIR)/$(TEST_PROG),$(TEST_OBJS)))

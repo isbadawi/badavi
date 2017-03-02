@@ -1,3 +1,6 @@
 [submodule "tests/clar"]
 	path = tests/clar
 	url = https://github.com/vmg/clar
+[submodule "vendor/termbox"]
+	path = vendor/termbox
+	url = https://github.com/nsf/termbox

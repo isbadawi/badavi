@@ -1,9 +1,5 @@
 language: c
 
-env:
-  global:
-    - LD_LIBRARY_PATH=/usr/local/lib
-
 os:
   - linux
   - osx
@@ -11,9 +7,5 @@ os:
 compiler:
   - clang
   - gcc
-
-install:
-  - git clone https://github.com/nsf/termbox
-  - pushd termbox && ./waf configure && ./waf && sudo ./waf install && popd
 
 script: make test

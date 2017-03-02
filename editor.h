@@ -13,9 +13,7 @@ struct editor_t {
   // The loaded buffers.
   struct list_t *buffers;
 
-  // The open windows.
-  struct list_t *windows;
-  // The "selected" window -- the one being edited. An element of windows.
+  // The focused window.
   struct window_t *window;
 
   // A stack of editing modes.
@@ -74,11 +72,6 @@ __attribute__((__format__(__printf__, 2, 3)))
 void editor_status_err(struct editor_t *editor, const char *format, ...);
 
 void editor_send_keys(struct editor_t *editor, const char *keys);
-
-void editor_equalize_windows(struct editor_t *editor);
-
-struct window_t *editor_left_window(struct editor_t *editor, struct window_t *window);
-struct window_t *editor_right_window(struct editor_t *editor, struct window_t *window);
 
 void editor_undo(struct editor_t *editor);
 void editor_redo(struct editor_t *editor);

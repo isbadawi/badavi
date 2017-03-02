@@ -13,6 +13,7 @@
 #include "motion.h"
 #include "search.h"
 #include "tags.h"
+#include "util.h"
 #include "window.h"
 
 static bool is_last_line(struct gapbuf_t *gb, size_t pos) {
@@ -45,18 +46,45 @@ static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
   case TB_KEY_CTRL_T:
     editor_tag_stack_prev(editor);
     return;
-  case TB_KEY_CTRL_H: {
-    struct window_t *left = editor_left_window(editor, editor->window);
-    if (left) {
-      editor->window = left;
+  case TB_KEY_CTRL_W: {
+    editor_waitkey(editor, ev);
+    struct window_t *next = NULL;
+    switch (ev->key) {
+    case TB_KEY_CTRL_H: next = window_left(editor->window); break;
+    case TB_KEY_CTRL_L: next = window_right(editor->window); break;
+    case TB_KEY_CTRL_K: next = window_up(editor->window); break;
+    case TB_KEY_CTRL_J: next = window_down(editor->window); break;
     }
-    return;
-  }
-  case TB_KEY_CTRL_L: {
-    struct window_t *right = editor_right_window(editor, editor->window);
-    if (right) {
-      editor->window = right;
+
+    int count = max(1, (int)editor->count);
+
+    switch (ev->ch) {
+    case 'h': next = window_left(editor->window); break;
+    case 'l': next = window_right(editor->window); break;
+    case 'k': next = window_up(editor->window); break;
+    case 'j': next = window_down(editor->window); break;
+    case '<':
+      window_resize(editor->window, -count, 0);
+      editor->count = 0;
+      break;
+    case '>':
+      window_resize(editor->window, count, 0);
+      editor->count = 0;
+      break;
+    case '-':
+      window_resize(editor->window, 0, -count);
+      editor->count = 0;
+      break;
+    case '+':
+      window_resize(editor->window, 0, count);
+      editor->count = 0;
+      break;
     }
+
+    if (next) {
+      editor->window = next;
+    }
+
     return;
   }
   }

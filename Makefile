@@ -8,7 +8,8 @@ TERMBOX_HEADER := $(TERMBOX_INSTALL_DIR)/include/termbox.h
 TERMBOX_LIBRARY := $(TERMBOX_INSTALL_DIR)/lib/libtermbox.a
 TERMBOX := $(TERMBOX_HEADER) $(TERMBOX_LIBRARY)
 
-COMMON_CFLAGS := -g -std=c99 -D_GNU_SOURCE -isystem $(dir $(TERMBOX_HEADER))
+# Use C11 for anonymous structs.
+COMMON_CFLAGS := -g -std=c11 -D_GNU_SOURCE -isystem $(dir $(TERMBOX_HEADER))
 
 WARNING_CFLAGS := -Wall -Wextra
 ifneq (,$(findstring clang,$(realpath $(shell which $(CC)))))

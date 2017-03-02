@@ -52,11 +52,9 @@ void editor_init(struct editor_t *editor, size_t width, size_t height) {
   struct buffer_t *buffer = buffer_create(NULL);
   list_append(editor->buffers, buffer);
 
-  editor->windows = list_create();
   editor->width = width;
   editor->height = height;
-  editor->window = window_create(buffer, 0, 0, editor->width, editor->height - 1);
-  list_append(editor->windows, editor->window);
+  editor->window = window_create(buffer, editor->width, editor->height - 1);
 
   editor->status = buf_create(editor->width);
   editor->status_error = false;
@@ -155,26 +153,6 @@ void editor_save_buffer(struct editor_t *editor, char *path) {
   }
 }
 
-void editor_equalize_windows(struct editor_t *editor) {
-  size_t nwindows = list_size(editor->windows);
-  size_t width = (editor->width - nwindows) / nwindows;
-  size_t height = editor->height - ((nwindows == 1) ? 1 : 2);
-
-  size_t i = 0;
-  struct window_t *last = NULL;
-  struct window_t *w;
-  LIST_FOREACH(editor->windows, w) {
-    w->x = i++ * (width + 1);
-    w->y = 0;
-    w->w = width;
-    w->h = height;
-    last = w;
-  }
-
-  assert(last);
-  last->w += (editor->width - nwindows) % nwindows + 1;
-}
-
 struct editor_command_t {
   const char *name;
   const char *shortname;
@@ -201,22 +179,16 @@ static void editor_command_force_quit(struct editor_t __unused *editor,
 }
 
 static void editor_command_force_close_window(struct editor_t *editor, char *arg) {
-  if (list_size(editor->windows) == 1) {
+  if (window_root(editor->window)->split_type == WINDOW_LEAF) {
     editor_command_force_quit(editor, arg);
   }
+  assert(editor->window->parent);
 
-  struct window_t *window = list_prev(editor->windows, editor->window);
-  if (!window) {
-    window = list_next(editor->windows, editor->window);
-  }
-  list_remove(editor->windows, editor->window);
-  free(editor->window);
-  editor->window = window;
-  editor_equalize_windows(editor);
+  editor->window = window_close(editor->window);
 }
 
 static void editor_command_close_window(struct editor_t *editor, char *arg) {
-  if (list_size(editor->windows) == 1) {
+  if (window_root(editor->window)->split_type == WINDOW_LEAF) {
     editor_command_quit(editor, arg);
     return;
   }
@@ -331,24 +303,16 @@ static void editor_command_set(struct editor_t *editor, char *arg) {
   return;
 }
 
-struct window_t *editor_left_window(struct editor_t *editor, struct window_t *window) {
-  return list_prev(editor->windows, window);
-}
+static void editor_command_split(struct editor_t *editor, char *arg) {
+  editor->window = window_split(editor->window, WINDOW_SPLIT_HORIZONTAL);
 
-struct window_t *editor_right_window(struct editor_t *editor, struct window_t *window) {
-  return list_next(editor->windows, window);
+  if (arg) {
+    editor_command_edit(editor, arg);
+  }
 }
 
 static void editor_command_vsplit(struct editor_t *editor, char *arg) {
-  struct window_t *window = window_create(editor->window->buffer, 0, 0, 0, 0);
-  if (option_get_bool("splitright")) {
-    list_insert_after(editor->windows, editor->window, window);
-  } else {
-    list_insert_before(editor->windows, editor->window, window);
-  }
-  editor->window = window;
-
-  editor_equalize_windows(editor);
+  editor->window = window_split(editor->window, WINDOW_SPLIT_VERTICAL);
 
   if (arg) {
     editor_command_edit(editor, arg);
@@ -373,6 +337,7 @@ static struct editor_command_t editor_commands[] = {
   {"edit", "e", editor_command_edit},
   {"source", "so", editor_command_source},
   {"set", "set", editor_command_set},
+  {"split", "sp", editor_command_split},
   {"vsplit", "vsp", editor_command_vsplit},
   {"tag", "tag", editor_command_tag},
   {NULL, NULL, NULL}
@@ -408,37 +373,8 @@ void editor_execute_command(struct editor_t *editor, char *command) {
 void editor_draw(struct editor_t *editor) {
   tb_clear();
 
-  bool first = true;
-  bool drawplate = list_size(editor->windows) > 1;
-
-  struct window_t *w;
-  LIST_FOREACH(editor->windows, w) {
-    if (!first) {
-      for (size_t y = 0; y < editor->height - 1; ++y) {
-        tb_change_cell((int) w->x - 1, (int) y, '|', TB_BLACK, TB_WHITE);
-      }
-    }
-    first = false;
-
-    window_draw(w);
-    if (w == editor->window) {
-      window_draw_cursor(w);
-    }
-
-    if (drawplate) {
-      char plate[300];
-      strcpy(plate, *w->buffer->name ? w->buffer->name : "[No Name]");
-      if (w->buffer->dirty) {
-        strcat(plate, " [+]");
-      }
-      size_t platelen = strlen(plate);
-      for (size_t x = 0; x < w->w; ++x) {
-        char c = x < platelen ? plate[x] : ' ';
-        tb_change_cell((int) (w->x + x), (int) editor->height - 2, (uint32_t) c,
-                       TB_BLACK, TB_WHITE);
-      }
-    }
-  }
+  window_draw(window_root(editor->window));
+  window_draw_cursor(editor->window);
 
   for (size_t x = 0; x < editor->status->len; ++x) {
     tb_change_cell((int) x, (int) editor->height - 1, (uint32_t) editor->status->buf[x],
@@ -492,7 +428,7 @@ bool editor_waitkey(struct editor_t *editor, struct tb_event *ev) {
   } else if (ev->type == TB_EVENT_RESIZE) {
     editor->width = (size_t) ev->w;
     editor->height = (size_t) ev->h;
-    editor_equalize_windows(editor);
+    // FIXME(ibadawi): Resize windows
   } else {
     return true;
   }

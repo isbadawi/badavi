@@ -1,8 +1,9 @@
 BUILD_DIR := build
 
 TERMBOX_DIR := vendor/termbox
-TERMBOX_HEADER := $(BUILD_DIR)/include/termbox.h
-TERMBOX_LIBRARY := $(BUILD_DIR)/lib/libtermbox.a
+TERMBOX_INSTALL_DIR := $(BUILD_DIR)/termbox
+TERMBOX_HEADER := $(TERMBOX_INSTALL_DIR)/include/termbox.h
+TERMBOX_LIBRARY := $(TERMBOX_INSTALL_DIR)/lib/libtermbox.a
 TERMBOX := $(TERMBOX_HEADER) $(TERMBOX_LIBRARY)
 
 COMMON_CFLAGS := -g -std=c99 -D_GNU_SOURCE -isystem $(dir $(TERMBOX_HEADER))
@@ -65,11 +66,13 @@ $(1):
 endif
 endef
 
-$(TERMBOX): | $(call mkdir_dep,$(BUILD_DIR))
+$(TERMBOX_INSTALL_DIR): | $(call mkdir_dep,$(BUILD_DIR))
 	(cd $(TERMBOX_DIR) && \
-	  ./waf configure --prefix=$(abspath $(BUILD_DIR)) && \
+	  ./waf configure --prefix=$(abspath $@) && \
 	  ./waf && \
 	  ./waf install --targets=termbox_static)
+
+$(TERMBOX): $(TERMBOX_INSTALL_DIR)
 
 # We define the rule for test objects first because in GNU make 3.81, when
 # multiple pattern rules match a target, the first one is chosen. This is

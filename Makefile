@@ -1,5 +1,7 @@
 BUILD_DIR := build
 
+CLAR_DIR := vendor/clar
+
 TERMBOX_DIR := vendor/termbox
 TERMBOX_INSTALL_DIR := $(BUILD_DIR)/termbox
 TERMBOX_HEADER := $(TERMBOX_INSTALL_DIR)/include/termbox.h
@@ -29,8 +31,8 @@ TEST_SRCS := $(wildcard tests/*.c)
 TEST_OBJS := $(TEST_SRCS:.c=.o)
 TEST_OBJS := $(addprefix $(BUILD_DIR)/,$(TEST_OBJS))
 TEST_OBJS += $(filter-out $(BUILD_DIR)/main.o,$(OBJS))
-TEST_OBJS += $(BUILD_DIR)/tests/clar/clar.o
-TEST_CFLAGS := $(COMMON_CFLAGS) -w -I. -Itests/clar -I$(BUILD_DIR)/tests/clar \
+TEST_OBJS += $(BUILD_DIR)/tests/clar.o
+TEST_CFLAGS := $(COMMON_CFLAGS) -w -I. -isystem $(CLAR_DIR) -I$(BUILD_DIR)/tests \
 	-DCLAR_FIXTURE_PATH=\"$(abspath tests/testdata)\"
 
 .PHONY: $(PROG)
@@ -82,12 +84,14 @@ $(BUILD_DIR)/tests/%.o: tests/%.c $(TERMBOX_HEADER) \
 	| $(call mkdir_dep,$(BUILD_DIR)/tests)
 	$(CC) $(TEST_CFLAGS) -c -o $@ $<
 
-$(BUILD_DIR)/tests/clar/clar.o: $(BUILD_DIR)/tests/clar/clar.suite \
-	| $(call mkdir_dep,$(BUILD_DIR)/tests/clar)
+$(BUILD_DIR)/tests/clar.o: \
+	$(CLAR_DIR)/clar.c $(BUILD_DIR)/tests/clar.suite \
+	| $(call mkdir_dep,$(BUILD_DIR)/tests)
+	$(CC) $(TEST_CFLAGS) -c -o $@ $<
 
-$(BUILD_DIR)/tests/clar/clar.suite: $(TEST_SRCS) \
-	| $(call mkdir_dep,$(BUILD_DIR)/tests/clar)
-	python tests/clar/generate.py tests
+$(BUILD_DIR)/tests/clar.suite: $(TEST_SRCS) \
+	| $(call mkdir_dep,$(BUILD_DIR)/tests)
+	$(CLAR_DIR)/generate.py tests
 	mv tests/clar.suite $@
 
 $(BUILD_DIR)/%.o: %.c $(TERMBOX_HEADER) \

@@ -33,6 +33,7 @@ static struct option_t option_table[] = {
   BOOL_OPTION(cursorline, false),
   BOOL_OPTION(splitright, false),
   BOOL_OPTION(splitbelow, false),
+  BOOL_OPTION(equalalways, true),
   BOOL_OPTION(incsearch, false),
   {NULL, OPTION_TYPE_INT, {-1}},
 };

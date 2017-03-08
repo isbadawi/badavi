@@ -79,6 +79,10 @@ static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
       window_resize(editor->window, 0, count);
       editor->count = 0;
       break;
+    case '=':
+      window_equalize(editor->window, WINDOW_SPLIT_HORIZONTAL);
+      window_equalize(editor->window, WINDOW_SPLIT_VERTICAL);
+      break;
     }
 
     if (next) {

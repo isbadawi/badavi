@@ -46,6 +46,8 @@ struct window_t *window_split(struct window_t *window,
                               enum window_split_type_t type);
 
 void window_resize(struct window_t *window, int dw, int dh);
+void window_equalize(struct window_t *window,
+                     enum window_split_type_t type);
 
 struct window_t *window_root(struct window_t *window);
 struct window_t *window_left(struct window_t *window);

@@ -110,8 +110,78 @@ static size_t window_y(struct window_t *window) {
   }
 }
 
+static size_t window_count_splits(struct window_t *window,
+                                  enum window_split_type_t type) {
+  if (window->split_type == WINDOW_LEAF) {
+    return 0;
+  }
+
+  size_t lhs = window_count_splits(window->split.first, type);
+  size_t rhs = window_count_splits(window->split.second, type);
+
+  if (window->split_type == type) {
+    return 1 + lhs + rhs;
+  }
+  return max(lhs, rhs);
+}
+
+static size_t window_count_leaves(struct window_t *window,
+                                  enum window_split_type_t type) {
+
+  if (window->split_type == WINDOW_LEAF) {
+    return window->parent->split_type == type ? 1 : 0;
+  }
+
+  size_t lhs = window_count_leaves(window->split.first, type);
+  size_t rhs = window_count_leaves(window->split.second, type);
+
+  if (window->split_type == type) {
+    return lhs + rhs;
+  }
+  return max(lhs, rhs);
+}
+
+static void window_set_split_size(struct window_t *window,
+                                  enum window_split_type_t type,
+                                  size_t size) {
+  if (window->split_type == WINDOW_LEAF) {
+    return;
+  }
+
+  if (window->split_type == type) {
+    window->split.point =
+      size * window_count_leaves(window->split.first, type);
+  }
+  window_set_split_size(window->split.first, type, size);
+  window_set_split_size(window->split.second, type, size);
+}
+
+void window_equalize(struct window_t *window,
+                     enum window_split_type_t type) {
+  if (window->split_type == WINDOW_LEAF) {
+    window = window->parent;
+  }
+  if (!window) {
+    return;
+  }
+
+  struct window_t *root = window_root(window);
+
+  size_t n = window_count_splits(root, type);
+  size_t size;
+  if (type == WINDOW_SPLIT_VERTICAL) {
+    size = root->w;
+  } else {
+    size = root->h;
+  }
+
+  window_set_split_size(root, type, size / (n + 1));
+}
+
 struct window_t *window_split(struct window_t *window,
                               enum window_split_type_t type) {
+  assert(window->split_type == WINDOW_LEAF);
+
   struct window_t *copy = xmalloc(sizeof(*window));
   memcpy(copy, window, sizeof(*window));
 
@@ -146,6 +216,10 @@ struct window_t *window_split(struct window_t *window,
     break;
   case WINDOW_LEAF:
     assert(0);
+  }
+
+  if (option_get_bool("equalalways")) {
+    window_equalize(window, window->split_type);
   }
 
   return sibling;
@@ -357,6 +431,10 @@ struct window_t *window_close(struct window_t *window) {
     } else if (parent->split_type == WINDOW_SPLIT_VERTICAL) {
       parent->split.point = window_w(parent) - parent->split.point;
     }
+  }
+
+  if (option_get_bool("equalalways")) {
+    window_equalize(parent, old_parent_type);
   }
 
   window_free(window);

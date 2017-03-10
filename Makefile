@@ -54,21 +54,18 @@ coverage:
 	lcov -q -d . -a coverage-build/coverage.base -a coverage-build/coverage.run -o coverage-build/coverage.total
 	genhtml -q --no-branch-coverage -o $@ coverage-build/coverage.total
 
-# mkdir_dep allows you to specify a directory as an order-only dependency
-# without having to manually define the rule that creates it.
-mkdir_dep = $(eval $(call mkdir_template,$(1))) $(1)
+# Enable second expansion to access automatic variables in prerequisite lists.
+# In particular, we write $$(@D)/. to refer to the directory of the target.
+# Note the trailing dot -- make 3.81 seems to ignore trailing slashes.
+.SECONDEXPANSION:
 
-define mkdir_template
-ifndef __mkdir_$(1)_defined__
-__mkdir_$(1)_defined__ := 1
+$(BUILD_DIR)/.:
+	mkdir -p $@
 
-$(1):
-	mkdir -p $$@
+$(BUILD_DIR)%/.:
+	mkdir -p $@
 
-endif
-endef
-
-$(TERMBOX_INSTALL_DIR): | $(call mkdir_dep,$(BUILD_DIR))
+$(TERMBOX_INSTALL_DIR): | $$(@D)/.
 	(cd $(TERMBOX_DIR) && \
 	  ./waf configure --prefix=$(abspath $@) && \
 	  ./waf && \
@@ -80,28 +77,24 @@ $(TERMBOX): $(TERMBOX_INSTALL_DIR)
 # multiple pattern rules match a target, the first one is chosen. This is
 # different than 3.82 and later, where the most specific one (i.e. the one with
 # the shortest stem) is chosen.
-$(BUILD_DIR)/tests/%.o: tests/%.c $(TERMBOX_HEADER) \
-	| $(call mkdir_dep,$(BUILD_DIR)/tests)
+$(BUILD_DIR)/tests/%.o: tests/%.c $(TERMBOX_HEADER) | $$(@D)/.
 	$(CC) $(TEST_CFLAGS) -c -o $@ $<
 
 $(BUILD_DIR)/tests/clar.o: \
-	$(CLAR_DIR)/clar.c $(BUILD_DIR)/tests/clar.suite \
-	| $(call mkdir_dep,$(BUILD_DIR)/tests)
+	$(CLAR_DIR)/clar.c $(BUILD_DIR)/tests/clar.suite | $$(@D)/.
 	$(CC) $(TEST_CFLAGS) -c -o $@ $<
 
-$(BUILD_DIR)/tests/clar.suite: $(TEST_SRCS) \
-	| $(call mkdir_dep,$(BUILD_DIR)/tests)
+$(BUILD_DIR)/tests/clar.suite: $(TEST_SRCS) | $$(@D)/.
 	$(CLAR_DIR)/generate.py tests
 	mv tests/clar.suite $@
 
-$(BUILD_DIR)/%.o: %.c $(TERMBOX_HEADER) \
-	| $(call mkdir_dep,$(BUILD_DIR))
+$(BUILD_DIR)/%.o: %.c $(TERMBOX_HEADER) | $$(@D)/.
 	$(CC) -MMD -MP -o $@ -c $< $(CFLAGS)
 
 -include $(DEPS)
 
 define program_template
-$(1): $(2) $(TERMBOX_LIBRARY) | $$(call mkdir_dep,$(BUILD_DIR))
+$(1): $(2) $(TERMBOX_LIBRARY) | $$$$(@D)/.
 	$(CC) -o $$@ $(COVERAGE_CFLAGS) $$^
 endef
 $(eval $(call program_template,$(BUILD_DIR)/$(PROG),$(OBJS)))

@@ -87,8 +87,9 @@ static size_t window_x(struct window_t *window) {
     return window_x(window->parent) + window_w(window_sibling(window));
   case WINDOW_LEAF:
     assert(0);
-    return 0;
   }
+
+  return 0;
 }
 
 static size_t window_y(struct window_t *window) {
@@ -106,8 +107,9 @@ static size_t window_y(struct window_t *window) {
     return window_y(window->parent) + window_h(window_sibling(window));
   case WINDOW_LEAF:
     assert(0);
-    return 0;
   }
+
+  return 0;
 }
 
 static size_t window_count_splits(struct window_t *window,
@@ -331,8 +333,9 @@ struct window_t *window_left(struct window_t *window) {
     return window_left(window->parent);
   case WINDOW_LEAF:
     assert(0);
-    return NULL;
   }
+
+  return NULL;
 }
 
 struct window_t *window_right(struct window_t *window) {
@@ -350,8 +353,9 @@ struct window_t *window_right(struct window_t *window) {
     return window_right(window->parent);
   case WINDOW_LEAF:
     assert(0);
-    return NULL;
   }
+
+  return NULL;
 }
 
 struct window_t *window_up(struct window_t *window) {
@@ -369,8 +373,9 @@ struct window_t *window_up(struct window_t *window) {
     return window_up(window->parent);
   case WINDOW_LEAF:
     assert(0);
-    return NULL;
   }
+
+  return NULL;
 }
 
 struct window_t *window_down(struct window_t *window) {
@@ -388,8 +393,9 @@ struct window_t *window_down(struct window_t *window) {
     return window_down(window->parent);
   case WINDOW_LEAF:
     assert(0);
-    return NULL;
   }
+
+  return NULL;
 }
 
 static void window_free(struct window_t *window) {

@@ -9,16 +9,18 @@
 
 #include "editor.h"
 #include "tags.h"
+#include "window.h"
 
 int main(int argc, char *argv[]) {
-  char *file = NULL;
   char *line = NULL;
   char *tag = NULL;
+  enum window_split_type_t split_type = WINDOW_LEAF;
 
   char *rc = NULL;
   char default_rc[255];
 
-  for (int i = 1; i < argc; ++i) {
+  int i;
+  for (i = 1; i < argc; ++i) {
     char *arg = argv[i];
     if (!strcmp(arg, "-u")) {
       if (i == argc - 1) {
@@ -32,10 +34,14 @@ int main(int argc, char *argv[]) {
         return 1;
       }
       tag = argv[++i];
+    } else if (!strcmp(arg, "-o")) {
+      split_type = WINDOW_SPLIT_HORIZONTAL;
+    } else if (!strcmp(arg, "-O")) {
+      split_type = WINDOW_SPLIT_VERTICAL;
     } else if (*arg == '+') {
       line = arg + 1;
     } else {
-      file = arg;
+      break;
     }
   }
 
@@ -51,8 +57,23 @@ int main(int argc, char *argv[]) {
 
   if (tag) {
     editor_jump_to_tag(&editor, tag);
-  } else if (file) {
-    editor_open(&editor, file);
+  } else if (i < argc) {
+    // Open files in reverse order so that the first file listed ends up as the
+    // leftmost or topmost split. Note that this is all happening before we
+    // source any config, so that the values of 'splitbelow' or 'splitright'
+    // don't affect the behavior.
+    // FIXME(ibadawi): Have window_split take arguments to control layout
+    // FIXME(ibadawi): instead of looking at options directly.
+    editor_open(&editor, argv[argc - 1]);
+
+    if (split_type != WINDOW_LEAF) {
+      for (int j = argc - 2; i < j + 1; --j) {
+        editor.window = window_split(editor.window, split_type);
+        editor_open(&editor, argv[j]);
+      }
+      editor.window = window_first_leaf(window_root(editor.window));
+    }
+
     if (line && (!*line || atoi(line) > 0)) {
       char buf[32];
       snprintf(buf, 32, "%sG", line);

@@ -55,6 +55,8 @@ struct window_t *window_right(struct window_t *window);
 struct window_t *window_up(struct window_t *window);
 struct window_t *window_down(struct window_t *window);
 
+struct window_t *window_first_leaf(struct window_t *window);
+
 void window_set_buffer(struct window_t *window, struct buffer_t *buffer);
 
 size_t window_cursor(struct window_t *window);

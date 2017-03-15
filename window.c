@@ -297,7 +297,7 @@ size_t window_cursor(struct window_t *window) {
   return window->cursor->start;
 }
 
-static struct window_t *window_first_leaf(struct window_t *window) {
+struct window_t *window_first_leaf(struct window_t *window) {
   while (window->split_type != WINDOW_LEAF) {
     window = window->split.first;
   }

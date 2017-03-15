@@ -2,12 +2,43 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <pwd.h>
+#include <unistd.h>
+
 #include <termbox.h>
 
 #include "editor.h"
 #include "tags.h"
 
 int main(int argc, char *argv[]) {
+  char *file = NULL;
+  char *line = NULL;
+  char *tag = NULL;
+
+  char *rc = NULL;
+  char default_rc[255];
+
+  for (int i = 1; i < argc; ++i) {
+    char *arg = argv[i];
+    if (!strcmp(arg, "-u")) {
+      if (i == argc - 1) {
+        fprintf(stderr, "argument missing after -u\n");
+        return 1;
+      }
+      rc = argv[++i];
+    } else if (!strcmp(arg, "-t")) {
+      if (i == argc - 1) {
+        fprintf(stderr, "argument missing after -t\n");
+        return 1;
+      }
+      tag = argv[++i];
+    } else if (*arg == '+') {
+      line = arg + 1;
+    } else {
+      file = arg;
+    }
+  }
+
   int err = tb_init();
   if (err) {
     fprintf(stderr, "tb_init() failed with error code %d\n", err);
@@ -18,21 +49,6 @@ int main(int argc, char *argv[]) {
   struct editor_t editor;
   editor_init(&editor, (size_t) tb_width(), (size_t) tb_height());
 
-  char *file = NULL;
-  char *line = NULL;
-  char *tag = NULL;
-
-  for (int i = 1; i < argc; ++i) {
-    char *arg = argv[i];
-    if (!strcmp(arg, "-t")) {
-      tag = argv[++i];
-    } else if (*arg == '+') {
-      line = arg + 1;
-    } else {
-      file = arg;
-    }
-  }
-
   if (tag) {
     editor_jump_to_tag(&editor, tag);
   } else if (file) {
@@ -42,6 +58,19 @@ int main(int argc, char *argv[]) {
       snprintf(buf, 32, "%sG", line);
       editor_send_keys(&editor, buf);
     }
+  }
+
+  if (!rc) {
+    const char *home = getenv("HOME");
+    home = home ? home : getpwuid(getuid())->pw_dir;
+    snprintf(default_rc, sizeof(default_rc), "%s/.badavimrc", home);
+    if (!access(default_rc, F_OK)) {
+      rc = default_rc;
+    }
+  }
+
+  if (rc && strcmp(rc, "NONE") != 0) {
+    editor_source(&editor, rc);
   }
 
   editor_draw(&editor);

@@ -75,3 +75,5 @@ void editor_send_keys(struct editor_t *editor, const char *keys);
 
 void editor_undo(struct editor_t *editor);
 void editor_redo(struct editor_t *editor);
+
+void editor_source(struct editor_t *editor, char *path);

@@ -7,7 +7,6 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include <pwd.h>
 #include <regex.h>
 #include <unistd.h>
 
@@ -38,15 +37,6 @@ static struct editor_register_t register_table[] = {
 };
 #undef R
 
-static void editor_source_badavimrc(struct editor_t *editor) {
-  const char *home = getenv("HOME");
-  home = home ? home : getpwuid(getuid())->pw_dir;
-  char cmd[255];
-  snprintf(cmd, 255, "source %s/.badavimrc", home);
-  editor_execute_command(editor, cmd);
-  buf_clear(editor->status);
-}
-
 void editor_init(struct editor_t *editor, size_t width, size_t height) {
   editor->buffers = list_create();
   struct buffer_t *buffer = buffer_create(NULL);
@@ -74,8 +64,6 @@ void editor_init(struct editor_t *editor, size_t width, size_t height) {
   editor->register_ = '"';
 
   editor->synthetic_events = list_create();
-
-  editor_source_badavimrc(editor);
 }
 
 struct buf_t *editor_get_register(struct editor_t *editor, char name) {
@@ -215,15 +203,10 @@ static void editor_command_edit(struct editor_t *editor, char *arg) {
   }
 }
 
-static void editor_command_source(struct editor_t *editor, char *arg) {
-  if (!arg) {
-    editor_status_err(editor, "Argument required");
-    return;
-  }
-
-  FILE *fp = fopen(arg, "r");
+void editor_source(struct editor_t *editor, char *path) {
+  FILE *fp = fopen(path, "r");
   if (!fp) {
-    editor_status_err(editor, "Can't open file %s", arg);
+    editor_status_err(editor, "Can't open file %s", path);
     return;
   }
 
@@ -237,6 +220,15 @@ static void editor_command_source(struct editor_t *editor, char *arg) {
   free(line);
 
   fclose(fp);
+}
+
+static void editor_command_source(struct editor_t *editor, char *arg) {
+  if (!arg) {
+    editor_status_err(editor, "Argument required");
+    return;
+  }
+
+  editor_source(editor, arg);
 }
 
 static void editor_command_set(struct editor_t *editor, char *arg) {

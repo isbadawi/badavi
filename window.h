@@ -64,3 +64,8 @@ void window_set_cursor(struct window_t *window, size_t pos);
 
 void window_draw(struct window_t *window);
 void window_draw_cursor(struct window_t *window);
+
+size_t window_w(struct window_t *window);
+size_t window_h(struct window_t *window);
+size_t window_x(struct window_t *window);
+size_t window_y(struct window_t *window);

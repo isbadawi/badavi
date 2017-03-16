@@ -42,7 +42,7 @@ static struct window_t *window_sibling(struct window_t *window) {
   return window->parent->split.first;
 }
 
-static size_t window_w(struct window_t *window) {
+size_t window_w(struct window_t *window) {
   if (!window->parent) {
     return window->w;
   }
@@ -57,7 +57,7 @@ static size_t window_w(struct window_t *window) {
   return window_w(window->parent) - window->parent->split.point;
 }
 
-static size_t window_h(struct window_t *window) {
+size_t window_h(struct window_t *window) {
   if (!window->parent) {
     return window->h;
   }
@@ -72,7 +72,7 @@ static size_t window_h(struct window_t *window) {
   return window_h(window->parent) - window->parent->split.point;
 }
 
-static size_t window_x(struct window_t *window) {
+size_t window_x(struct window_t *window) {
   if (!window->parent) {
     return 0;
   }
@@ -92,7 +92,7 @@ static size_t window_x(struct window_t *window) {
   return 0;
 }
 
-static size_t window_y(struct window_t *window) {
+size_t window_y(struct window_t *window) {
   if (!window->parent) {
     return 0;
   }
@@ -152,7 +152,7 @@ static void window_set_split_size(struct window_t *window,
 
   if (window->split_type == type) {
     window->split.point =
-      size * window_count_leaves(window->split.first, type);
+      size * max(1, window_count_leaves(window->split.first, type));
   }
   window_set_split_size(window->split.first, type, size);
   window_set_split_size(window->split.second, type, size);

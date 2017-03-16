@@ -20,11 +20,11 @@ void test_tags__cleanup(void) {
 }
 
 void test_tags__find(void) {
-  struct tag_t *main = tags_find(tags, "main");
-  cl_assert(main);
-  cl_assert_equal_s("main", main->name);
-  cl_assert_equal_s("main.c", main->path);
-  cl_assert_equal_s("/^int main\\(int argc, char \\*argv\\[\\]\\) \\{$", main->cmd);
+  struct tag_t *tag = tags_find(tags, "main");
+  cl_assert(tag);
+  cl_assert_equal_s("main", tag->name);
+  cl_assert_equal_s("main.c", tag->path);
+  cl_assert_equal_s("/^int main\\(int argc, char \\*argv\\[\\]\\) \\{$", tag->cmd);
 
   struct tag_t *garbage = tags_find(tags, "garbage");
   cl_assert(!garbage);
@@ -40,7 +40,7 @@ void test_tags__updated(void) {
 void test_tags__deleted(void) {
   cl_assert(tags->len > 0);
   remove(tags->file);
-  struct tag_t *main = tags_find(tags, "main");
-  cl_assert(!main);
+  struct tag_t *tag = tags_find(tags, "main");
+  cl_assert(!tag);
   cl_assert_equal_i(tags->len, 0);
 }

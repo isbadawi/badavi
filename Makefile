@@ -8,9 +8,6 @@ TERMBOX_HEADER := $(TERMBOX_INSTALL_DIR)/include/termbox.h
 TERMBOX_LIBRARY := $(TERMBOX_INSTALL_DIR)/lib/libtermbox.a
 TERMBOX := $(TERMBOX_HEADER) $(TERMBOX_LIBRARY)
 
-# Use C11 for anonymous structs.
-COMMON_CFLAGS := -g -std=c11 -D_GNU_SOURCE -isystem $(dir $(TERMBOX_HEADER))
-
 WARNING_CFLAGS := -Wall -Wextra
 ifneq (,$(findstring clang,$(realpath $(shell which $(CC)))))
 WARNING_CFLAGS := -Weverything -Wno-padded
@@ -18,7 +15,13 @@ endif
 WARNING_CFLAGS += -Werror
 
 COVERAGE_CFLAGS := $(if $(COVERAGE),-coverage)
-CFLAGS := $(COMMON_CFLAGS) $(WARNING_CFLAGS) $(COVERAGE_CFLAGS)
+
+# Use C11 for anonymous structs.
+COMMON_CFLAGS := -g -std=c11 -D_GNU_SOURCE \
+	-isystem $(dir $(TERMBOX_HEADER)) \
+	$(WARNING_CFLAGS)
+
+CFLAGS := $(COMMON_CFLAGS) $(COVERAGE_CFLAGS)
 
 PROG := badavi
 SRCS := $(wildcard *.c)
@@ -33,7 +36,8 @@ TEST_OBJS := $(TEST_SRCS:.c=.o)
 TEST_OBJS := $(addprefix $(BUILD_DIR)/,$(TEST_OBJS))
 TEST_OBJS += $(filter-out $(BUILD_DIR)/main.o,$(OBJS))
 TEST_OBJS += $(BUILD_DIR)/tests/clar.o
-TEST_CFLAGS := $(COMMON_CFLAGS) -w -I. -isystem $(CLAR_DIR) -I$(BUILD_DIR)/tests \
+TEST_CFLAGS := $(COMMON_CFLAGS) -Wno-missing-prototypes \
+	-I. -isystem $(CLAR_DIR) -I$(BUILD_DIR)/tests \
 	-DCLAR_FIXTURE_PATH=\"$(abspath tests/testdata)\"
 
 .PHONY: $(PROG)
@@ -83,7 +87,7 @@ $(BUILD_DIR)/tests/%.o: tests/%.c $(TERMBOX_HEADER) | $$(@D)/.
 
 $(BUILD_DIR)/tests/clar.o: \
 	$(CLAR_DIR)/clar.c $(BUILD_DIR)/tests/clar.suite | $$(@D)/.
-	$(CC) $(TEST_CFLAGS) -c -o $@ $<
+	$(CC) $(TEST_CFLAGS) -w -c -o $@ $<
 
 $(BUILD_DIR)/tests/clar.suite: $(TEST_SRCS) | $$(@D)/.
 	$(CLAR_DIR)/generate.py tests

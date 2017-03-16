@@ -20,7 +20,7 @@ static void assert_contents(const char *text) {
   cl_assert_equal_s(buf->buf, text);
 }
 
-static void insert_text(size_t pos, const char *text) {
+static void insert_text(size_t pos, char *text) {
   buffer_do_insert(buffer, buf_from_cstr(text), pos);
 }
 

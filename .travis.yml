@@ -3,6 +3,8 @@ language: c
 dist: trusty
 sudo: false
 
+script: make && make test
+
 os:
   - linux
   - osx
@@ -11,4 +13,11 @@ compiler:
   - clang
   - gcc
 
-script: make && make test
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      env: COVERAGE=1
+
+after_success:
+  - [ $COVERAGE = 1 ] && bash <(curl -s https://codecov.io/bash)

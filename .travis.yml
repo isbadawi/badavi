@@ -20,4 +20,4 @@ matrix:
       env: COVERAGE=1
 
 after_success:
-  - [ $COVERAGE = 1 ] && bash <(curl -s https://codecov.io/bash)
+  - "[ $COVERAGE = 1 ] && bash <(curl -s https://codecov.io/bash)"

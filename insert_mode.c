@@ -8,16 +8,16 @@
 #include "list.h"
 #include "window.h"
 
-static void insert_mode_entered(struct editor_t *editor) {
+static void insert_mode_entered(struct editor *editor) {
   editor_status_msg(editor, "-- INSERT --");
   buffer_start_action_group(editor->window->buffer);
 }
 
-static void insert_mode_exited(struct editor_t *editor) {
+static void insert_mode_exited(struct editor *editor) {
   // If we exit insert mode without making changes, let's not add a
   // useless undo action.
   // TODO(isbadawi): Maybe this belongs in an "editor_end_action_group"
-  struct list_t *undo_stack = editor->window->buffer->undo_stack;
+  struct list *undo_stack = editor->window->buffer->undo_stack;
   if (list_empty(list_peek(undo_stack))) {
     list_pop(undo_stack);
   }
@@ -25,8 +25,8 @@ static void insert_mode_exited(struct editor_t *editor) {
   buf_clear(editor->status);
 }
 
-static void insert_mode_key_pressed(struct editor_t* editor, struct tb_event* ev) {
-  struct buffer_t *buffer = editor->window->buffer;
+static void insert_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
+  struct buffer *buffer = editor->window->buffer;
   size_t cursor = window_cursor(editor->window);
   char ch;
   switch (ev->key) {
@@ -45,13 +45,13 @@ static void insert_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
   buffer_do_insert(buffer, buf_from_char(ch), cursor);
 }
 
-static struct editing_mode_t impl = {
+static struct editing_mode impl = {
   .entered = insert_mode_entered,
   .exited = insert_mode_exited,
   .key_pressed = insert_mode_key_pressed,
   .parent = NULL
 };
 
-struct editing_mode_t *insert_mode(void) {
+struct editing_mode *insert_mode(void) {
   return &impl;
 }

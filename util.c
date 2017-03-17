@@ -53,12 +53,12 @@ char *xstrdup(const char *s) {
 }
 
 
-struct region_t *region_set(struct region_t *region, size_t start, size_t end) {
+struct region *region_set(struct region *region, size_t start, size_t end) {
   region->start = min(start, end);
   region->end = max(start, end);
   return region;
 }
 
-struct region_t *region_create(size_t start, size_t end) {
-  return region_set(xmalloc(sizeof(struct region_t)), start, end);
+struct region *region_create(size_t start, size_t end) {
+  return region_set(xmalloc(sizeof(struct region)), start, end);
 }

@@ -1,26 +1,26 @@
 #pragma once
 
-struct editor_t;
-struct region_t;
+struct editor;
+struct region;
 struct tb_event;
 
-struct editing_mode_t {
+struct editing_mode {
   // Called when the editor switches into this mode (optional).
-  void (*entered)(struct editor_t*);
+  void (*entered)(struct editor*);
   // Called when the editor switches out of this mode (optional).
-  void (*exited)(struct editor_t*);
+  void (*exited)(struct editor*);
   // Called when this mode is active and a key is pressed.
-  void (*key_pressed)(struct editor_t*, struct tb_event*);
+  void (*key_pressed)(struct editor*, struct tb_event*);
   // The mode the editor was in when this mode was entered.
-  struct editing_mode_t *parent;
+  struct editing_mode *parent;
 };
 
-struct editing_mode_t *normal_mode(void);
-struct editing_mode_t *insert_mode(void);
-struct editing_mode_t *visual_mode(void);
-struct editing_mode_t *command_mode(void);
-struct editing_mode_t *search_mode(char direction);
-struct editing_mode_t *operator_pending_mode(char op);
+struct editing_mode *normal_mode(void);
+struct editing_mode *insert_mode(void);
+struct editing_mode *visual_mode(void);
+struct editing_mode *command_mode(void);
+struct editing_mode *search_mode(char direction);
+struct editing_mode *operator_pending_mode(char op);
 
-typedef void (op_t) (struct editor_t*, struct region_t*);
-op_t *op_find(char name);
+typedef void (op_func) (struct editor*, struct region*);
+op_func *op_find(char name);

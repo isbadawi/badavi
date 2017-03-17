@@ -12,88 +12,88 @@
 #include "window.h"
 #include "util.h"
 
-static bool is_line_start(struct gapbuf_t *gb, size_t pos) {
+static bool is_line_start(struct gapbuf *gb, size_t pos) {
   return pos == 0 || gb_getchar(gb, pos - 1) == '\n';
 }
 
-static bool is_line_end(struct gapbuf_t *gb, size_t pos) {
+static bool is_line_end(struct gapbuf *gb, size_t pos) {
   return pos == gb_size(gb) - 1 || gb_getchar(gb, pos) == '\n';
 }
 
-static bool is_first_line(struct gapbuf_t *gb, size_t pos) {
+static bool is_first_line(struct gapbuf *gb, size_t pos) {
   return pos <= gb->lines->buf[0];
 }
 
-static bool is_last_line(struct gapbuf_t *gb, size_t pos) {
+static bool is_last_line(struct gapbuf *gb, size_t pos) {
   return pos >= gb_size(gb) - 1 - gb->lines->buf[gb->lines->len - 1];
 }
 
-static bool is_blank_line(struct gapbuf_t *gb, size_t pos) {
+static bool is_blank_line(struct gapbuf *gb, size_t pos) {
   return gb_getchar(gb, pos) == '\n' && is_line_start(gb, pos);
 }
 
-static size_t left(struct motion_context_t ctx) {
+static size_t left(struct motion_context ctx) {
   return is_line_start(ctx.window->buffer->text, ctx.pos) ? ctx.pos : ctx.pos - 1;
 }
 
-static size_t right(struct motion_context_t ctx) {
+static size_t right(struct motion_context ctx) {
   return is_line_end(ctx.window->buffer->text, ctx.pos) ? ctx.pos : ctx.pos + 1;
 }
 
-static size_t up(struct motion_context_t ctx) {
+static size_t up(struct motion_context ctx) {
   if (is_first_line(ctx.window->buffer->text, ctx.pos)) {
     return ctx.pos;
   }
-  struct gapbuf_t *gb = ctx.window->buffer->text;
+  struct gapbuf *gb = ctx.window->buffer->text;
   size_t x, y;
   gb_pos_to_linecol(gb, ctx.pos, &y, &x);
   return gb_linecol_to_pos(gb, y - 1, min(x, gb->lines->buf[y - 1]));
 }
 
-static size_t down(struct motion_context_t ctx) {
+static size_t down(struct motion_context ctx) {
   if (is_last_line(ctx.window->buffer->text, ctx.pos)) {
     return ctx.pos;
   }
-  struct gapbuf_t *gb = ctx.window->buffer->text;
+  struct gapbuf *gb = ctx.window->buffer->text;
   size_t x, y;
   gb_pos_to_linecol(gb, ctx.pos, &y, &x);
   return gb_linecol_to_pos(gb, y + 1, min(x, gb->lines->buf[y + 1]));
 }
 
-static size_t line_start(struct motion_context_t ctx) {
-  struct gapbuf_t *gb = ctx.window->buffer->text;
+static size_t line_start(struct motion_context ctx) {
+  struct gapbuf *gb = ctx.window->buffer->text;
   if (is_line_start(gb, ctx.pos)) {
     return ctx.pos;
   }
   return (size_t) (gb_lastindexof(gb, '\n', ctx.pos - 1) + 1);
 }
 
-static size_t line_end(struct motion_context_t ctx) {
-  struct gapbuf_t *gb = ctx.window->buffer->text;
+static size_t line_end(struct motion_context ctx) {
+  struct gapbuf *gb = ctx.window->buffer->text;
   if (is_line_end(gb, ctx.pos)) {
     return ctx.pos;
   }
   return gb_indexof(gb, '\n', ctx.pos);
 }
 
-static size_t buffer_top(struct motion_context_t __unused ctx) {
+static size_t buffer_top(struct motion_context __unused ctx) {
   return 0;
 }
 
-static size_t first_non_blank(struct motion_context_t ctx) {
+static size_t first_non_blank(struct motion_context ctx) {
   size_t start = line_start(ctx);
   size_t end = line_end(ctx);
-  struct gapbuf_t *gb = ctx.window->buffer->text;
+  struct gapbuf *gb = ctx.window->buffer->text;
   while (start < end && isspace(gb_getchar(gb, start))) {
     start++;
   }
   return start;
 }
 
-static size_t last_non_blank(struct motion_context_t ctx) {
+static size_t last_non_blank(struct motion_context ctx) {
   size_t start = line_start(ctx);
   size_t end = line_end(ctx);
-  struct gapbuf_t *gb = ctx.window->buffer->text;
+  struct gapbuf *gb = ctx.window->buffer->text;
   while (end > start && isspace(gb_getchar(gb, end))) {
     end--;
   }
@@ -104,8 +104,8 @@ static bool is_word_char(char c) {
   return isalnum(c) || c == '_';
 }
 
-static bool is_word_start(struct motion_context_t ctx) {
-  struct gapbuf_t *gb = ctx.window->buffer->text;
+static bool is_word_start(struct motion_context ctx) {
+  struct gapbuf *gb = ctx.window->buffer->text;
   if (is_line_start(gb, ctx.pos)) {
     return true;
   }
@@ -114,18 +114,18 @@ static bool is_word_start(struct motion_context_t ctx) {
   return !isspace(this) && (is_word_char(this) + is_word_char(last) == 1);
 }
 
-static bool is_WORD_start(struct motion_context_t ctx) {
+static bool is_WORD_start(struct motion_context ctx) {
   if (ctx.pos == 0) {
     return true;
   }
-  struct gapbuf_t *gb = ctx.window->buffer->text;
+  struct gapbuf *gb = ctx.window->buffer->text;
   char this = gb_getchar(gb, ctx.pos);
   char last = gb_getchar(gb, ctx.pos - 1);
   return !isspace(this) && isspace(last);
 }
 
-static bool is_word_end(struct motion_context_t ctx) {
-  struct gapbuf_t *gb = ctx.window->buffer->text;
+static bool is_word_end(struct motion_context ctx) {
+  struct gapbuf *gb = ctx.window->buffer->text;
   if (ctx.pos == gb_size(gb) - 1 || is_blank_line(gb, ctx.pos)) {
     return true;
   }
@@ -134,8 +134,8 @@ static bool is_word_end(struct motion_context_t ctx) {
   return !isspace(this) && (is_word_char(this) + is_word_char(next) == 1);
 }
 
-static bool is_WORD_end(struct motion_context_t ctx) {
-  struct gapbuf_t *gb = ctx.window->buffer->text;
+static bool is_WORD_end(struct motion_context ctx) {
+  struct gapbuf *gb = ctx.window->buffer->text;
   if (ctx.pos == gb_size(gb)) {
     return true;
   }
@@ -144,7 +144,7 @@ static bool is_WORD_end(struct motion_context_t ctx) {
   return !isspace(this) && isspace(next);
 }
 
-static size_t prev_until(struct motion_context_t ctx, bool (*pred)(struct motion_context_t)) {
+static size_t prev_until(struct motion_context ctx, bool (*pred)(struct motion_context)) {
   if (ctx.pos > 0) {
     do {
       --ctx.pos;
@@ -153,7 +153,7 @@ static size_t prev_until(struct motion_context_t ctx, bool (*pred)(struct motion
   return ctx.pos;
 }
 
-static size_t next_until(struct motion_context_t ctx, bool (*pred)(struct motion_context_t)) {
+static size_t next_until(struct motion_context ctx, bool (*pred)(struct motion_context)) {
   size_t size = gb_size(ctx.window->buffer->text);
   if (ctx.pos < size - 1) {
     do {
@@ -163,64 +163,64 @@ static size_t next_until(struct motion_context_t ctx, bool (*pred)(struct motion
   return ctx.pos;
 }
 
-static size_t next_word_start(struct motion_context_t ctx) {
+static size_t next_word_start(struct motion_context ctx) {
   return next_until(ctx, is_word_start);
 }
 
-static size_t next_WORD_start(struct motion_context_t ctx) {
+static size_t next_WORD_start(struct motion_context ctx) {
   return next_until(ctx, is_WORD_start);
 }
 
-static size_t prev_word_start(struct motion_context_t ctx) {
+static size_t prev_word_start(struct motion_context ctx) {
   return prev_until(ctx, is_word_start);
 }
 
-static size_t prev_WORD_start(struct motion_context_t ctx) {
+static size_t prev_WORD_start(struct motion_context ctx) {
   return prev_until(ctx, is_WORD_start);
 }
 
-static size_t next_word_end(struct motion_context_t ctx) {
+static size_t next_word_end(struct motion_context ctx) {
   return next_until(ctx, is_word_end);
 }
 
-static size_t next_WORD_end(struct motion_context_t ctx) {
+static size_t next_WORD_end(struct motion_context ctx) {
   return next_until(ctx, is_WORD_end);
 }
 
-static size_t prev_word_end(struct motion_context_t ctx) {
+static size_t prev_word_end(struct motion_context ctx) {
   return prev_until(ctx, is_word_end);
 }
 
-static size_t prev_WORD_end(struct motion_context_t ctx) {
+static size_t prev_WORD_end(struct motion_context ctx) {
   return prev_until(ctx, is_WORD_end);
 }
 
-static bool is_paragraph_start(struct motion_context_t ctx) {
+static bool is_paragraph_start(struct motion_context ctx) {
   if (ctx.pos == 0) {
     return true;
   }
-  struct gapbuf_t *gb = ctx.window->buffer->text;
+  struct gapbuf *gb = ctx.window->buffer->text;
   return is_blank_line(gb, ctx.pos) && !is_blank_line(gb, ctx.pos + 1);
 }
 
-static bool is_paragraph_end(struct motion_context_t ctx) {
-  struct gapbuf_t *gb = ctx.window->buffer->text;
+static bool is_paragraph_end(struct motion_context ctx) {
+  struct gapbuf *gb = ctx.window->buffer->text;
   if (ctx.pos == gb_size(gb) - 1) {
     return true;
   }
   return is_blank_line(gb, ctx.pos) && !is_blank_line(gb, ctx.pos - 1);
 }
 
-static size_t paragraph_start(struct motion_context_t ctx) {
+static size_t paragraph_start(struct motion_context ctx) {
   return prev_until(ctx, is_paragraph_start);
 }
 
-static size_t paragraph_end(struct motion_context_t ctx) {
+static size_t paragraph_end(struct motion_context ctx) {
   return next_until(ctx, is_paragraph_end);
 }
 
-static size_t till_forward(struct motion_context_t ctx, bool inclusive) {
-  struct gapbuf_t *gb = ctx.window->buffer->text;
+static size_t till_forward(struct motion_context ctx, bool inclusive) {
+  struct gapbuf *gb = ctx.window->buffer->text;
   if (is_line_end(gb, ctx.pos)) {
     return ctx.pos;
   }
@@ -234,8 +234,8 @@ static size_t till_forward(struct motion_context_t ctx, bool inclusive) {
   return ctx.pos;
 }
 
-static size_t till_backward(struct motion_context_t ctx, bool inclusive) {
-  struct gapbuf_t *gb = ctx.window->buffer->text;
+static size_t till_backward(struct motion_context ctx, bool inclusive) {
+  struct gapbuf *gb = ctx.window->buffer->text;
   if (is_line_start(gb, ctx.pos)) {
     return ctx.pos;
   }
@@ -249,19 +249,19 @@ static size_t till_backward(struct motion_context_t ctx, bool inclusive) {
   return ctx.pos;
 }
 
-static size_t till_forward_inclusive(struct motion_context_t ctx) {
+static size_t till_forward_inclusive(struct motion_context ctx) {
   return till_forward(ctx, true);
 }
 
-static size_t till_forward_exclusive(struct motion_context_t ctx) {
+static size_t till_forward_exclusive(struct motion_context ctx) {
   return till_forward(ctx, false);
 }
 
-static size_t till_backward_inclusive(struct motion_context_t ctx) {
+static size_t till_backward_inclusive(struct motion_context ctx) {
   return till_backward(ctx, true);
 }
 
-static size_t till_backward_exclusive(struct motion_context_t ctx) {
+static size_t till_backward_exclusive(struct motion_context ctx) {
   return till_backward(ctx, false);
 }
 
@@ -269,7 +269,7 @@ static size_t till_backward_exclusive(struct motion_context_t ctx) {
 #define EXCLUSIVE false, true
 #define INCLUSIVE false, false
 
-static struct motion_t motion_table[] = {
+static struct motion motion_table[] = {
   {'h', left, EXCLUSIVE},
   {'j', down, LINEWISE},
   {'k', up, LINEWISE},
@@ -293,7 +293,7 @@ static struct motion_t motion_table[] = {
   {-1, NULL, false, false}
 };
 
-static struct motion_t g_motion_table[] = {
+static struct motion g_motion_table[] = {
   {'_', last_non_blank, INCLUSIVE},
   {'e', prev_word_end, INCLUSIVE},
   {'E', prev_WORD_end, INCLUSIVE},
@@ -301,7 +301,7 @@ static struct motion_t g_motion_table[] = {
   {-1, NULL, false, false}
 };
 
-static struct motion_t *motion_find(struct motion_t *table, char name) {
+static struct motion *motion_find(struct motion *table, char name) {
   for (int i = 0; table[i].name != -1; ++i) {
     if (table[i].name == name) {
       return &table[i];
@@ -310,8 +310,8 @@ static struct motion_t *motion_find(struct motion_t *table, char name) {
   return NULL;
 }
 
-struct motion_t *motion_get(struct editor_t *editor, struct tb_event *ev) {
-  struct motion_t *table = motion_table;
+struct motion *motion_get(struct editor *editor, struct tb_event *ev) {
+  struct motion *table = motion_table;
   if (ev->ch == 'g') {
     table = g_motion_table;
     editor_waitkey(editor, ev);
@@ -319,11 +319,11 @@ struct motion_t *motion_get(struct editor_t *editor, struct tb_event *ev) {
   return motion_find(table, (char) ev->ch);
 }
 
-size_t motion_apply(struct motion_t *motion, struct editor_t *editor) {
+size_t motion_apply(struct motion *motion, struct editor *editor) {
   unsigned int n = editor->count ? editor->count : 1;
 
   size_t cursor = window_cursor(editor->window);
-  struct motion_context_t ctx = {cursor, editor->window, editor};
+  struct motion_context ctx = {cursor, editor->window, editor};
 
   size_t nlines = gb_nlines(editor->window->buffer->text);
   // TODO(isbadawi): This is a hack to make G work correctly.
@@ -340,8 +340,8 @@ size_t motion_apply(struct motion_t *motion, struct editor_t *editor) {
   return ctx.pos;
 }
 
-size_t motion_word_under_cursor(struct window_t *window, char *buf) {
-  struct motion_context_t ctx = {window_cursor(window), window, NULL};
+size_t motion_word_under_cursor(struct window *window, char *buf) {
+  struct motion_context ctx = {window_cursor(window), window, NULL};
   size_t start = is_word_start(ctx) ? ctx.pos : prev_word_start(ctx);
   size_t end = is_word_end(ctx) ? ctx.pos : next_word_end(ctx);
   gb_getstring(window->buffer->text, start, end - start + 1, buf);

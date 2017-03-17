@@ -28,9 +28,9 @@ static char *escape_regex(char *regex) {
   return result;
 }
 
-void tags_clear(struct tags_t *tags) {
+void tags_clear(struct tags *tags) {
   for (size_t i = 0; i < tags->len; ++i) {
-    struct tag_t *tag = &tags->tags[i];
+    struct tag *tag = &tags->tags[i];
     free(tag->name);
     free(tag->path);
     free(tag->cmd);
@@ -43,7 +43,7 @@ void tags_clear(struct tags_t *tags) {
   tags->loaded_at = 0;
 }
 
-static void tags_load(struct tags_t *tags) {
+static void tags_load(struct tags *tags) {
   FILE *fp = fopen(tags->file, "r");
   if (!fp) {
     return;
@@ -72,7 +72,7 @@ static void tags_load(struct tags_t *tags) {
     if (*line == '!') {
       continue;
     }
-    struct tag_t *tag = &tags->tags[i++];
+    struct tag *tag = &tags->tags[i++];
     tag->name = xstrdup(strtok(line, "\t"));
     tag->path = xstrdup(strtok(NULL, "\t"));
     tag->cmd = escape_regex(strtok(NULL, "\""));
@@ -84,8 +84,8 @@ static void tags_load(struct tags_t *tags) {
   tags->loaded_at = time(0);
 }
 
-struct tags_t *tags_create(const char *file) {
-  struct tags_t *tags = xmalloc(sizeof(*tags));
+struct tags *tags_create(const char *file) {
+  struct tags *tags = xmalloc(sizeof(*tags));
   tags->file = file;
   tags->tags = NULL;
   tags->len = 0;
@@ -96,10 +96,10 @@ struct tags_t *tags_create(const char *file) {
 }
 
 static int tag_compare(const void *lhs, const void *rhs) {
-  return strcmp((const char*) lhs, ((const struct tag_t*) rhs)->name);
+  return strcmp((const char*) lhs, ((const struct tag*) rhs)->name);
 }
 
-struct tag_t *tags_find(struct tags_t *tags, char *name) {
+struct tag *tags_find(struct tags *tags, char *name) {
   struct stat info;
   int err = stat(tags->file, &info);
   if (err) {
@@ -111,24 +111,24 @@ struct tag_t *tags_find(struct tags_t *tags, char *name) {
     tags_load(tags);
   }
 
-  return bsearch(name, tags->tags, tags->len, sizeof(struct tag_t), tag_compare);
+  return bsearch(name, tags->tags, tags->len, sizeof(struct tag), tag_compare);
 }
 
-void editor_jump_to_tag(struct editor_t *editor, char *name) {
-  struct tag_t *tag = tags_find(editor->tags, name);
+void editor_jump_to_tag(struct editor *editor, char *name) {
+  struct tag *tag = tags_find(editor->tags, name);
   if (!tag) {
     editor_status_err(editor, "tag not found: %s", name);
     return;
   }
 
-  struct tag_jump_t *jump = xmalloc(sizeof(*jump));
+  struct tag_jump *jump = xmalloc(sizeof(*jump));
   jump->buffer = editor->window->buffer;
   jump->cursor = window_cursor(editor->window);
   jump->tag = tag;
 
-  struct list_t *stack = editor->window->tag_stack;
+  struct list *stack = editor->window->tag_stack;
   if (editor->window->tag) {
-    struct list_node_t *node = list_get_node(stack, editor->window->tag);
+    struct list_node *node = list_get_node(stack, editor->window->tag);
     if (node->next != stack->tail) {
       list_free(list_steal(node->next, stack->tail->prev), free);
     }
@@ -140,7 +140,7 @@ void editor_jump_to_tag(struct editor_t *editor, char *name) {
   editor_search(editor, tag->cmd + 1, 0, SEARCH_FORWARDS);
 }
 
-void editor_tag_stack_prev(struct editor_t *editor) {
+void editor_tag_stack_prev(struct editor *editor) {
   if (list_empty(editor->window->tag_stack)) {
     editor_status_err(editor, "tag stack empty");
   } else if (!editor->window->tag) {
@@ -154,13 +154,13 @@ void editor_tag_stack_prev(struct editor_t *editor) {
   }
 }
 
-void editor_tag_stack_next(struct editor_t *editor) {
+void editor_tag_stack_next(struct editor *editor) {
   if (list_empty(editor->window->tag_stack)) {
     editor_status_err(editor, "tag stack empty");
     return;
   }
 
-  struct tag_jump_t *next;
+  struct tag_jump *next;
   if (!editor->window->tag) {
     next = editor->window->tag_stack->head->next->data;
   } else {

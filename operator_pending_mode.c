@@ -14,14 +14,14 @@
 #include "window.h"
 #include "util.h"
 
-struct operator_pending_mode_t {
-  struct editing_mode_t mode;
-  op_t* op;
+struct operator_pending_mode {
+  struct editing_mode mode;
+  op_func* op;
 };
 
-static void yank_op(struct editor_t *editor, struct region_t *region) {
-  struct buf_t *reg = editor_get_register(editor, editor->register_);
-  struct gapbuf_t *gb = editor->window->buffer->text;
+static void yank_op(struct editor *editor, struct region *region) {
+  struct buf *reg = editor_get_register(editor, editor->register_);
+  struct gapbuf *gb = editor->window->buffer->text;
 
   size_t n = region->end - region->start;
   buf_grow(reg, n + 1);
@@ -31,26 +31,26 @@ static void yank_op(struct editor_t *editor, struct region_t *region) {
   editor->register_ = '"';
 }
 
-static void delete_op(struct editor_t *editor, struct region_t *region) {
+static void delete_op(struct editor *editor, struct region *region) {
   yank_op(editor, region);
   buffer_start_action_group(editor->window->buffer);
   buffer_do_delete(editor->window->buffer, region->end - region->start, region->start);
   window_set_cursor(editor->window, region->start);
 }
 
-static void change_op(struct editor_t *editor, struct region_t *region) {
+static void change_op(struct editor *editor, struct region *region) {
   delete_op(editor, region);
   editor_push_mode(editor, insert_mode());
 }
 
-static struct { char name; op_t *op; } op_table[] = {
+static struct { char name; op_func *op; } op_table[] = {
   {'d', delete_op},
   {'c', change_op},
   {'y', yank_op},
   {-1, NULL}
 };
 
-op_t *op_find(char name) {
+op_func *op_find(char name) {
   for (int i = 0; op_table[i].op; ++i) {
     if (op_table[i].name == name) {
       return op_table[i].op;
@@ -59,7 +59,7 @@ op_t *op_find(char name) {
   return NULL;
 }
 
-static void key_pressed(struct editor_t *editor, struct tb_event *ev) {
+static void key_pressed(struct editor *editor, struct tb_event *ev) {
   if (ev->ch != '0' && isdigit((int) ev->ch)) {
     editor->count = 0;
     while (isdigit((int) ev->ch)) {
@@ -69,15 +69,15 @@ static void key_pressed(struct editor_t *editor, struct tb_event *ev) {
     }
   }
 
-  struct motion_t *motion = motion_get(editor, ev);
+  struct motion *motion = motion_get(editor, ev);
   if (!motion) {
     editor_pop_mode(editor);
     return;
   }
 
-  struct gapbuf_t *gb = editor->window->buffer->text;
+  struct gapbuf *gb = editor->window->buffer->text;
 
-  struct region_t *region = region_create(
+  struct region *region = region_create(
       window_cursor(editor->window), motion_apply(motion, editor));
 
   ssize_t last = gb_lastindexof(gb, '\n', region->start - 1);
@@ -92,12 +92,12 @@ static void key_pressed(struct editor_t *editor, struct tb_event *ev) {
     region->end = min(region->end + 1, next);
   }
 
-  struct operator_pending_mode_t* mode = (struct operator_pending_mode_t*) editor->mode;
+  struct operator_pending_mode* mode = (struct operator_pending_mode*) editor->mode;
   mode->op(editor, region);
   free(region);
 }
 
-static struct operator_pending_mode_t impl = {
+static struct operator_pending_mode impl = {
   {
     .entered = NULL,
     .exited = NULL,
@@ -107,11 +107,11 @@ static struct operator_pending_mode_t impl = {
   NULL
 };
 
-struct editing_mode_t *operator_pending_mode(char op_name) {
-  op_t *op = op_find(op_name);
+struct editing_mode *operator_pending_mode(char op_name) {
+  op_func *op = op_find(op_name);
   if (!op) {
     return NULL;
   }
   impl.op = op;
-  return (struct editing_mode_t*) &impl;
+  return (struct editing_mode*) &impl;
 }

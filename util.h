@@ -17,10 +17,10 @@ void *xmalloc(size_t size);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *s);
 
-struct region_t {
+struct region {
   size_t start;
   size_t end;
 };
 
-struct region_t *region_create(size_t start, size_t end);
-struct region_t *region_set(struct region_t *region, size_t start, size_t end);
+struct region *region_create(size_t start, size_t end);
+struct region *region_set(struct region *region, size_t start, size_t end);

@@ -10,18 +10,18 @@
 #include "window.h"
 #include "util.h"
 
-static struct editor_t *editor = NULL;
+static struct editor *editor = NULL;
 
 static void type(const char *keys) {
   editor_send_keys(editor, keys);
 }
 
 static void assert_buffer_contents(const char *text) {
-  struct buffer_t* buffer = editor->window->buffer;
+  struct buffer* buffer = editor->window->buffer;
   size_t expected_len = strlen(text);
   size_t actual_len  = gb_size(buffer->text);
   cl_assert_equal_i(expected_len, actual_len);
-  struct buf_t *buf = buf_create(actual_len);
+  struct buf *buf = buf_create(actual_len);
   gb_getstring(buffer->text, 0, expected_len, buf->buf);
   cl_assert_equal_s(buf->buf, text);
 }
@@ -38,7 +38,7 @@ static void assert_cursor_at(
 }
 
 static void assert_cursor_over(char c) {
-  struct gapbuf_t *text = editor->window->buffer->text;
+  struct gapbuf *text = editor->window->buffer->text;
   size_t cursor = editor->window->cursor->start;
   cl_assert_equal_i(gb_getchar(text, cursor), c);
 }

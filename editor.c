@@ -23,7 +23,7 @@
 #include "util.h"
 
 #define R(n) {n, NULL}
-static struct editor_register_t register_table[] = {
+static struct editor_register register_table[] = {
   // Last search pattern register
   R('/'),
   // Unnamed default register
@@ -37,9 +37,9 @@ static struct editor_register_t register_table[] = {
 };
 #undef R
 
-void editor_init(struct editor_t *editor, size_t width, size_t height) {
+void editor_init(struct editor *editor, size_t width, size_t height) {
   editor->buffers = list_create();
-  struct buffer_t *buffer = buffer_create(NULL);
+  struct buffer *buffer = buffer_create(NULL);
   list_append(editor->buffers, buffer);
 
   editor->width = width;
@@ -66,7 +66,7 @@ void editor_init(struct editor_t *editor, size_t width, size_t height) {
   editor->synthetic_events = list_create();
 }
 
-struct buf_t *editor_get_register(struct editor_t *editor, char name) {
+struct buf *editor_get_register(struct editor *editor, char name) {
   for (int i = 0; editor->registers[i].name != -1; ++i) {
     if (editor->registers[i].name == name) {
       return editor->registers[i].buf;
@@ -75,8 +75,8 @@ struct buf_t *editor_get_register(struct editor_t *editor, char name) {
   return NULL;
 }
 
-static struct buffer_t *editor_get_buffer_by_name(struct editor_t* editor, char *name) {
-  struct buffer_t *b;
+static struct buffer *editor_get_buffer_by_name(struct editor* editor, char *name) {
+  struct buffer *b;
   LIST_FOREACH(editor->buffers, b) {
     if (!strcmp(b->name, name)) {
       return b;
@@ -85,8 +85,8 @@ static struct buffer_t *editor_get_buffer_by_name(struct editor_t* editor, char 
   return NULL;
 }
 
-void editor_open(struct editor_t *editor, char *path) {
-  struct buffer_t *buffer = editor_get_buffer_by_name(editor, path);
+void editor_open(struct editor *editor, char *path) {
+  struct buffer *buffer = editor_get_buffer_by_name(editor, path);
 
   if (!buffer) {
     if (access(path, F_OK) < 0) {
@@ -102,7 +102,7 @@ void editor_open(struct editor_t *editor, char *path) {
   window_set_buffer(editor->window, buffer);
 }
 
-void editor_push_mode(struct editor_t *editor, struct editing_mode_t *mode) {
+void editor_push_mode(struct editor *editor, struct editing_mode *mode) {
   mode->parent = editor->mode;
   editor->mode = mode;
   if (editor->mode->entered) {
@@ -110,7 +110,7 @@ void editor_push_mode(struct editor_t *editor, struct editing_mode_t *mode) {
   }
 }
 
-void editor_pop_mode(struct editor_t *editor) {
+void editor_pop_mode(struct editor *editor) {
   if (editor->mode->exited) {
     editor->mode->exited(editor);
   }
@@ -122,8 +122,8 @@ void editor_pop_mode(struct editor_t *editor) {
   }
 }
 
-void editor_save_buffer(struct editor_t *editor, char *path) {
-  struct buffer_t *buffer = editor->window->buffer;
+void editor_save_buffer(struct editor *editor, char *path) {
+  struct buffer *buffer = editor->window->buffer;
   char *name;
   bool rc;
   if (path) {
@@ -141,14 +141,14 @@ void editor_save_buffer(struct editor_t *editor, char *path) {
   }
 }
 
-struct editor_command_t {
+struct editor_command {
   const char *name;
   const char *shortname;
-  void (*action)(struct editor_t*, char*);
+  void (*action)(struct editor*, char*);
 };
 
-static void editor_command_quit(struct editor_t *editor, char __unused *arg) {
-  struct buffer_t *b;
+static void editor_command_quit(struct editor *editor, char __unused *arg) {
+  struct buffer *b;
   LIST_FOREACH(editor->buffers, b) {
     if (b->dirty) {
       editor_status_err(editor,
@@ -161,12 +161,12 @@ static void editor_command_quit(struct editor_t *editor, char __unused *arg) {
 }
 
 __attribute__((noreturn))
-static void editor_command_force_quit(struct editor_t __unused *editor,
+static void editor_command_force_quit(struct editor __unused *editor,
                                       char __unused *arg) {
   exit(0);
 }
 
-static void editor_command_force_close_window(struct editor_t *editor, char *arg) {
+static void editor_command_force_close_window(struct editor *editor, char *arg) {
   if (window_root(editor->window)->split_type == WINDOW_LEAF) {
     editor_command_force_quit(editor, arg);
   }
@@ -175,7 +175,7 @@ static void editor_command_force_close_window(struct editor_t *editor, char *arg
   editor->window = window_close(editor->window);
 }
 
-static void editor_command_close_window(struct editor_t *editor, char *arg) {
+static void editor_command_close_window(struct editor *editor, char *arg) {
   if (window_root(editor->window)->split_type == WINDOW_LEAF) {
     editor_command_quit(editor, arg);
     return;
@@ -190,12 +190,12 @@ static void editor_command_close_window(struct editor_t *editor, char *arg) {
   editor_command_force_close_window(editor, arg);
 }
 
-static void editor_command_write_quit(struct editor_t *editor, char *arg) {
+static void editor_command_write_quit(struct editor *editor, char *arg) {
   editor_save_buffer(editor, NULL);
   editor_command_close_window(editor, arg);
 }
 
-static void editor_command_edit(struct editor_t *editor, char *arg) {
+static void editor_command_edit(struct editor *editor, char *arg) {
   if (arg) {
     editor_open(editor, arg);
   } else {
@@ -203,7 +203,7 @@ static void editor_command_edit(struct editor_t *editor, char *arg) {
   }
 }
 
-void editor_source(struct editor_t *editor, char *path) {
+void editor_source(struct editor *editor, char *path) {
   FILE *fp = fopen(path, "r");
   if (!fp) {
     editor_status_err(editor, "Can't open file %s", path);
@@ -222,7 +222,7 @@ void editor_source(struct editor_t *editor, char *path) {
   fclose(fp);
 }
 
-static void editor_command_source(struct editor_t *editor, char *arg) {
+static void editor_command_source(struct editor *editor, char *arg) {
   if (!arg) {
     editor_status_err(editor, "Argument required");
     return;
@@ -231,7 +231,7 @@ static void editor_command_source(struct editor_t *editor, char *arg) {
   editor_source(editor, arg);
 }
 
-static void editor_command_set(struct editor_t *editor, char *arg) {
+static void editor_command_set(struct editor *editor, char *arg) {
   if (!arg) {
     // TODO(isbadawi): show current values of all options...
     editor_status_err(editor, "Argument required");
@@ -295,7 +295,7 @@ static void editor_command_set(struct editor_t *editor, char *arg) {
   return;
 }
 
-static void editor_command_split(struct editor_t *editor, char *arg) {
+static void editor_command_split(struct editor *editor, char *arg) {
   editor->window = window_split(editor->window, WINDOW_SPLIT_HORIZONTAL);
 
   if (arg) {
@@ -303,7 +303,7 @@ static void editor_command_split(struct editor_t *editor, char *arg) {
   }
 }
 
-static void editor_command_vsplit(struct editor_t *editor, char *arg) {
+static void editor_command_vsplit(struct editor *editor, char *arg) {
   editor->window = window_split(editor->window, WINDOW_SPLIT_VERTICAL);
 
   if (arg) {
@@ -311,7 +311,7 @@ static void editor_command_vsplit(struct editor_t *editor, char *arg) {
   }
 }
 
-static void editor_command_tag(struct editor_t *editor, char *arg) {
+static void editor_command_tag(struct editor *editor, char *arg) {
   if (!arg) {
     editor_tag_stack_next(editor);
   } else {
@@ -319,7 +319,7 @@ static void editor_command_tag(struct editor_t *editor, char *arg) {
   }
 }
 
-static struct editor_command_t editor_commands[] = {
+static struct editor_command editor_commands[] = {
   {"quit", "q", editor_command_close_window},
   {"quit!", "q!", editor_command_force_close_window},
   {"qall", "qa", editor_command_quit},
@@ -335,14 +335,14 @@ static struct editor_command_t editor_commands[] = {
   {NULL, NULL, NULL}
 };
 
-void editor_execute_command(struct editor_t *editor, char *command) {
+void editor_execute_command(struct editor *editor, char *command) {
   if (!*command) {
     return;
   }
   char *name = strtok(command, " ");
   char *arg = strtok(NULL, " ");
   for (int i = 0; editor_commands[i].name; ++i) {
-    struct editor_command_t *cmd = &editor_commands[i];
+    struct editor_command *cmd = &editor_commands[i];
     if (!strcmp(name, cmd->name) || !strcmp(name, cmd->shortname)) {
       cmd->action(editor, arg);
       return;
@@ -362,7 +362,7 @@ void editor_execute_command(struct editor_t *editor, char *command) {
   }
 }
 
-void editor_draw(struct editor_t *editor) {
+void editor_draw(struct editor *editor) {
   tb_clear();
 
   window_draw(window_root(editor->window));
@@ -387,7 +387,7 @@ void editor_draw(struct editor_t *editor) {
 // normal, manually raise SIGTSTP.
 //
 // Adapted from https://github.com/nsf/godit/blob/master/suspend_linux.go
-static void editor_suspend(struct editor_t *editor) {
+static void editor_suspend(struct editor *editor) {
   tb_shutdown();
 
   raise(SIGTSTP);
@@ -401,7 +401,7 @@ static void editor_suspend(struct editor_t *editor) {
   editor_draw(editor);
 }
 
-static int editor_poll_event(struct editor_t *editor, struct tb_event *ev) {
+static int editor_poll_event(struct editor *editor, struct tb_event *ev) {
   if (!list_empty(editor->synthetic_events)) {
     struct tb_event *top = list_pop(editor->synthetic_events);
     *ev = *top;
@@ -411,7 +411,7 @@ static int editor_poll_event(struct editor_t *editor, struct tb_event *ev) {
   return tb_poll_event(ev);
 }
 
-bool editor_waitkey(struct editor_t *editor, struct tb_event *ev) {
+bool editor_waitkey(struct editor *editor, struct tb_event *ev) {
   if (editor_poll_event(editor, ev) < 0) {
     return false;
   }
@@ -428,7 +428,7 @@ bool editor_waitkey(struct editor_t *editor, struct tb_event *ev) {
   return editor_waitkey(editor, ev);
 }
 
-char editor_getchar(struct editor_t *editor) {
+char editor_getchar(struct editor *editor) {
   struct tb_event ev;
   editor_waitkey(editor, &ev);
   char ch = (char) ev.ch;
@@ -438,11 +438,11 @@ char editor_getchar(struct editor_t *editor) {
   return ch;
 }
 
-void editor_handle_key_press(struct editor_t *editor, struct tb_event *ev) {
+void editor_handle_key_press(struct editor *editor, struct tb_event *ev) {
   editor->mode->key_pressed(editor, ev);
 }
 
-void editor_send_keys(struct editor_t *editor, const char *keys) {
+void editor_send_keys(struct editor *editor, const char *keys) {
   struct tb_event *last = NULL;
   for (const char *k = keys; *k; ++k) {
     struct tb_event *ev = xmalloc(sizeof(*ev));
@@ -494,7 +494,7 @@ void editor_send_keys(struct editor_t *editor, const char *keys) {
   }
 }
 
-void editor_status_msg(struct editor_t *editor, const char *format, ...) {
+void editor_status_msg(struct editor *editor, const char *format, ...) {
   if (editor->status_silence) {
     return;
   }
@@ -505,7 +505,7 @@ void editor_status_msg(struct editor_t *editor, const char *format, ...) {
   editor->status_error = false;
 }
 
-void editor_status_err(struct editor_t *editor, const char *format, ...) {
+void editor_status_err(struct editor *editor, const char *format, ...) {
   if (editor->status_silence) {
     return;
   }
@@ -516,13 +516,13 @@ void editor_status_err(struct editor_t *editor, const char *format, ...) {
   editor->status_error = true;
 }
 
-void editor_undo(struct editor_t *editor) {
+void editor_undo(struct editor *editor) {
   if (!buffer_undo(editor->window->buffer)) {
     editor_status_msg(editor, "Already at oldest change");
   }
 }
 
-void editor_redo(struct editor_t *editor) {
+void editor_redo(struct editor *editor) {
   if (!buffer_redo(editor->window->buffer)) {
     editor_status_msg(editor, "Already at newest change");
   }

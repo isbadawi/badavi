@@ -3,15 +3,15 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-struct motion_context_t {
+struct motion_context {
   size_t pos;
-  struct window_t *window;
-  struct editor_t *editor;
+  struct window *window;
+  struct editor *editor;
 };
 
-struct motion_t {
+struct motion {
   char name;
-  size_t (*op)(struct motion_context_t);
+  size_t (*op)(struct motion_context);
   // Whether the motion is linewise (vs. characterwise).
   // (See :help linewise in vim for details).
   bool linewise;
@@ -22,10 +22,10 @@ struct motion_t {
 };
 
 struct tb_event;
-struct motion_t *motion_get(struct editor_t *editor, struct tb_event *ev);
+struct motion *motion_get(struct editor *editor, struct tb_event *ev);
 
-size_t motion_apply(struct motion_t *motion, struct editor_t *editor);
+size_t motion_apply(struct motion *motion, struct editor *editor);
 
 // TODO(isbadawi): This is an awkward place to put this.
 // But a lot of knowledge about words lives in motion.c right now.
-size_t motion_word_under_cursor(struct window_t *window, char *buf);
+size_t motion_word_under_cursor(struct window *window, char *buf);

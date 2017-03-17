@@ -3,22 +3,22 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-struct list_node_t {
+struct list_node {
   void *data;
-  struct list_node_t *prev;
-  struct list_node_t *next;
+  struct list_node *prev;
+  struct list_node *next;
 };
 
 // A doubly linked list.
 // Head and tail are sentinel nodes with data == NULL.
 // n.b. The list doesn't own its data -- it just stores pointers.
 // It's up to the callers to free memory if required.
-struct list_t {
-  struct list_node_t *head;
-  struct list_node_t *tail;
+struct list {
+  struct list_node *head;
+  struct list_node *tail;
 
   // Used by LIST_FOREACH for iterating. (No concurrent iteration.)
-  struct list_node_t *iter;
+  struct list_node *iter;
 };
 
 #define LIST_FOREACH(list, i) \
@@ -37,21 +37,21 @@ struct list_t {
       list->iter = list->iter->prev, \
       i = list->iter->data)
 
-typedef void (list_free_func_t)(void*);
+typedef void (list_free_func)(void*);
 
-struct list_t *list_create(void);
-struct list_t *list_steal(struct list_node_t *start, struct list_node_t *end);
-void list_free(struct list_t *list, list_free_func_t *free_func);
-void list_prepend(struct list_t* list, void *data);
-void list_append(struct list_t* list, void *data);
-void *list_pop(struct list_t *list);
-void list_remove(struct list_t *list, void *data);
-void *list_peek(struct list_t *list);
-bool list_empty(struct list_t *list);
-void list_clear(struct list_t *list, list_free_func_t *free_func);
-void *list_prev(struct list_t *list, void *data);
-void *list_next(struct list_t *list, void *data);
-void list_insert_after(struct list_t *list, void *el, void *data);
-void list_insert_before(struct list_t *list, void *el, void *data);
-size_t list_size(struct list_t *list);
-struct list_node_t *list_get_node(struct list_t *list, void *data);
+struct list *list_create(void);
+struct list *list_steal(struct list_node *start, struct list_node *end);
+void list_free(struct list *list, list_free_func *free_func);
+void list_prepend(struct list* list, void *data);
+void list_append(struct list* list, void *data);
+void *list_pop(struct list *list);
+void list_remove(struct list *list, void *data);
+void *list_peek(struct list *list);
+bool list_empty(struct list *list);
+void list_clear(struct list *list, list_free_func *free_func);
+void *list_prev(struct list *list, void *data);
+void *list_next(struct list *list, void *data);
+void list_insert_after(struct list *list, void *el, void *data);
+void list_insert_before(struct list *list, void *el, void *data);
+size_t list_size(struct list *list);
+struct list_node *list_get_node(struct list *list, void *data);

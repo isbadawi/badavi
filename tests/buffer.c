@@ -9,13 +9,13 @@
 #include "list.h"
 #include "util.h"
 
-static struct buffer_t *buffer = NULL;
+static struct buffer *buffer = NULL;
 
 static void assert_contents(const char *text) {
   size_t expected_len = strlen(text);
   size_t actual_len  = gb_size(buffer->text);
   cl_assert_equal_i(expected_len, actual_len);
-  struct buf_t *buf = buf_create(actual_len);
+  struct buf *buf = buf_create(actual_len);
   gb_getstring(buffer->text, 0, expected_len, buf->buf);
   cl_assert_equal_s(buf->buf, text);
 }
@@ -81,7 +81,7 @@ void test_buffer__undo_group(void) {
 
 void test_buffer__marks(void) {
   buffer = buffer_create(NULL);
-  struct region_t mark = {0, 1};
+  struct region mark = {0, 1};
   list_append(buffer->marks, &mark);
 
   cl_assert_equal_i(mark.start, 0);

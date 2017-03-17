@@ -10,8 +10,8 @@
 
 #define GAPSIZE 1024
 
-struct gapbuf_t *gb_create(void) {
-  struct gapbuf_t *gb = xmalloc(sizeof(*gb));
+struct gapbuf *gb_create(void) {
+  struct gapbuf *gb = xmalloc(sizeof(*gb));
 
   gb->bufstart = xmalloc(1 + GAPSIZE);
   gb->gapstart = gb->bufstart;
@@ -24,8 +24,8 @@ struct gapbuf_t *gb_create(void) {
   return gb;
 }
 
-struct gapbuf_t *gb_load(FILE *fp) {
-  struct gapbuf_t *gb = xmalloc(sizeof(*gb));
+struct gapbuf *gb_load(FILE *fp) {
+  struct gapbuf *gb = xmalloc(sizeof(*gb));
 
   struct stat info;
   fstat(fileno(fp), &info);
@@ -52,36 +52,36 @@ struct gapbuf_t *gb_load(FILE *fp) {
   return gb;
 }
 
-void gb_free(struct gapbuf_t *gb) {
+void gb_free(struct gapbuf *gb) {
   free(gb->bufstart);
   intbuf_free(gb->lines);
   free(gb);
 }
 
-size_t gb_size(struct gapbuf_t *gb) {
+size_t gb_size(struct gapbuf *gb) {
   return (size_t) ((gb->gapstart - gb->bufstart) + (gb->bufend - gb->gapend));
 }
 
-size_t gb_nlines(struct gapbuf_t *gb) {
+size_t gb_nlines(struct gapbuf *gb) {
   return gb->lines->len;
 }
 
-void gb_save(struct gapbuf_t *gb, FILE *fp) {
+void gb_save(struct gapbuf *gb, FILE *fp) {
   fwrite(gb->bufstart, 1, (size_t) (gb->gapstart - gb->bufstart), fp);
   fwrite(gb->gapend, 1, (size_t) (gb->bufend - gb->gapend), fp);
 }
 
 // Returns the real index of the logical offset pos.
-static size_t gb_index(struct gapbuf_t *gb, size_t pos) {
+static size_t gb_index(struct gapbuf *gb, size_t pos) {
   ptrdiff_t gapsize = gb->gapend - gb->gapstart;
   return gb->bufstart + pos < gb->gapstart ? pos : pos + (size_t) gapsize;
 }
 
-char gb_getchar(struct gapbuf_t *gb, size_t pos) {
+char gb_getchar(struct gapbuf *gb, size_t pos) {
   return gb->bufstart[gb_index(gb, pos)];
 }
 
-void gb_getstring(struct gapbuf_t *gb, size_t pos, size_t n, char *buf) {
+void gb_getstring(struct gapbuf *gb, size_t pos, size_t n, char *buf) {
   char *start = gb->bufstart + gb_index(gb, pos);
   char *end = gb->bufstart + gb_index(gb, pos + n);
   if (end < gb->gapstart || start >= gb->gapend) {
@@ -98,7 +98,7 @@ void gb_getstring(struct gapbuf_t *gb, size_t pos, size_t n, char *buf) {
 }
 
 // Moves the gap so that gb->bufstart + pos == gb->gapstart.
-void gb_mvgap(struct gapbuf_t *gb, size_t pos) {
+void gb_mvgap(struct gapbuf *gb, size_t pos) {
   char *point = gb->bufstart + gb_index(gb, pos);
   if (gb->gapend <= point) {
     size_t n = (size_t)(point - gb->gapend);
@@ -114,7 +114,7 @@ void gb_mvgap(struct gapbuf_t *gb, size_t pos) {
 }
 
 // Ensure the gap fits at least n new characters.
-static void gb_growgap(struct gapbuf_t *gb, size_t n) {
+static void gb_growgap(struct gapbuf *gb, size_t n) {
   ptrdiff_t gapsize = gb->gapend - gb->gapstart;
   if (n <= (size_t) gapsize) {
     return;
@@ -139,11 +139,11 @@ static void gb_growgap(struct gapbuf_t *gb, size_t n) {
   gb->bufend = gb->bufstart + newsize;
 }
 
-void gb_putchar(struct gapbuf_t *gb, char c, size_t pos) {
+void gb_putchar(struct gapbuf *gb, char c, size_t pos) {
   gb_putstring(gb, &c, 1, pos);
 }
 
-void gb_putstring(struct gapbuf_t *gb, char *buf, size_t n, size_t pos) {
+void gb_putstring(struct gapbuf *gb, char *buf, size_t n, size_t pos) {
   gb_growgap(gb, n);
   gb_mvgap(gb, pos);
   memcpy(gb->gapstart, buf, n);
@@ -172,7 +172,7 @@ void gb_putstring(struct gapbuf_t *gb, char *buf, size_t n, size_t pos) {
   gb->gapstart += n;
 }
 
-void gb_del(struct gapbuf_t *gb, size_t n, size_t pos) {
+void gb_del(struct gapbuf *gb, size_t n, size_t pos) {
   gb_mvgap(gb, pos);
 
   size_t line, col;
@@ -197,7 +197,7 @@ void gb_del(struct gapbuf_t *gb, size_t n, size_t pos) {
   }
 }
 
-size_t gb_indexof(struct gapbuf_t *gb, char c, size_t start) {
+size_t gb_indexof(struct gapbuf *gb, char c, size_t start) {
   size_t size = gb_size(gb);
   for (size_t i = start; i < size; ++i) {
     if (gb_getchar(gb, i) == c) {
@@ -207,7 +207,7 @@ size_t gb_indexof(struct gapbuf_t *gb, char c, size_t start) {
   return size;
 }
 
-ssize_t gb_lastindexof(struct gapbuf_t *gb, char c, size_t start) {
+ssize_t gb_lastindexof(struct gapbuf *gb, char c, size_t start) {
   for (ssize_t i = (ssize_t) start; i >= 0; --i) {
     if (gb_getchar(gb, (size_t) i) == c) {
       return i;
@@ -216,7 +216,7 @@ ssize_t gb_lastindexof(struct gapbuf_t *gb, char c, size_t start) {
   return -1;
 }
 
-void gb_pos_to_linecol(struct gapbuf_t *gb, size_t pos, size_t *line, size_t *column) {
+void gb_pos_to_linecol(struct gapbuf *gb, size_t pos, size_t *line, size_t *column) {
   size_t offset = 0;
   *line = *column = 0;
   for (size_t i = 0; i < gb->lines->len; ++i) {
@@ -231,7 +231,7 @@ void gb_pos_to_linecol(struct gapbuf_t *gb, size_t pos, size_t *line, size_t *co
   *column = pos - offset;
 }
 
-size_t gb_linecol_to_pos(struct gapbuf_t *gb, size_t line, size_t column) {
+size_t gb_linecol_to_pos(struct gapbuf *gb, size_t line, size_t column) {
   size_t offset = 0;
   for (size_t i = 0; i < line; ++i) {
     offset += gb->lines->buf[i] + 1;

@@ -2,9 +2,9 @@
 
 #include <stddef.h>
 
-struct window_t {
-  struct window_t *parent;
-  enum window_split_type_t {
+struct window {
+  struct window *parent;
+  enum window_split_type {
     WINDOW_LEAF,
     WINDOW_SPLIT_VERTICAL,
     WINDOW_SPLIT_HORIZONTAL
@@ -17,55 +17,55 @@ struct window_t {
   union {
     struct {
       // The buffer being edited.
-      struct buffer_t *buffer;
+      struct buffer *buffer;
       // The coordinates of the top left cell visible on screen.
       size_t top;
       size_t left;
 
       // The offset of the cursor.
-      struct region_t *cursor;
+      struct region *cursor;
 
       // The offset of the cursor when visual mode was entered.
-      struct region_t *visual_mode_anchor;
+      struct region *visual_mode_anchor;
 
-      struct list_t *tag_stack;
-      struct tag_jump_t *tag;
+      struct list *tag_stack;
+      struct tag_jump *tag;
     };
 
     struct {
-      struct window_t *first;
-      struct window_t *second;
+      struct window *first;
+      struct window *second;
       size_t point;
     } split;
   };
 };
 
-struct window_t *window_create(struct buffer_t *buffer, size_t w, size_t h);
-struct window_t *window_close(struct window_t *window);
-struct window_t *window_split(struct window_t *window,
-                              enum window_split_type_t type);
+struct window *window_create(struct buffer *buffer, size_t w, size_t h);
+struct window *window_close(struct window *window);
+struct window *window_split(struct window *window,
+                              enum window_split_type type);
 
-void window_resize(struct window_t *window, int dw, int dh);
-void window_equalize(struct window_t *window,
-                     enum window_split_type_t type);
+void window_resize(struct window *window, int dw, int dh);
+void window_equalize(struct window *window,
+                     enum window_split_type type);
 
-struct window_t *window_root(struct window_t *window);
-struct window_t *window_left(struct window_t *window);
-struct window_t *window_right(struct window_t *window);
-struct window_t *window_up(struct window_t *window);
-struct window_t *window_down(struct window_t *window);
+struct window *window_root(struct window *window);
+struct window *window_left(struct window *window);
+struct window *window_right(struct window *window);
+struct window *window_up(struct window *window);
+struct window *window_down(struct window *window);
 
-struct window_t *window_first_leaf(struct window_t *window);
+struct window *window_first_leaf(struct window *window);
 
-void window_set_buffer(struct window_t *window, struct buffer_t *buffer);
+void window_set_buffer(struct window *window, struct buffer *buffer);
 
-size_t window_cursor(struct window_t *window);
-void window_set_cursor(struct window_t *window, size_t pos);
+size_t window_cursor(struct window *window);
+void window_set_cursor(struct window *window, size_t pos);
 
-void window_draw(struct window_t *window);
-void window_draw_cursor(struct window_t *window);
+void window_draw(struct window *window);
+void window_draw_cursor(struct window *window);
 
-size_t window_w(struct window_t *window);
-size_t window_h(struct window_t *window);
-size_t window_x(struct window_t *window);
-size_t window_y(struct window_t *window);
+size_t window_w(struct window *window);
+size_t window_h(struct window *window);
+size_t window_x(struct window *window);
+size_t window_y(struct window *window);

@@ -16,11 +16,11 @@
 #include "util.h"
 #include "window.h"
 
-static bool is_last_line(struct gapbuf_t *gb, size_t pos) {
+static bool is_last_line(struct gapbuf *gb, size_t pos) {
   return pos > gb_size(gb) - gb->lines->buf[gb->lines->len - 1];
 }
 
-static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev) {
+static void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
   if (ev->ch != '0' && isdigit((int) ev->ch)) {
     editor->count = 0;
     while (isdigit((int) ev->ch)) {
@@ -48,7 +48,7 @@ static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
     return;
   case TB_KEY_CTRL_W: {
     editor_waitkey(editor, ev);
-    struct window_t *next = NULL;
+    struct window *next = NULL;
     switch (ev->key) {
     case TB_KEY_CTRL_H: next = window_left(editor->window); break;
     case TB_KEY_CTRL_L: next = window_right(editor->window); break;
@@ -93,7 +93,7 @@ static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
   }
   }
 
-  struct gapbuf_t *gb = editor->window->buffer->text;
+  struct gapbuf *gb = editor->window->buffer->text;
   size_t cursor = window_cursor(editor->window);
   switch (ev->ch) {
   case 0:
@@ -131,7 +131,7 @@ static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
     break;
   }
   case 'p': {
-    struct buf_t *reg = editor_get_register(editor, editor->register_);
+    struct buf *reg = editor_get_register(editor, editor->register_);
     size_t where = gb_getchar(gb, cursor) == '\n' ? cursor : cursor + 1;
     buffer_start_action_group(editor->window->buffer);
     buffer_do_insert(editor->window->buffer, buf_copy(reg), where);
@@ -155,12 +155,12 @@ static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
     }
     break;
   default: {
-    struct motion_t *motion = motion_get(editor, ev);
+    struct motion *motion = motion_get(editor, ev);
     if (motion) {
       window_set_cursor(editor->window, motion_apply(motion, editor));
       break;
     }
-    struct editing_mode_t *mode = operator_pending_mode((char) ev->ch);
+    struct editing_mode *mode = operator_pending_mode((char) ev->ch);
     if (mode) {
       editor_push_mode(editor, mode);
     }
@@ -168,13 +168,13 @@ static void normal_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
   }
 }
 
-static struct editing_mode_t impl = {
+static struct editing_mode impl = {
   .entered = NULL,
   .exited = NULL,
   .key_pressed = normal_mode_key_pressed,
   .parent = NULL
 };
 
-struct editing_mode_t *normal_mode(void) {
+struct editing_mode *normal_mode(void) {
   return &impl;
 }

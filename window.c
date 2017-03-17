@@ -14,8 +14,8 @@
 #include "options.h"
 #include "util.h"
 
-struct window_t *window_create(struct buffer_t *buffer, size_t w, size_t h) {
-  struct window_t *window = xmalloc(sizeof(*window));
+struct window *window_create(struct buffer *buffer, size_t w, size_t h) {
+  struct window *window = xmalloc(sizeof(*window));
 
   window->split_type = WINDOW_LEAF;
   window->parent = NULL;
@@ -33,7 +33,7 @@ struct window_t *window_create(struct buffer_t *buffer, size_t w, size_t h) {
   return window;
 }
 
-static struct window_t *window_sibling(struct window_t *window) {
+static struct window *window_sibling(struct window *window) {
   assert(window->parent);
   if (window == window->parent->split.first) {
     return window->parent->split.second;
@@ -42,7 +42,7 @@ static struct window_t *window_sibling(struct window_t *window) {
   return window->parent->split.first;
 }
 
-size_t window_w(struct window_t *window) {
+size_t window_w(struct window *window) {
   if (!window->parent) {
     return window->w;
   }
@@ -57,7 +57,7 @@ size_t window_w(struct window_t *window) {
   return window_w(window->parent) - window->parent->split.point;
 }
 
-size_t window_h(struct window_t *window) {
+size_t window_h(struct window *window) {
   if (!window->parent) {
     return window->h;
   }
@@ -72,7 +72,7 @@ size_t window_h(struct window_t *window) {
   return window_h(window->parent) - window->parent->split.point;
 }
 
-size_t window_x(struct window_t *window) {
+size_t window_x(struct window *window) {
   if (!window->parent) {
     return 0;
   }
@@ -92,7 +92,7 @@ size_t window_x(struct window_t *window) {
   return 0;
 }
 
-size_t window_y(struct window_t *window) {
+size_t window_y(struct window *window) {
   if (!window->parent) {
     return 0;
   }
@@ -112,8 +112,8 @@ size_t window_y(struct window_t *window) {
   return 0;
 }
 
-static size_t window_count_splits(struct window_t *window,
-                                  enum window_split_type_t type) {
+static size_t window_count_splits(struct window *window,
+                                  enum window_split_type type) {
   if (window->split_type == WINDOW_LEAF) {
     return 0;
   }
@@ -127,8 +127,8 @@ static size_t window_count_splits(struct window_t *window,
   return max(lhs, rhs);
 }
 
-static size_t window_count_leaves(struct window_t *window,
-                                  enum window_split_type_t type) {
+static size_t window_count_leaves(struct window *window,
+                                  enum window_split_type type) {
 
   if (window->split_type == WINDOW_LEAF) {
     return window->parent->split_type == type ? 1 : 0;
@@ -143,8 +143,8 @@ static size_t window_count_leaves(struct window_t *window,
   return max(lhs, rhs);
 }
 
-static void window_set_split_size(struct window_t *window,
-                                  enum window_split_type_t type,
+static void window_set_split_size(struct window *window,
+                                  enum window_split_type type,
                                   size_t size) {
   if (window->split_type == WINDOW_LEAF) {
     return;
@@ -158,8 +158,8 @@ static void window_set_split_size(struct window_t *window,
   window_set_split_size(window->split.second, type, size);
 }
 
-void window_equalize(struct window_t *window,
-                     enum window_split_type_t type) {
+void window_equalize(struct window *window,
+                     enum window_split_type type) {
   if (window->split_type == WINDOW_LEAF) {
     window = window->parent;
   }
@@ -167,7 +167,7 @@ void window_equalize(struct window_t *window,
     return;
   }
 
-  struct window_t *root = window_root(window);
+  struct window *root = window_root(window);
 
   size_t n = window_count_splits(root, type);
   size_t size;
@@ -180,14 +180,14 @@ void window_equalize(struct window_t *window,
   window_set_split_size(root, type, size / (n + 1));
 }
 
-struct window_t *window_split(struct window_t *window,
-                              enum window_split_type_t type) {
+struct window *window_split(struct window *window,
+                              enum window_split_type type) {
   assert(window->split_type == WINDOW_LEAF);
 
-  struct window_t *copy = xmalloc(sizeof(*window));
+  struct window *copy = xmalloc(sizeof(*window));
   memcpy(copy, window, sizeof(*window));
 
-  struct window_t *sibling = window_create(
+  struct window *sibling = window_create(
       window->buffer, window->w, window->h);
 
   copy->parent = window;
@@ -228,7 +228,7 @@ struct window_t *window_split(struct window_t *window,
 }
 
 // FIXME(ibadawi): Enforce minimum size for a window
-void window_resize(struct window_t *window, int dw, int dh) {
+void window_resize(struct window *window, int dw, int dh) {
   if (!window->parent) {
     return;
   }
@@ -245,7 +245,7 @@ void window_resize(struct window_t *window, int dw, int dh) {
       }
     } else {
       assert(window->parent->split_type == WINDOW_SPLIT_HORIZONTAL);
-      struct window_t *parent = window->parent;
+      struct window *parent = window->parent;
       while (parent && parent->split_type != WINDOW_SPLIT_VERTICAL) {
         window = parent;
         parent = parent->parent;
@@ -267,7 +267,7 @@ void window_resize(struct window_t *window, int dw, int dh) {
       }
     } else {
       assert(window->parent->split_type == WINDOW_SPLIT_VERTICAL);
-      struct window_t *parent = window->parent;
+      struct window *parent = window->parent;
       while (parent && parent->split_type != WINDOW_SPLIT_HORIZONTAL) {
         window = parent;
         parent = parent->parent;
@@ -280,7 +280,7 @@ void window_resize(struct window_t *window, int dw, int dh) {
   }
 }
 
-void window_set_buffer(struct window_t *window, struct buffer_t* buffer) {
+void window_set_buffer(struct window *window, struct buffer* buffer) {
   if (window->buffer) {
     list_remove(window->buffer->marks, window->cursor);
     free(window->cursor);
@@ -293,32 +293,32 @@ void window_set_buffer(struct window_t *window, struct buffer_t* buffer) {
   list_append(buffer->marks, window->cursor);
 }
 
-size_t window_cursor(struct window_t *window) {
+size_t window_cursor(struct window *window) {
   return window->cursor->start;
 }
 
-struct window_t *window_first_leaf(struct window_t *window) {
+struct window *window_first_leaf(struct window *window) {
   while (window->split_type != WINDOW_LEAF) {
     window = window->split.first;
   }
   return window;
 }
 
-static struct window_t *window_last_leaf(struct window_t *window) {
+static struct window *window_last_leaf(struct window *window) {
   while (window->split_type != WINDOW_LEAF) {
     window = window->split.second;
   }
   return window;
 }
 
-struct window_t *window_root(struct window_t *window) {
+struct window *window_root(struct window *window) {
   while (window->parent) {
     window = window->parent;
   }
   return window;
 }
 
-struct window_t *window_left(struct window_t *window) {
+struct window *window_left(struct window *window) {
   if (!window || !window->parent) {
     return NULL;
   }
@@ -338,7 +338,7 @@ struct window_t *window_left(struct window_t *window) {
   return NULL;
 }
 
-struct window_t *window_right(struct window_t *window) {
+struct window *window_right(struct window *window) {
   if (!window || !window->parent) {
     return NULL;
   }
@@ -358,7 +358,7 @@ struct window_t *window_right(struct window_t *window) {
   return NULL;
 }
 
-struct window_t *window_up(struct window_t *window) {
+struct window *window_up(struct window *window) {
   if (!window || !window->parent) {
     return NULL;
   }
@@ -378,7 +378,7 @@ struct window_t *window_up(struct window_t *window) {
   return NULL;
 }
 
-struct window_t *window_down(struct window_t *window) {
+struct window *window_down(struct window *window) {
   if (!window || !window->parent) {
     return NULL;
   }
@@ -398,7 +398,7 @@ struct window_t *window_down(struct window_t *window) {
   return NULL;
 }
 
-static void window_free(struct window_t *window) {
+static void window_free(struct window *window) {
   if (window->split_type == WINDOW_LEAF) {
     list_free(window->tag_stack, free);
     if (window->buffer) {
@@ -409,15 +409,15 @@ static void window_free(struct window_t *window) {
   free(window);
 }
 
-struct window_t *window_close(struct window_t *window) {
+struct window *window_close(struct window *window) {
   assert(window->split_type == WINDOW_LEAF);
 
-  struct window_t *parent = window->parent;
-  struct window_t *sibling = window_sibling(window);
+  struct window *parent = window->parent;
+  struct window *sibling = window_sibling(window);
   bool was_left_child = window == window->parent->split.first;
 
-  enum window_split_type_t old_parent_type = parent->split_type;
-  struct window_t *grandparent = parent->parent;
+  enum window_split_type old_parent_type = parent->split_type;
+  struct window *grandparent = parent->parent;
   size_t w = parent->w;
   size_t h = parent->h;
 
@@ -450,14 +450,14 @@ struct window_t *window_close(struct window_t *window) {
   return window_first_leaf(parent);
 }
 
-void window_set_cursor(struct window_t *window, size_t pos) {
+void window_set_cursor(struct window *window, size_t pos) {
   window->cursor->start = pos;
   window->cursor->end = pos + 1;
 }
 
 // Number of columns to use for the line number (including the trailing space).
 // TODO(isbadawi): This might not be exactly correct for relativenumber mode.
-static size_t window_numberwidth(struct window_t* window) {
+static size_t window_numberwidth(struct window* window) {
   if (!option_get_bool("number") && !option_get_bool("relativenumber")) {
     return 0;
   }
@@ -469,11 +469,11 @@ static size_t window_numberwidth(struct window_t* window) {
   return max((size_t) option_get_int("numberwidth"), maxwidth + 1);
 }
 
-static bool window_should_draw_plate(struct window_t *window) {
+static bool window_should_draw_plate(struct window *window) {
   return window->parent != NULL;
 }
 
-static void window_ensure_cursor_visible(struct window_t *window) {
+static void window_ensure_cursor_visible(struct window *window) {
   size_t x, y;
   gb_pos_to_linecol(window->buffer->text, window_cursor(window), &y, &x);
 
@@ -494,7 +494,7 @@ static void window_ensure_cursor_visible(struct window_t *window) {
   window->top = (size_t) ((ssize_t) max((ssize_t) min(window->top, y), (ssize_t) (y - h + 1)));
 }
 
-static void window_change_cell(struct window_t *window, size_t x, size_t y, char c,
+static void window_change_cell(struct window *window, size_t x, size_t y, char c,
                                int fg, int bg) {
   tb_change_cell(
       (int) (window_numberwidth(window) + window_x(window) + x),
@@ -502,9 +502,9 @@ static void window_change_cell(struct window_t *window, size_t x, size_t y, char
       (uint32_t) c, (uint16_t) fg, (uint16_t) bg);
 }
 
-void window_draw_cursor(struct window_t *window) {
+void window_draw_cursor(struct window *window) {
   size_t cursor = window_cursor(window);
-  struct gapbuf_t *gb = window->buffer->text;
+  struct gapbuf *gb = window->buffer->text;
   char c = gb_getchar(gb, cursor);
   size_t x, y;
   gb_pos_to_linecol(gb, cursor, &y, &x);
@@ -517,7 +517,7 @@ void window_draw_cursor(struct window_t *window) {
       TB_WHITE);
 }
 
-static void window_draw_plate(struct window_t *window) {
+static void window_draw_plate(struct window *window) {
   char plate[300];
   strcpy(plate, *window->buffer->name ? window->buffer->name : "[No Name]");
   if (window->buffer->dirty) {
@@ -533,7 +533,7 @@ static void window_draw_plate(struct window_t *window) {
   }
 }
 
-void window_draw(struct window_t *window) {
+void window_draw(struct window *window) {
   if (window->split_type != WINDOW_LEAF) {
     window_draw(window->split.first);
     window_draw(window->split.second);
@@ -548,7 +548,7 @@ void window_draw(struct window_t *window) {
   }
 
   window_ensure_cursor_visible(window);
-  struct gapbuf_t *gb = window->buffer->text;
+  struct gapbuf *gb = window->buffer->text;
 
   size_t cursorline, cursorcol;
   gb_pos_to_linecol(gb, window_cursor(window), &cursorline, &cursorcol);
@@ -565,7 +565,7 @@ void window_draw(struct window_t *window) {
   size_t topx = window->left;
   size_t rows = min(gb->lines->len - topy, h);
 
-  struct region_t selection;
+  struct region selection;
   if (window->visual_mode_anchor) {
     region_set(&selection,
         window->cursor->start, window->visual_mode_anchor->start);

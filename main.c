@@ -14,7 +14,7 @@
 int main(int argc, char *argv[]) {
   char *line = NULL;
   char *tag = NULL;
-  enum window_split_type_t split_type = WINDOW_LEAF;
+  enum window_split_type split_type = WINDOW_LEAF;
 
   char *rc = NULL;
   char default_rc[255];
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
   }
   atexit(tb_shutdown);
 
-  struct editor_t editor;
+  struct editor editor;
   editor_init(&editor, (size_t) tb_width(), (size_t) tb_height());
 
   if (tag) {

@@ -5,10 +5,10 @@
 #include <string.h>
 #include <stdbool.h>
 
-struct option_t {
+struct option {
   const char *name;
 
-  enum option_type_t {
+  enum option_type {
     OPTION_TYPE_INT,
     OPTION_TYPE_BOOL,
   } type;
@@ -24,7 +24,7 @@ struct option_t {
 #define BOOL_OPTION(name, defaultval) OPTION(name, OPTION_TYPE_BOOL, .b = defaultval)
 #define INT_OPTION(name, defaultval) OPTION(name, OPTION_TYPE_INT, .i = defaultval)
 
-static struct option_t option_table[] = {
+static struct option option_table[] = {
   INT_OPTION(numberwidth, 4),
   BOOL_OPTION(number, false),
   BOOL_OPTION(relativenumber, false),
@@ -38,7 +38,7 @@ static struct option_t option_table[] = {
   {NULL, OPTION_TYPE_INT, {-1}},
 };
 
-static struct option_t *option_find(const char *name) {
+static struct option *option_find(const char *name) {
   for (int i = 0; option_table[i].name; ++i) {
     if (!strcmp(option_table[i].name, name)) {
       return &option_table[i];
@@ -47,8 +47,8 @@ static struct option_t *option_find(const char *name) {
   return NULL;
 }
 
-static bool option_has_type(const char *name, enum option_type_t type) {
-  struct option_t *option = option_find(name);
+static bool option_has_type(const char *name, enum option_type type) {
+  struct option *option = option_find(name);
   return option && option->type == type;
 }
 

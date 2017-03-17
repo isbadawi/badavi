@@ -32,13 +32,13 @@ static bool search_should_ignore_case(char *pattern) {
   return true;
 }
 
-struct search_result_t {
+struct search_result {
   char error[48];
-  struct list_t *matches;
+  struct list *matches;
 };
 
-static void gb_search(struct gapbuf_t *gb, char *pattern,
-                      struct search_result_t *result) {
+static void gb_search(struct gapbuf *gb, char *pattern,
+                      struct search_result *result) {
   // Move the gap so the searched region is contiguous.
   gb_mvgap(gb, 0);
 
@@ -69,7 +69,7 @@ static void gb_search(struct gapbuf_t *gb, char *pattern,
 
     nomatch = regexec(&regex, gb->gapend + start, 1, &match, flags);
     if (!nomatch) {
-      struct region_t *region = region_create(
+      struct region *region = region_create(
           start + (size_t) match.rm_so, start + (size_t) match.rm_eo);
       list_append(result->matches, region);
       start += max(1, (size_t) match.rm_eo);
@@ -79,10 +79,10 @@ static void gb_search(struct gapbuf_t *gb, char *pattern,
 }
 
 // TODO(isbadawi): Searching should be a motion.
-void editor_search(struct editor_t *editor, char *pattern,
-                   size_t start, enum search_direction_t direction) {
+void editor_search(struct editor *editor, char *pattern,
+                   size_t start, enum search_direction direction) {
   if (!pattern) {
-    struct buf_t *reg = editor_get_register(editor, '/');
+    struct buf *reg = editor_get_register(editor, '/');
     if (reg->len == 0) {
       editor_status_err(editor, "No previous regular expression");
       return;
@@ -90,8 +90,8 @@ void editor_search(struct editor_t *editor, char *pattern,
     pattern = reg->buf;
   }
 
-  struct gapbuf_t *gb = editor->window->buffer->text;
-  struct search_result_t result;
+  struct gapbuf *gb = editor->window->buffer->text;
+  struct search_result result;
   gb_search(gb, pattern, &result);
 
   if (!result.matches) {
@@ -104,8 +104,8 @@ void editor_search(struct editor_t *editor, char *pattern,
     return;
   }
 
-  struct region_t *match = NULL;
-  struct region_t *m;
+  struct region *match = NULL;
+  struct region *m;
   if (direction == SEARCH_FORWARDS) {
     LIST_FOREACH(result.matches, m) {
       if (m->start > start) {
@@ -119,7 +119,7 @@ void editor_search(struct editor_t *editor, char *pattern,
       match = result.matches->head->next->data;
     }
   } else {
-    struct region_t *last = NULL;
+    struct region *last = NULL;
     LIST_FOREACH(result.matches, m) {
       if (last && last->start < start && start <= m->start) {
         match = last;

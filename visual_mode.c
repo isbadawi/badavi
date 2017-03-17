@@ -11,19 +11,19 @@
 #include "util.h"
 #include "window.h"
 
-static void visual_mode_entered(struct editor_t *editor) {
+static void visual_mode_entered(struct editor *editor) {
   size_t cursor = window_cursor(editor->window);
   editor->window->visual_mode_anchor = region_create(cursor, cursor + 1);
   editor_status_msg(editor, "-- VISUAL --");
 }
 
-static void visual_mode_exited(struct editor_t *editor) {
+static void visual_mode_exited(struct editor *editor) {
   free(editor->window->visual_mode_anchor);
   editor->window->visual_mode_anchor = NULL;
   buf_clear(editor->status);
 }
 
-static void visual_mode_key_pressed(struct editor_t* editor, struct tb_event* ev) {
+static void visual_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
   if (ev->ch != '0' && isdigit((int) ev->ch)) {
     editor->count = 0;
     while (isdigit((int) ev->ch)) {
@@ -38,14 +38,14 @@ static void visual_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
     editor_pop_mode(editor);
     return;
   default: {
-    struct motion_t *motion = motion_get(editor, ev);
+    struct motion *motion = motion_get(editor, ev);
     if (motion) {
       window_set_cursor(editor->window, motion_apply(motion, editor));
       return;
     }
-    op_t *op = op_find((char) ev->ch);
+    op_func *op = op_find((char) ev->ch);
     if (op) {
-      struct region_t selection;
+      struct region selection;
       region_set(
           &selection,
           editor->window->cursor->start,
@@ -57,13 +57,13 @@ static void visual_mode_key_pressed(struct editor_t* editor, struct tb_event* ev
   }
 }
 
-static struct editing_mode_t impl = {
+static struct editing_mode impl = {
   .entered = visual_mode_entered,
   .exited = visual_mode_exited,
   .key_pressed = visual_mode_key_pressed,
   .parent = NULL
 };
 
-struct editing_mode_t *visual_mode(void) {
+struct editing_mode *visual_mode(void) {
   return &impl;
 }

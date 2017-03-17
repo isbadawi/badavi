@@ -10,8 +10,8 @@
 #include "list.h"
 #include "util.h"
 
-static struct buffer_t *buffer_of(char *path, struct gapbuf_t *gb) {
-  struct buffer_t *buffer = xmalloc(sizeof(*buffer));
+static struct buffer *buffer_of(char *path, struct gapbuf *gb) {
+  struct buffer *buffer = xmalloc(sizeof(*buffer));
 
   buffer->text = gb;
   strcpy(buffer->name, path ? path : "");
@@ -25,30 +25,30 @@ static struct buffer_t *buffer_of(char *path, struct gapbuf_t *gb) {
   return buffer;
 }
 
-struct buffer_t *buffer_create(char *path) {
+struct buffer *buffer_create(char *path) {
   return buffer_of(path, gb_create());
 }
 
-struct buffer_t *buffer_open(char *path) {
+struct buffer *buffer_open(char *path) {
   FILE *fp = fopen(path, "r");
   if (!fp) {
     return NULL;
   }
 
-  struct gapbuf_t *gb = gb_load(fp);
+  struct gapbuf *gb = gb_load(fp);
   fclose(fp);
 
   return buffer_of(path, gb);
 }
 
-bool buffer_write(struct buffer_t *buffer) {
+bool buffer_write(struct buffer *buffer) {
   if (!buffer->name[0]) {
     return false;
   }
   return buffer_saveas(buffer, buffer->name);
 }
 
-bool buffer_saveas(struct buffer_t *buffer, char *path) {
+bool buffer_saveas(struct buffer *buffer, char *path) {
   FILE *fp = fopen(path, "w");
   if (!fp) {
     return false;
@@ -65,17 +65,17 @@ bool buffer_saveas(struct buffer_t *buffer, char *path) {
 }
 
 // A single edit action -- either an insert or delete.
-struct edit_action_t {
+struct edit_action {
   enum { EDIT_ACTION_INSERT, EDIT_ACTION_DELETE } type;
   // The position at which the action occurred.
   size_t pos;
   // The text added (for insertions) or removed (for deletions).
-  struct buf_t *buf;
+  struct buf *buf;
 };
 
 static void buffer_update_marks_after_insert(
-    struct buffer_t *buffer, size_t pos, size_t n) {
-  struct region_t *region;
+    struct buffer *buffer, size_t pos, size_t n) {
+  struct region *region;
   LIST_FOREACH(buffer->marks, region) {
     assert(region->end - region->start == 1);
     if (pos <= region->start) {
@@ -86,8 +86,8 @@ static void buffer_update_marks_after_insert(
 }
 
 static void buffer_update_marks_after_delete(
-    struct buffer_t *buffer, size_t pos, size_t n) {
-  struct region_t *region;
+    struct buffer *buffer, size_t pos, size_t n) {
+  struct region *region;
   LIST_FOREACH(buffer->marks, region) {
     assert(region->end - region->start == 1);
     if (pos <= region->start) {
@@ -98,12 +98,12 @@ static void buffer_update_marks_after_delete(
   }
 }
 
-void buffer_do_insert(struct buffer_t *buffer, struct buf_t *buf, size_t pos) {
-  struct edit_action_t *action = xmalloc(sizeof(*action));
+void buffer_do_insert(struct buffer *buffer, struct buf *buf, size_t pos) {
+  struct edit_action *action = xmalloc(sizeof(*action));
   action->type = EDIT_ACTION_INSERT;
   action->pos = pos;
   action->buf = buf;
-  struct list_t *group = list_peek(buffer->undo_stack);
+  struct list *group = list_peek(buffer->undo_stack);
   if (group) {
     list_prepend(group, action);
   }
@@ -113,15 +113,15 @@ void buffer_do_insert(struct buffer_t *buffer, struct buf_t *buf, size_t pos) {
   buffer_update_marks_after_insert(buffer, pos, buf->len);
 }
 
-void buffer_do_delete(struct buffer_t *buffer, size_t n, size_t pos) {
-  struct edit_action_t *action = xmalloc(sizeof(*action));
-  struct buf_t *buf = buf_create(n + 1);
+void buffer_do_delete(struct buffer *buffer, size_t n, size_t pos) {
+  struct edit_action *action = xmalloc(sizeof(*action));
+  struct buf *buf = buf_create(n + 1);
   gb_getstring(buffer->text, pos, n, buf->buf);
   buf->len = n;
   action->type = EDIT_ACTION_DELETE;
   action->pos = pos;
   action->buf = buf;
-  struct list_t *group = list_peek(buffer->undo_stack);
+  struct list *group = list_peek(buffer->undo_stack);
   if (group) {
     list_prepend(group, action);
   }
@@ -131,15 +131,15 @@ void buffer_do_delete(struct buffer_t *buffer, size_t n, size_t pos) {
   buffer_update_marks_after_delete(buffer, pos, n);
 }
 
-bool buffer_undo(struct buffer_t* buffer) {
+bool buffer_undo(struct buffer* buffer) {
   if (list_empty(buffer->undo_stack)) {
     return false;
   }
 
-  struct list_t *group = list_pop(buffer->undo_stack);
+  struct list *group = list_pop(buffer->undo_stack);
 
-  struct gapbuf_t *gb = buffer->text;
-  struct edit_action_t *action;
+  struct gapbuf *gb = buffer->text;
+  struct edit_action *action;
   LIST_FOREACH(group, action) {
     switch (action->type) {
     case EDIT_ACTION_INSERT:
@@ -157,15 +157,15 @@ bool buffer_undo(struct buffer_t* buffer) {
   return true;
 }
 
-bool buffer_redo(struct buffer_t* buffer) {
+bool buffer_redo(struct buffer* buffer) {
   if (list_empty(buffer->redo_stack)) {
     return false;
   }
 
-  struct list_t *group = list_pop(buffer->redo_stack);
+  struct list *group = list_pop(buffer->redo_stack);
 
-  struct gapbuf_t *gb = buffer->text;
-  struct edit_action_t *action;
+  struct gapbuf *gb = buffer->text;
+  struct edit_action *action;
   LIST_FOREACH_REVERSE(group, action) {
     switch (action->type) {
     case EDIT_ACTION_INSERT:
@@ -184,17 +184,17 @@ bool buffer_redo(struct buffer_t* buffer) {
 }
 
 static void edit_action_free(void *p) {
-  struct edit_action_t *action = p;
+  struct edit_action *action = p;
   buf_free(action->buf);
   free(action);
 }
 
 static void edit_action_group_free(void *p) {
-  struct list_t *group = p;
+  struct list *group = p;
   list_free(group, edit_action_free);
 }
 
-void buffer_start_action_group(struct buffer_t *buffer) {
+void buffer_start_action_group(struct buffer *buffer) {
   list_clear(buffer->redo_stack, edit_action_group_free);
   list_prepend(buffer->undo_stack, list_create());
 }

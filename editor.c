@@ -407,7 +407,12 @@ bool editor_waitkey(struct editor *editor, struct tb_event *ev) {
   } else if (ev->type == TB_EVENT_RESIZE) {
     editor->width = (size_t) ev->w;
     editor->height = (size_t) ev->h;
-    // FIXME(ibadawi): Resize windows
+    struct window *root = window_root(editor->window);
+    root->w = editor->width;
+    root->h = editor->height - 1;
+    // FIXME(ibadawi): Just equalizing layout for now because it's easier
+    window_equalize(root, WINDOW_SPLIT_HORIZONTAL);
+    window_equalize(root, WINDOW_SPLIT_VERTICAL);
   } else {
     return true;
   }

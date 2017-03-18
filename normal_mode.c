@@ -11,7 +11,6 @@
 #include "editor.h"
 #include "gap.h"
 #include "motion.h"
-#include "search.h"
 #include "tags.h"
 #include "util.h"
 #include "window.h"
@@ -115,18 +114,6 @@ static void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) 
   case ':':
     editor_push_mode(editor, command_mode());
     break;
-  case '*': case '#': {
-    char word[256];
-    size_t start = motion_word_under_cursor(editor->window, word);
-    char pattern[256];
-    snprintf(pattern, 256, "[[:<:]]%s[[:>:]]", word);
-    if (ev->ch == '*') {
-      editor_search(editor, pattern, cursor, SEARCH_FORWARDS);
-    } else {
-      editor_search(editor, pattern, start, SEARCH_BACKWARDS);
-    }
-    break;
-  }
   case 'p': {
     struct buf *reg = editor_get_register(editor, editor->register_);
     size_t where = gb_getchar(gb, cursor) == '\n' ? cursor : cursor + 1;
@@ -136,8 +123,6 @@ static void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) 
     break;
   }
   case 'u': editor_undo(editor); break;
-  case 'n': editor_search(editor, NULL, cursor, SEARCH_FORWARDS); break;
-  case 'N': editor_search(editor, NULL, cursor, SEARCH_BACKWARDS); break;
   case 'a': editor_send_keys(editor, "li"); break;
   case 'I': editor_send_keys(editor, "0i"); break;
   case 'A': editor_send_keys(editor, "$i"); break;

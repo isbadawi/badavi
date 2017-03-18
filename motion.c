@@ -10,6 +10,7 @@
 #include "editor.h"
 #include "gap.h"
 #include "mode.h"
+#include "search.h"
 #include "window.h"
 #include "util.h"
 
@@ -289,6 +290,42 @@ static size_t backward_search(struct motion_context ctx) {
   return search_motion(ctx, '?');
 }
 
+// editor_search awkwardly sets the window cursor instead of returning a value.
+// This shim keeps the cursor in place while returning the destination.
+// FIXME(ibadawi): Refactor search_mode / editor_search and remove this.
+static size_t editor_search_dest(struct editor *editor, char *pattern,
+                                size_t start, enum search_direction direction) {
+  size_t old_cursor = window_cursor(editor->window);
+  editor_search(editor, pattern, start, direction);
+  size_t result = window_cursor(editor->window);
+  window_set_cursor(editor->window, old_cursor);
+  return result;
+}
+
+static size_t search_next(struct motion_context ctx) {
+  return editor_search_dest(ctx.editor, NULL, ctx.pos, SEARCH_FORWARDS);
+}
+
+static size_t search_prev(struct motion_context ctx) {
+  return editor_search_dest(ctx.editor, NULL, ctx.pos, SEARCH_BACKWARDS);
+}
+
+static size_t word_under_cursor_next(struct motion_context ctx) {
+  char word[256];
+  char pattern[256];
+  motion_word_under_cursor(ctx.editor->window, word);
+  snprintf(pattern, 256, "[[:<:]]%s[[:>:]]", word);
+  return editor_search_dest(ctx.editor, pattern, ctx.pos, SEARCH_FORWARDS);
+}
+
+static size_t word_under_cursor_prev(struct motion_context ctx) {
+  char word[256];
+  char pattern[256];
+  size_t start = motion_word_under_cursor(ctx.editor->window, word);
+  snprintf(pattern, 256, "[[:<:]]%s[[:>:]]", word);
+  return editor_search_dest(ctx.editor, pattern, start, SEARCH_BACKWARDS);
+}
+
 #define LINEWISE true, false
 #define EXCLUSIVE false, true
 #define INCLUSIVE false, false
@@ -316,6 +353,10 @@ static struct motion motion_table[] = {
   {'F', till_backward_inclusive, INCLUSIVE},
   {'/', forward_search, EXCLUSIVE},
   {'?', backward_search, EXCLUSIVE},
+  {'n', search_next, EXCLUSIVE},
+  {'N', search_prev, EXCLUSIVE},
+  {'*', word_under_cursor_next, EXCLUSIVE},
+  {'#', word_under_cursor_prev, EXCLUSIVE},
   {-1, NULL, false, false}
 };
 

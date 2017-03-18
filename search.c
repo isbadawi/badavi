@@ -78,7 +78,6 @@ static void gb_search(struct gapbuf *gb, char *pattern,
   regfree(&regex);
 }
 
-// TODO(isbadawi): Searching should be a motion.
 void editor_search(struct editor *editor, char *pattern,
                    size_t start, enum search_direction direction) {
   if (!pattern) {

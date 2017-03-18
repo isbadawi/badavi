@@ -115,9 +115,6 @@ static void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) 
   case ':':
     editor_push_mode(editor, command_mode());
     break;
-  case '/': case '?':
-    editor_push_mode(editor, search_mode((char) ev->ch));
-    break;
   case '*': case '#': {
     char word[256];
     size_t start = motion_word_under_cursor(editor->window, word);

@@ -12,8 +12,12 @@
 #include "window.h"
 
 static void visual_mode_entered(struct editor *editor) {
-  size_t cursor = window_cursor(editor->window);
-  editor->window->visual_mode_anchor = region_create(cursor, cursor + 1);
+  // If we're entering the mode by popping (e.g. because we did a search and
+  // finished), then keep the current anchor.
+  if (!editor->window->visual_mode_anchor) {
+    size_t cursor = window_cursor(editor->window);
+    editor->window->visual_mode_anchor = region_create(cursor, cursor + 1);
+  }
   editor_status_msg(editor, "-- VISUAL --");
 }
 

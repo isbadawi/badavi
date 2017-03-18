@@ -9,6 +9,7 @@
 #include "buffer.h"
 #include "editor.h"
 #include "gap.h"
+#include "mode.h"
 #include "window.h"
 #include "util.h"
 
@@ -265,6 +266,29 @@ static size_t till_backward_exclusive(struct motion_context ctx) {
   return till_backward(ctx, false);
 }
 
+static size_t search_motion(struct motion_context ctx, char direction) {
+  struct editing_mode *mode = search_mode(direction);
+  editor_push_mode(ctx.editor, mode);
+  editor_draw(ctx.editor);
+  while (ctx.editor->mode == mode) {
+    struct tb_event event;
+    editor_waitkey(ctx.editor, &event);
+    editor_handle_key_press(ctx.editor, &event);
+    editor_draw(ctx.editor);
+  }
+  size_t result = window_cursor(ctx.editor->window);
+  window_set_cursor(ctx.editor->window, ctx.pos);
+  return result;
+}
+
+static size_t forward_search(struct motion_context ctx) {
+  return search_motion(ctx, '/');
+}
+
+static size_t backward_search(struct motion_context ctx) {
+  return search_motion(ctx, '?');
+}
+
 #define LINEWISE true, false
 #define EXCLUSIVE false, true
 #define INCLUSIVE false, false
@@ -290,6 +314,8 @@ static struct motion motion_table[] = {
   {'f', till_forward_inclusive, INCLUSIVE},
   {'T', till_backward_exclusive, INCLUSIVE},
   {'F', till_backward_inclusive, INCLUSIVE},
+  {'/', forward_search, EXCLUSIVE},
+  {'?', backward_search, EXCLUSIVE},
   {-1, NULL, false, false}
 };
 

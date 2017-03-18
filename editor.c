@@ -1,7 +1,6 @@
 #include "editor.h"
 
 #include <assert.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,10 +16,11 @@
 #include "gap.h"
 #include "list.h"
 #include "mode.h"
-#include "tags.h"
 #include "options.h"
-#include "window.h"
+#include "tags.h"
+#include "terminal.h"
 #include "util.h"
+#include "window.h"
 
 #define R(n) {n, NULL}
 static struct editor_register register_table[] = {
@@ -383,21 +383,8 @@ void editor_draw(struct editor *editor) {
   tb_present();
 }
 
-// termbox catches ctrl-z as a regular key event. To suspend the process as
-// normal, manually raise SIGTSTP.
-//
-// Adapted from https://github.com/nsf/godit/blob/master/suspend_linux.go
 static void editor_suspend(struct editor *editor) {
-  tb_shutdown();
-
-  raise(SIGTSTP);
-
-  int err = tb_init();
-  if (err) {
-    fprintf(stderr, "tb_init() failed with error code %d\n", err);
-    exit(1);
-  }
-
+  terminal_suspend();
   editor_draw(editor);
 }
 

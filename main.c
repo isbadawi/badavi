@@ -9,6 +9,7 @@
 
 #include "editor.h"
 #include "tags.h"
+#include "terminal.h"
 #include "window.h"
 
 int main(int argc, char *argv[]) {
@@ -45,12 +46,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  int err = tb_init();
-  if (err) {
-    fprintf(stderr, "tb_init() failed with error code %d\n", err);
-    return 1;
-  }
-  atexit(tb_shutdown);
+  terminal_init();
 
   struct editor editor;
   editor_init(&editor, (size_t) tb_width(), (size_t) tb_height());

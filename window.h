@@ -25,8 +25,9 @@ struct window {
       // The offset of the cursor.
       struct region *cursor;
 
-      // The offset of the cursor when visual mode was entered.
-      struct region *visual_mode_anchor;
+      // The visual mode selection.
+      // NULL if not in visual mode.
+      struct region *visual_mode_selection;
 
       struct list *tag_stack;
       struct tag_jump *tag;

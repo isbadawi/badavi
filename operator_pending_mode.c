@@ -27,7 +27,6 @@ static void yank_op(struct editor *editor, struct region *region) {
   buf_grow(reg, n + 1);
   gb_getstring(gb, region->start, n, reg->buf);
   reg->len = n;
-  editor_pop_mode(editor);
   editor->register_ = '"';
 }
 
@@ -93,6 +92,7 @@ static void key_pressed(struct editor *editor, struct tb_event *ev) {
   }
 
   struct operator_pending_mode* mode = (struct operator_pending_mode*) editor->mode;
+  editor_pop_mode(editor);
   mode->op(editor, region);
   free(region);
 }

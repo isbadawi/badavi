@@ -109,7 +109,10 @@ static void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) 
     editor_push_mode(editor, insert_mode());
     break;
   case 'v':
-    editor_push_mode(editor, visual_mode());
+    editor_push_mode(editor, visual_mode(VISUAL_MODE_CHARACTERWISE));
+    break;
+  case 'V':
+    editor_push_mode(editor, visual_mode(VISUAL_MODE_LINEWISE));
     break;
   case ':':
     editor_push_mode(editor, command_mode());

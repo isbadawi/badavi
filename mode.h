@@ -15,9 +15,17 @@ struct editing_mode {
   struct editing_mode *parent;
 };
 
+enum visual_mode_kind {
+  VISUAL_MODE_CHARACTERWISE,
+  VISUAL_MODE_LINEWISE,
+  // TODO(ibadawi): VISUAL_MODE_BLOCKWISE
+};
+
+void visual_mode_selection_update(struct editor *editor);
+
 struct editing_mode *normal_mode(void);
 struct editing_mode *insert_mode(void);
-struct editing_mode *visual_mode(void);
+struct editing_mode *visual_mode(enum visual_mode_kind kind);
 struct editing_mode *command_mode(void);
 struct editing_mode *search_mode(char direction);
 struct editing_mode *operator_pending_mode(char op);

@@ -365,6 +365,11 @@ void editor_execute_command(struct editor *editor, char *command) {
 void editor_draw(struct editor *editor) {
   tb_clear();
 
+  // FIXME(ibadawi): It's a bit kludgy to call this here.
+  // We want to visual mode selection to be up to date if we're searching inside
+  // visual mode with 'incsearch' enabled.
+  visual_mode_selection_update(editor);
+
   window_draw(window_root(editor->window));
   window_draw_cursor(editor->window);
 

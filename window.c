@@ -22,7 +22,7 @@ struct window *window_create(struct buffer *buffer, size_t w, size_t h) {
 
   window->buffer = NULL;
   window_set_buffer(window, buffer);
-  window->visual_mode_anchor = NULL;
+  window->visual_mode_selection = NULL;
 
   window->w = w;
   window->h = h;
@@ -565,12 +565,6 @@ void window_draw(struct window *window) {
   size_t topx = window->left;
   size_t rows = min(gb->lines->len - topy, h);
 
-  struct region selection;
-  if (window->visual_mode_anchor) {
-    region_set(&selection,
-        window->cursor->start, window->visual_mode_anchor->start);
-  }
-
   for (size_t y = 0; y < rows; ++y) {
     size_t absolute = window->top + y + 1;
     size_t relative = (size_t) labs((ssize_t)(absolute - cursorline - 1));
@@ -591,15 +585,16 @@ void window_draw(struct window *window) {
 
     bool drawcursorline = relative == 0 &&
       option_get_bool("cursorline") &&
-      !window->visual_mode_anchor;
+      !window->visual_mode_selection;
 
     size_t cols = (size_t) max(0, min((ssize_t) gb->lines->buf[y + topy] - (ssize_t) topx, (ssize_t) w));
     for (size_t x = 0; x < cols; ++x) {
       int fg = TB_WHITE;
       int bg = TB_DEFAULT;
       size_t pos = gb_linecol_to_pos(gb, y + topy, x + topx);
-      if (window->visual_mode_anchor &&
-          selection.start <= pos && pos < selection.end) {
+      if (window->visual_mode_selection &&
+          window->visual_mode_selection->start <= pos &&
+          pos < window->visual_mode_selection->end) {
         fg = TB_BLACK;
         bg = TB_WHITE;
       }

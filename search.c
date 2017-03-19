@@ -78,13 +78,13 @@ static void gb_search(struct gapbuf *gb, char *pattern,
   regfree(&regex);
 }
 
-void editor_search(struct editor *editor, char *pattern,
+bool editor_search(struct editor *editor, char *pattern,
                    size_t start, enum search_direction direction) {
   if (!pattern) {
     struct buf *reg = editor_get_register(editor, '/');
     if (reg->len == 0) {
       editor_status_err(editor, "No previous regular expression");
-      return;
+      return false;
     }
     pattern = reg->buf;
   }
@@ -95,12 +95,12 @@ void editor_search(struct editor *editor, char *pattern,
 
   if (!result.matches) {
     editor_status_err(editor, "Bad regex \"%s\": %s", pattern, result.error);
-    return;
+    return false;
   }
 
   if (list_empty(result.matches)) {
     editor_status_err(editor, "Pattern not found: \"%s\"", pattern);
-    return;
+    return false;
   }
 
   struct region *match = NULL;
@@ -140,4 +140,6 @@ void editor_search(struct editor *editor, char *pattern,
   // TODO(isbadawi): Remember matches -- can do hlsearch, or cache searches
   // if the buffer hasn't changed.
   list_clear(result.matches, free);
+
+  return true;
 }

@@ -103,7 +103,9 @@ static void search_char_cb(struct editor *editor, char *command,
     return;
   }
   struct cmdline_mode *mode = (struct cmdline_mode*) editor->mode;
-  editor_search(editor, command, mode->cursor, direction);
+  if (!editor_search(editor, command, mode->cursor, direction)) {
+    window_set_cursor(editor->window, mode->cursor);
+  }
 }
 
 static void forward_search_done_cb(struct editor *editor, char *command) {

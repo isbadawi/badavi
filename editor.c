@@ -380,6 +380,22 @@ void editor_draw(struct editor *editor) {
         TB_BLACK, TB_WHITE);
   }
 
+  // If there's only one window, draw the ruler on the bottom line.
+  // FIXME(ibadawi): It would be nicer not to special case this.
+  if (option_get_bool("ruler") &&
+      !editor->window->parent &&
+      !editor->status_cursor) {
+    char ruler[32];
+    window_get_ruler(editor->window, ruler, sizeof(ruler));
+    size_t rulerlen = strlen(ruler);
+    for (size_t i = 0; i < rulerlen; ++i) {
+      tb_change_cell(
+          (int) (editor->width - (rulerlen - i)),
+          (int) editor->height - 1,
+          (uint32_t) ruler[i], TB_WHITE, TB_DEFAULT);
+    }
+  }
+
   tb_present();
 }
 

@@ -517,12 +517,55 @@ void window_draw_cursor(struct window *window) {
       TB_WHITE);
 }
 
-static void window_draw_plate(struct window *window) {
-  char plate[300];
-  strcpy(plate, *window->buffer->name ? window->buffer->name : "[No Name]");
-  if (window->buffer->dirty) {
-    strcat(plate, " [+]");
+void window_get_ruler(struct window *window, char *buf, size_t buflen) {
+  struct gapbuf *gb = window->buffer->text;
+  size_t line, col;
+  gb_pos_to_linecol(gb, window_cursor(window), &line, &col);
+  size_t nlines = gb_nlines(gb);
+  size_t h = window_h(window);
+
+  bool top = window->top == 0;
+  bool bot = nlines < window->top + h + 1;
+  char relpos[4];
+  if (top && bot) {
+    strcpy(relpos, "All");
+  } else if (top) {
+    strcpy(relpos, "Top");
+  } else if (bot) {
+    strcpy(relpos, "Bot");
+  } else {
+    size_t above = window->top - 1;
+    size_t below = nlines - (window->top + h) + 1;
+    size_t pct = (above * 100 / (above + below));
+    snprintf(relpos, sizeof(relpos), "%zu%%", pct);
   }
+
+  snprintf(buf, buflen, "%zu,%zu        %3s", line + 1, col + 1, relpos);
+}
+
+static void window_draw_plate(struct window *window) {
+  size_t w = window_w(window);
+  if (window_right(window)) {
+    --w;
+  }
+
+  char name[256];
+  snprintf(name, sizeof(name), "%s%s",
+      *window->buffer->name ? window->buffer->name : "[No Name]",
+      window->buffer->dirty ? " [+]" : "");
+
+  char plate[256];
+
+  if (option_get_bool("ruler")) {
+    char ruler[32];
+    window_get_ruler(window, ruler, sizeof(ruler));
+    size_t namelen = strlen(name);
+    snprintf(plate, sizeof(plate), "%-*s %*s",
+        (int)namelen, name, (int)(w - namelen - 1), ruler);
+  } else {
+    strcpy(plate, name);
+  }
+
   size_t platelen = strlen(plate);
   for (size_t x = 0; x < window_w(window); ++x) {
     char c = x < platelen ? plate[x] : ' ';

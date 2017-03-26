@@ -3,11 +3,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-struct editor_register {
-  char name;
-  struct buf *buf;
-};
-
 // The "editor" holds the main state of the program.
 struct editor {
   // The loaded buffers.
@@ -28,8 +23,12 @@ struct editor {
   // The position of the cursor in cmdline mode.
   size_t status_cursor;
 
-  // An array of registers.
-  struct editor_register *registers;
+  // An array of registers (a-z, / and ").
+  #define EDITOR_NUM_REGISTERS 28
+  struct editor_register {
+    char name;
+    struct buf *buf;
+  } registers[EDITOR_NUM_REGISTERS];
 
   // List of loaded ctags.
   struct tags *tags;

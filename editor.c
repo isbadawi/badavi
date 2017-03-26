@@ -22,21 +22,6 @@
 #include "util.h"
 #include "window.h"
 
-#define R(n) {n, NULL}
-static struct editor_register register_table[] = {
-  // Last search pattern register
-  R('/'),
-  // Unnamed default register
-  R('"'),
-  // Named registers
-  R('a'), R('b'), R('c'), R('d'), R('e'), R('f'), R('g'), R('h'), R('i'), R('j'), R('k'),
-  R('l'), R('m'), R('n'), R('o'), R('p'), R('q'), R('r'), R('s'), R('t'), R('u'), R('v'),
-  R('w'), R('x'), R('y'), R('z'),
-  // Sentinel
-  R(-1)
-};
-#undef R
-
 void editor_init(struct editor *editor, size_t width, size_t height) {
   editor->buffers = list_create();
   struct buffer *buffer = buffer_create(NULL);
@@ -53,10 +38,20 @@ void editor_init(struct editor *editor, size_t width, size_t height) {
 
   editor->mode = normal_mode();
 
-  editor->registers = register_table;
-  for (int i = 0; editor->registers[i].name != -1; ++i) {
-    editor->registers[i].buf = buf_create(1);
+#define R(n) \
+  editor->registers[next_register].name = n; \
+  editor->registers[next_register++].buf = buf_create(1);
+  int next_register = 0;
+  // Named registers
+  for (char c = 'a'; c <= 'z'; ++c) {
+    R(c);
   }
+  // Last search pattern register
+  R('/');
+  // Unnamed default register
+  R('"');
+  assert(next_register == EDITOR_NUM_REGISTERS);
+#undef R
 
   editor->tags = tags_create("tags");
 
@@ -67,7 +62,7 @@ void editor_init(struct editor *editor, size_t width, size_t height) {
 }
 
 struct buf *editor_get_register(struct editor *editor, char name) {
-  for (int i = 0; editor->registers[i].name != -1; ++i) {
+  for (int i = 0; i < EDITOR_NUM_REGISTERS; ++i) {
     if (editor->registers[i].name == name) {
       return editor->registers[i].buf;
     }

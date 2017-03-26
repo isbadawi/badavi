@@ -43,8 +43,16 @@ struct window {
 
 struct window *window_create(struct buffer *buffer, size_t w, size_t h);
 struct window *window_close(struct window *window);
+
+enum window_split_direction {
+  WINDOW_SPLIT_LEFT,
+  WINDOW_SPLIT_RIGHT,
+  WINDOW_SPLIT_ABOVE,
+  WINDOW_SPLIT_BELOW
+};
+
 struct window *window_split(struct window *window,
-                              enum window_split_type type);
+                              enum window_split_direction direction);
 
 void window_resize(struct window *window, int dw, int dh);
 void window_equalize(struct window *window,

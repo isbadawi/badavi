@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -54,18 +55,19 @@ int main(int argc, char *argv[]) {
   if (tag) {
     editor_jump_to_tag(&editor, tag);
   } else if (i < argc) {
-    // Open files in reverse order so that the first file listed ends up as the
-    // leftmost or topmost split. Note that this is all happening before we
-    // source any config, so that the values of 'splitbelow' or 'splitright'
-    // don't affect the behavior.
-    // FIXME(ibadawi): Have window_split take arguments to control layout
-    // FIXME(ibadawi): instead of looking at options directly.
-    editor_open(&editor, argv[argc - 1]);
+    editor_open(&editor, argv[i++]);
 
     if (split_type != WINDOW_LEAF) {
-      for (int j = argc - 2; i < j + 1; --j) {
-        editor.window = window_split(editor.window, split_type);
-        editor_open(&editor, argv[j]);
+      enum window_split_direction direction;
+      if (split_type == WINDOW_SPLIT_HORIZONTAL) {
+        direction = WINDOW_SPLIT_BELOW;
+      } else {
+        assert(split_type == WINDOW_SPLIT_VERTICAL);
+        direction = WINDOW_SPLIT_RIGHT;
+      }
+      for (; i < argc; ++i) {
+        editor.window = window_split(editor.window, direction);
+        editor_open(&editor, argv[i]);
       }
       editor.window = window_first_leaf(window_root(editor.window));
     }

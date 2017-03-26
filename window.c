@@ -181,7 +181,7 @@ void window_equalize(struct window *window,
 }
 
 struct window *window_split(struct window *window,
-                              enum window_split_type type) {
+                            enum window_split_direction direction) {
   assert(window->split_type == WINDOW_LEAF);
 
   struct window *copy = xmalloc(sizeof(*window));
@@ -193,31 +193,30 @@ struct window *window_split(struct window *window,
   copy->parent = window;
   sibling->parent = window;
 
-  window->split_type = type;
-
-  switch (type) {
-  case WINDOW_SPLIT_VERTICAL:
+  switch (direction) {
+  case WINDOW_SPLIT_LEFT:
+    window->split_type = WINDOW_SPLIT_VERTICAL;
     window->split.point = window_w(window) / 2;
-    if (option_get_bool("splitright")) {
-      window->split.first = copy;
-      window->split.second = sibling;
-    } else {
-      window->split.first = sibling;
-      window->split.second = copy;
-    }
+    window->split.first = sibling;
+    window->split.second = copy;
     break;
-  case WINDOW_SPLIT_HORIZONTAL:
+  case WINDOW_SPLIT_RIGHT:
+    window->split_type = WINDOW_SPLIT_VERTICAL;
+    window->split.point = window_w(window) / 2;
+    window->split.first = copy;
+    window->split.second = sibling;
+    break;
+  case WINDOW_SPLIT_ABOVE:
+    window->split_type = WINDOW_SPLIT_HORIZONTAL;
     window->split.point = window_h(window) / 2;
-    if (option_get_bool("splitbelow")) {
-      window->split.first = copy;
-      window->split.second = sibling;
-    } else {
-      window->split.first = sibling;
-      window->split.second = copy;
-    }
+    window->split.first = sibling;
+    window->split.second = copy;
     break;
-  case WINDOW_LEAF:
-    assert(0);
+  case WINDOW_SPLIT_BELOW:
+    window->split_type = WINDOW_SPLIT_HORIZONTAL;
+    window->split.point = window_h(window) / 2;
+    window->split.first = copy;
+    window->split.second = sibling;
   }
 
   if (option_get_bool("equalalways")) {

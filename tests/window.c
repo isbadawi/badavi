@@ -27,7 +27,7 @@ void test_window__create(void) {
 void test_window__vsplit(void) {
   struct window *window = window_create(buffer_create(NULL), 80, 16);
 
-  struct window *left = window_split(window, WINDOW_SPLIT_VERTICAL);
+  struct window *left = window_split(window, WINDOW_SPLIT_LEFT);
   cl_assert_equal_p(left, window->split.first);
   struct window *right = window->split.second;
 
@@ -48,7 +48,7 @@ void test_window__vsplit(void) {
 void test_window__split(void) {
   struct window *window = window_create(buffer_create(NULL), 80, 16);
 
-  struct window *up = window_split(window, WINDOW_SPLIT_HORIZONTAL);
+  struct window *up = window_split(window, WINDOW_SPLIT_ABOVE);
   cl_assert_equal_p(up, window->split.first);
   struct window *down = window->split.second;
 
@@ -69,7 +69,7 @@ void test_window__split(void) {
 void test_window__close(void) {
   struct window *window = window_create(buffer_create(NULL), 80, 16);
 
-  window_split(window, WINDOW_SPLIT_HORIZONTAL);
+  window_split(window, WINDOW_SPLIT_ABOVE);
 
   struct window *next = window_close(window->split.second);
   cl_assert(!next->parent);
@@ -85,8 +85,8 @@ void test_window__resize(void) {
   // | B |   |
   // |___|___|
   struct window *root = window_create(buffer_create(NULL), 80, 16);
-  struct window *left = window_split(root, WINDOW_SPLIT_VERTICAL);
-  struct window *A = window_split(left, WINDOW_SPLIT_HORIZONTAL);
+  struct window *left = window_split(root, WINDOW_SPLIT_LEFT);
+  struct window *A = window_split(left, WINDOW_SPLIT_ABOVE);
   struct window *B = left->split.second;
   struct window *C = root->split.second;
 

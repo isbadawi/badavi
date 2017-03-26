@@ -291,7 +291,8 @@ static void editor_command_set(struct editor *editor, char *arg) {
 }
 
 static void editor_command_split(struct editor *editor, char *arg) {
-  editor->window = window_split(editor->window, WINDOW_SPLIT_HORIZONTAL);
+  editor->window = window_split(editor->window,
+      option_get_bool("splitbelow") ? WINDOW_SPLIT_BELOW : WINDOW_SPLIT_ABOVE);
 
   if (arg) {
     editor_command_edit(editor, arg);
@@ -299,7 +300,8 @@ static void editor_command_split(struct editor *editor, char *arg) {
 }
 
 static void editor_command_vsplit(struct editor *editor, char *arg) {
-  editor->window = window_split(editor->window, WINDOW_SPLIT_VERTICAL);
+  editor->window = window_split(editor->window,
+      option_get_bool("splitright") ? WINDOW_SPLIT_RIGHT : WINDOW_SPLIT_LEFT);
 
   if (arg) {
     editor_command_edit(editor, arg);

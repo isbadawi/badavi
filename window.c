@@ -485,12 +485,17 @@ static void window_ensure_cursor_visible(struct window *window) {
     --h;
   }
 
-  // TODO(isbadawi): Clean this up...
-  // The problem is that x & w (and y & h) are unsigned, but we want to treat
-  // their difference as signed. All these casts are necessary to get around
-  // warnings.
-  window->left = (size_t) ((ssize_t) max((ssize_t) min(window->left, x), (ssize_t) (x - w + 1)));
-  window->top = (size_t) ((ssize_t) max((ssize_t) min(window->top, y), (ssize_t) (y - h + 1)));
+  if (y < window->top) {
+    window->top = y;
+  } else if (y > window->top + h - 1) {
+    window->top = y - h + 1;
+  }
+
+  if (x < window->left) {
+    window->left = x;
+  } else if (x > window->left + w - 1) {
+    window->left = x - w + 1;
+  }
 }
 
 static void window_change_cell(struct window *window, size_t x, size_t y, char c,

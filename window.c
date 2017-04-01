@@ -498,34 +498,39 @@ static void window_ensure_cursor_visible(struct window *window) {
   }
 }
 
-static struct tb_cell *window_get_cell(struct window *window, size_t x, size_t y) {
+static struct tb_cell *window_cell(struct window *window, size_t x, size_t y) {
   struct tb_cell *cells = tb_cell_buffer();
   size_t offset = (window_y(window) + y) * (size_t) tb_width() +
     window_x(window) + x;
   return &cells[offset];
 }
 
+static struct tb_cell *window_cell_for_pos(struct window *window, size_t pos) {
+  size_t line, col;
+  gb_pos_to_linecol(window->buffer->text, pos, &line, &col);
+  col += window_numberwidth(window);
+
+  if (window->top <= line && line < window->top + window_h(window) &&
+      window->left <= col && col < window->left + window_w(window)) {
+    return window_cell(window, col - window->left, line - window->top);
+  }
+
+  return NULL;
+}
+
 static void window_change_cell(struct window *window, size_t x, size_t y, char c,
                                int fg, int bg) {
-  struct tb_cell *cell = window_get_cell(window, x, y);
+  struct tb_cell *cell = window_cell(window, x, y);
   cell->ch = (uint32_t) c;
   cell->fg = (uint16_t) fg;
   cell->bg = (uint16_t) bg;
 }
 
 void window_draw_cursor(struct window *window) {
-  size_t cursor = window_cursor(window);
-  struct gapbuf *gb = window->buffer->text;
-  char c = gb_getchar(gb, cursor);
-  size_t x, y;
-  gb_pos_to_linecol(gb, cursor, &y, &x);
-
-  window_change_cell(window,
-      window_numberwidth(window) + x - window->left,
-      y - window->top,
-      c == '\n' ? ' ' : c,
-      TB_BLACK,
-      TB_WHITE);
+  struct tb_cell *cell = window_cell_for_pos(window, window_cursor(window));
+  assert(cell);
+  cell->fg = TB_BLACK;
+  cell->bg = TB_WHITE;
 }
 
 void window_get_ruler(struct window *window, char *buf, size_t buflen) {
@@ -610,14 +615,6 @@ static void window_draw_line_number(struct window *window, size_t line) {
   } while (linenumber > 0);
 }
 
-static bool window_pos_is_visible(struct window *window, size_t pos) {
-  size_t line, col;
-  gb_pos_to_linecol(window->buffer->text, pos, &line, &col);
-  col += window_numberwidth(window);
-  return window->top <= line && line < window->top + window_h(window) &&
-         window->left <= col && col < window->left + window_w(window);
-}
-
 static void window_draw_visual_mode_selection(struct window *window) {
   if (!window->visual_mode_selection) {
     return;
@@ -625,17 +622,11 @@ static void window_draw_visual_mode_selection(struct window *window) {
 
   for (size_t pos = window->visual_mode_selection->start;
       pos < window->visual_mode_selection->end; ++pos) {
-    if (!window_pos_is_visible(window, pos)) {
-      continue;
+    struct tb_cell *cell = window_cell_for_pos(window, pos);
+    if (cell) {
+      cell->fg = TB_BLACK;
+      cell->bg = TB_WHITE;
     }
-
-    size_t line, col;
-    gb_pos_to_linecol(window->buffer->text, pos, &line, &col);
-
-    struct tb_cell *cell = window_get_cell(window,
-        window_numberwidth(window) + col - window->left, line - window->top);
-    cell->fg = TB_BLACK;
-    cell->bg = TB_WHITE;
   }
 }
 
@@ -650,7 +641,7 @@ static void window_draw_cursorline(struct window *window) {
   size_t numberwidth = window_numberwidth(window);
   size_t width = window_w(window);
   for (size_t x = numberwidth; x < width; ++x) {
-    window_get_cell(window, x, line - window->top)->fg |= TB_UNDERLINE;
+    window_cell(window, x, line - window->top)->fg |= TB_UNDERLINE;
   }
 }
 

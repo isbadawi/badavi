@@ -26,6 +26,7 @@ struct option {
 
 static struct option option_table[] = {
   INT_OPTION(numberwidth, 4),
+  INT_OPTION(sidescroll, 0),
   BOOL_OPTION(number, false),
   BOOL_OPTION(relativenumber, false),
   BOOL_OPTION(ignorecase, false),

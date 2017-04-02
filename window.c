@@ -473,8 +473,9 @@ static bool window_should_draw_plate(struct window *window) {
 }
 
 static void window_ensure_cursor_visible(struct window *window) {
+  struct gapbuf *gb = window->buffer->text;
   size_t x, y;
-  gb_pos_to_linecol(window->buffer->text, window_cursor(window), &y, &x);
+  gb_pos_to_linecol(gb, window_cursor(window), &y, &x);
 
   size_t w = window_w(window) - window_numberwidth(window);
   size_t h = window_h(window);
@@ -491,10 +492,25 @@ static void window_ensure_cursor_visible(struct window *window) {
     window->top = y - h + 1;
   }
 
-  if (x < window->left) {
-    window->left = x;
-  } else if (x > window->left + w - 1) {
-    window->left = x - w + 1;
+  size_t scroll = (size_t) option_get_int("sidescroll");
+  bool left = x < window->left;
+  bool right = x > window->left + w - 1;
+  if (left || right) {
+    if (!scroll) {
+      window->left = x >= w / 2 ? x - w / 2 : 0;
+    } else if (left) {
+      if (window->left - x >= scroll) {
+        window->left = x;
+      } else {
+        window->left = window->left >= scroll ? window->left - scroll : 0;
+      }
+    } else if (right) {
+      if (x - (window->left + w - 1) >= scroll) {
+        window->left = x - w + 1;
+      } else {
+        window->left = min(window->left + scroll, gb->lines->buf[y] - 1);
+      }
+    }
   }
 }
 

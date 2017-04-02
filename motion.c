@@ -2,6 +2,7 @@
 
 #include <ctype.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <termbox.h>
 
@@ -326,6 +327,40 @@ static size_t word_under_cursor_prev(struct motion_context ctx) {
   return editor_search_dest(ctx.editor, pattern, start, SEARCH_BACKWARDS);
 }
 
+static size_t matching_paren(struct motion_context ctx) {
+  struct gapbuf *gb = ctx.window->buffer->text;
+  char a = '\0';
+  size_t start;
+  for (start = ctx.pos; !is_line_end(gb, start); ++start) {
+    a = gb_getchar(gb, start);
+    if (strchr("()[]{}", a)) {
+      break;
+    }
+  }
+  if (!strchr("()[]{}", a)) {
+    return ctx.pos;
+  }
+
+  char b = *(strchr("()([][{}{", a) + 1);
+  bool forwards = strchr("([{", a) != NULL;
+
+  int nested = -1;
+  size_t end;
+  for (end = start; end < gb_size(gb) - 1; forwards ? end++ : end--) {
+    char c = gb_getchar(gb, end);
+    if (c == a) {
+      nested++;
+    } else if (c == b) {
+      if (!nested) {
+        break;
+      }
+      nested--;
+    }
+  }
+
+  return gb_getchar(gb, end) == b ? end : ctx.pos;
+}
+
 #define LINEWISE true, false
 #define EXCLUSIVE false, true
 #define INCLUSIVE false, false
@@ -357,6 +392,7 @@ static struct motion motion_table[] = {
   {'N', search_prev, EXCLUSIVE},
   {'*', word_under_cursor_next, EXCLUSIVE},
   {'#', word_under_cursor_prev, EXCLUSIVE},
+  {'%', matching_paren, INCLUSIVE},
   {-1, NULL, false, false}
 };
 

@@ -87,8 +87,12 @@ void list_remove(struct list *list, void *data) {
   list_remove_node(list_get_node(list, data));
 }
 
-void *list_peek(struct list *list) {
+void *list_first(struct list *list) {
   return list_empty(list) ? NULL : list->head->next->data;
+}
+
+void *list_last(struct list *list) {
+  return list_empty(list) ? NULL : list->tail->prev->data;
 }
 
 bool list_empty(struct list *list) {

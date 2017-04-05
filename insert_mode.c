@@ -18,7 +18,7 @@ static void insert_mode_exited(struct editor *editor) {
   // useless undo action.
   // TODO(isbadawi): Maybe this belongs in an "editor_end_action_group"
   struct list *undo_stack = editor->window->buffer->undo_stack;
-  if (list_empty(list_peek(undo_stack))) {
+  if (list_empty(list_first(undo_stack))) {
     list_pop(undo_stack);
   }
 

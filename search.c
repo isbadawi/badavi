@@ -115,7 +115,7 @@ bool editor_search(struct editor *editor, char *pattern,
 
     if (!match) {
       editor_status_msg(editor, "search hit BOTTOM, continuing at TOP");
-      match = result.matches->head->next->data;
+      match = list_first(result.matches);
     }
   } else {
     struct region *last = NULL;
@@ -131,7 +131,7 @@ bool editor_search(struct editor *editor, char *pattern,
     }
     if (!match) {
       editor_status_msg(editor, "search hit TOP, continuing at BOTTOM");
-      match = result.matches->tail->prev->data;
+      match = list_last(result.matches);
     }
   }
 

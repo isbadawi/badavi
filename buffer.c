@@ -103,7 +103,7 @@ void buffer_do_insert(struct buffer *buffer, struct buf *buf, size_t pos) {
   action->type = EDIT_ACTION_INSERT;
   action->pos = pos;
   action->buf = buf;
-  struct list *group = list_peek(buffer->undo_stack);
+  struct list *group = list_first(buffer->undo_stack);
   if (group) {
     list_prepend(group, action);
   }
@@ -121,7 +121,7 @@ void buffer_do_delete(struct buffer *buffer, size_t n, size_t pos) {
   action->type = EDIT_ACTION_DELETE;
   action->pos = pos;
   action->buf = buf;
-  struct list *group = list_peek(buffer->undo_stack);
+  struct list *group = list_first(buffer->undo_stack);
   if (group) {
     list_prepend(group, action);
   }

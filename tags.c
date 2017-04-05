@@ -163,7 +163,7 @@ void editor_tag_stack_next(struct editor *editor) {
 
   struct tag_jump *next;
   if (!editor->window->tag) {
-    next = editor->window->tag_stack->head->next->data;
+    next = list_first(editor->window->tag_stack);
   } else {
     next = list_next(editor->window->tag_stack, editor->window->tag);
   }

@@ -19,6 +19,31 @@ static bool is_last_line(struct gapbuf *gb, size_t pos) {
   return pos > gb_size(gb) - gb->lines->buf[gb->lines->len - 1];
 }
 
+static void editor_join_lines(struct editor *editor) {
+  struct buffer *buffer = editor->window->buffer;
+  struct gapbuf *gb = buffer->text;
+  size_t cursor = window_cursor(editor->window);
+  if (is_last_line(gb, cursor)) {
+    return;
+  }
+
+  size_t newline = gb_indexof(gb, '\n', cursor);
+  size_t next_newline = newline + 1;
+  if (gb_getchar(gb, next_newline) != '\n') {
+    next_newline = gb_indexof(gb, '\n',  next_newline);
+  }
+  size_t first_non_blank;
+  for (first_non_blank = newline + 1;
+       first_non_blank < next_newline &&
+       isspace(gb_getchar(gb, first_non_blank));
+       first_non_blank++) {}
+
+  buffer_start_action_group(buffer);
+  buffer_do_delete(buffer, first_non_blank - newline, newline);
+  buffer_do_insert(buffer, buf_from_char(' '), newline);
+  window_set_cursor(editor->window, newline);
+}
+
 static void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
   if (ev->ch != '0' && isdigit((int) ev->ch)) {
     editor->count = 0;
@@ -135,9 +160,7 @@ static void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) 
   case 'D': editor_send_keys(editor, "d$"); break;
   case 'C': editor_send_keys(editor, "c$"); break;
   case 'J':
-    if (!is_last_line(gb, cursor)) {
-      editor_send_keys(editor, "A <esc>jI<bs><esc>");
-    }
+    editor_join_lines(editor);
     break;
   default: {
     struct motion *motion = motion_get(editor, ev);

@@ -32,16 +32,7 @@ static bool search_should_ignore_case(char *pattern) {
   return true;
 }
 
-struct search_result {
-  char error[48];
-  struct list *matches;
-};
-
-static void gb_search(struct gapbuf *gb, char *pattern,
-                      struct search_result *result) {
-  // Move the gap so the searched region is contiguous.
-  gb_mvgap(gb, 0);
-
+void regex_search(char *str, char *pattern, struct search_result *result) {
   regex_t regex;
   int flags = REG_EXTENDED | REG_NEWLINE;
   if (search_should_ignore_case(pattern)) {
@@ -63,11 +54,11 @@ static void gb_search(struct gapbuf *gb, char *pattern,
     // regexec assumes the string is at the beginning of a line unless told
     // otherwise. This affects regexes that use ^.
     flags = 0;
-    if (start > 0 && gb_getchar(gb, start - 1) != '\n') {
+    if (start > 0 && str[start - 1] != '\n') {
       flags |= REG_NOTBOL;
     }
 
-    nomatch = regexec(&regex, gb->gapend + start, 1, &match, flags);
+    nomatch = regexec(&regex, str + start, 1, &match, flags);
     if (!nomatch) {
       struct region *region = region_create(
           start + (size_t) match.rm_so, start + (size_t) match.rm_eo);
@@ -90,8 +81,10 @@ bool editor_search(struct editor *editor, char *pattern,
   }
 
   struct gapbuf *gb = editor->window->buffer->text;
+  // Move the gap so the searched region is contiguous.
+  gb_mvgap(gb, 0);
   struct search_result result;
-  gb_search(gb, pattern, &result);
+  regex_search(gb->gapend, pattern, &result);
 
   if (!result.matches) {
     editor_status_err(editor, "Bad regex \"%s\": %s", pattern, result.error);
@@ -99,6 +92,7 @@ bool editor_search(struct editor *editor, char *pattern,
   }
 
   if (list_empty(result.matches)) {
+    list_free(result.matches, free);
     editor_status_err(editor, "Pattern not found: \"%s\"", pattern);
     return false;
   }
@@ -137,9 +131,7 @@ bool editor_search(struct editor *editor, char *pattern,
 
   window_set_cursor(editor->window, match->start);
 
-  // TODO(isbadawi): Remember matches -- can do hlsearch, or cache searches
-  // if the buffer hasn't changed.
-  list_clear(result.matches, free);
+  list_free(result.matches, free);
 
   return true;
 }

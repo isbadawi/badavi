@@ -15,3 +15,10 @@ enum search_direction {
 // the pattern stored in the last-search-pattern register (/).
 bool editor_search(struct editor *editor, char *pattern,
                    size_t start, enum search_direction direction);
+
+struct search_result {
+  char error[48];
+  struct list *matches;
+};
+
+void regex_search(char *str, char *pattern, struct search_result *result);

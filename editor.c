@@ -36,6 +36,7 @@ void editor_init(struct editor *editor, size_t width, size_t height) {
   editor->status_silence = false;
   editor->status_cursor = 0;
 
+  editor->highlight_search_matches = true;
   editor->mode = normal_mode();
 
 #define R(n) \
@@ -316,6 +317,10 @@ static void editor_command_tag(struct editor *editor, char *arg) {
   }
 }
 
+static void editor_command_nohlsearch(struct editor *editor, char *arg __unused) {
+  editor->highlight_search_matches = false;
+}
+
 static struct editor_command editor_commands[] = {
   {"quit", "q", editor_command_close_window},
   {"quit!", "q!", editor_command_force_close_window},
@@ -329,6 +334,7 @@ static struct editor_command editor_commands[] = {
   {"split", "sp", editor_command_split},
   {"vsplit", "vsp", editor_command_vsplit},
   {"tag", "tag", editor_command_tag},
+  {"noh", "nohlsearch", editor_command_nohlsearch},
   {NULL, NULL, NULL}
 };
 
@@ -376,6 +382,12 @@ void editor_draw(struct editor *editor) {
   visual_mode_selection_update(editor);
 
   window_draw(window_root(editor->window));
+  if (option_get_bool("hlsearch") && editor->highlight_search_matches) {
+    struct buf *pattern = editor_get_register(editor, '/');
+    if (pattern->len) {
+      window_draw_search_matches(window_root(editor->window), pattern->buf);
+    }
+  }
   window_draw_cursor(editor->window);
 
   for (size_t x = 0; x < editor->status->len; ++x) {

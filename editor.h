@@ -37,6 +37,8 @@ struct editor {
   size_t width;
   size_t height;
 
+  bool highlight_search_matches;
+
   // Temporary input state.
   // TODO(isbadawi): This feels like a kludge but I don't know...
   unsigned int count;

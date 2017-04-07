@@ -95,8 +95,10 @@ static void search_done_cb(struct editor *editor, char *command,
   } else {
     editor_search(editor, NULL, cursor, direction);
   }
+  editor->highlight_search_matches = true;
 }
 
+// FIXME(ibadawi): Highlight the incremental match with hlsearch
 static void search_char_cb(struct editor *editor, char *command,
                            enum search_direction direction) {
   if (!option_get_bool("incsearch") || !*command) {

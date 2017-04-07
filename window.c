@@ -12,6 +12,7 @@
 #include "gap.h"
 #include "list.h"
 #include "options.h"
+#include "search.h"
 #include "util.h"
 
 struct window *window_create(struct buffer *buffer, size_t w, size_t h) {
@@ -547,6 +548,49 @@ void window_draw_cursor(struct window *window) {
   assert(cell);
   cell->fg = TB_BLACK;
   cell->bg = TB_WHITE;
+}
+
+// FIXME(ibadawi): avoid re-searching if e.g. we just moved the cursor
+void window_draw_search_matches(struct window *window, char *pattern) {
+  if (window->split_type != WINDOW_LEAF) {
+    window_draw_search_matches(window->split.first, pattern);
+    window_draw_search_matches(window->split.second, pattern);
+    return;
+  }
+
+  struct gapbuf *gb = window->buffer->text;
+  size_t h = window_h(window);
+  if (window_should_draw_plate(window)) {
+    --h;
+  }
+
+  size_t top = window->top;
+  size_t bot = window->top + min(gb->lines->len - window->top, h) - 1;
+
+  size_t start = gb_linecol_to_pos(gb, top, 0);
+  size_t end = gb_linecol_to_pos(gb, bot, gb->lines->buf[bot]);
+
+  struct buf *text = gb_getstring(gb, start, end - start);
+
+  struct search_result result;
+  regex_search(text->buf, pattern, &result);
+  buf_free(text);
+  if (!result.matches) {
+    return;
+  }
+
+  struct region *match;
+  LIST_FOREACH(result.matches, match) {
+    for (size_t pos = start + match->start; pos < start + match->end; ++pos) {
+      struct tb_cell *cell = window_cell_for_pos(window, pos);
+      if (cell) {
+        cell->fg = TB_BLACK;
+        cell->bg = TB_YELLOW;
+      }
+    }
+  }
+
+  list_free(result.matches, free);
 }
 
 void window_get_ruler(struct window *window, char *buf, size_t buflen) {

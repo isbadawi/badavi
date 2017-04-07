@@ -35,6 +35,7 @@ static struct option option_table[] = {
   BOOL_OPTION(splitright, false),
   BOOL_OPTION(splitbelow, false),
   BOOL_OPTION(equalalways, true),
+  BOOL_OPTION(hlsearch, false),
   BOOL_OPTION(incsearch, false),
   BOOL_OPTION(ruler, false),
   {NULL, OPTION_TYPE_INT, {-1}},

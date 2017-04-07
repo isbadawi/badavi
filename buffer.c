@@ -115,12 +115,9 @@ void buffer_do_insert(struct buffer *buffer, struct buf *buf, size_t pos) {
 
 void buffer_do_delete(struct buffer *buffer, size_t n, size_t pos) {
   struct edit_action *action = xmalloc(sizeof(*action));
-  struct buf *buf = buf_create(n + 1);
-  gb_getstring(buffer->text, pos, n, buf->buf);
-  buf->len = n;
   action->type = EDIT_ACTION_DELETE;
   action->pos = pos;
-  action->buf = buf;
+  action->buf = gb_getstring(buffer->text, pos, n);
   struct list *group = list_first(buffer->undo_stack);
   if (group) {
     list_prepend(group, action);

@@ -81,7 +81,10 @@ char gb_getchar(struct gapbuf *gb, size_t pos) {
   return gb->bufstart[gb_index(gb, pos)];
 }
 
-void gb_getstring(struct gapbuf *gb, size_t pos, size_t n, char *buf) {
+struct buf *gb_getstring(struct gapbuf *gb, size_t pos, size_t n) {
+  struct buf *strbuf = buf_create(n + 1);
+  char *buf = strbuf->buf;
+
   char *start = gb->bufstart + gb_index(gb, pos);
   char *end = gb->bufstart + gb_index(gb, pos + n);
   if (end < gb->gapstart || start >= gb->gapend) {
@@ -95,6 +98,8 @@ void gb_getstring(struct gapbuf *gb, size_t pos, size_t n, char *buf) {
     memcpy(buf + l, gb->gapend, r);
   }
   buf[n] = '\0';
+  strbuf->len = n;
+  return strbuf;
 }
 
 // Moves the gap so that gb->bufstart + pos == gb->gapstart.

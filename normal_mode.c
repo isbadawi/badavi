@@ -62,9 +62,9 @@ static void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) 
     editor_redo(editor);
     return;
   case TB_KEY_CTRL_RSQ_BRACKET: {
-    char word[256];
-    motion_word_under_cursor(editor->window, word);
-    editor_jump_to_tag(editor, word);
+    struct buf *word = motion_word_under_cursor(editor->window);
+    editor_jump_to_tag(editor, word->buf);
+    buf_free(word);
     return;
   }
   case TB_KEY_CTRL_T:

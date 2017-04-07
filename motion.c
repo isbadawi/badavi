@@ -311,20 +311,25 @@ static size_t search_prev(struct motion_context ctx) {
   return editor_search_dest(ctx.editor, NULL, ctx.pos, SEARCH_BACKWARDS);
 }
 
+static size_t word_under_cursor(struct motion_context ctx, size_t start,
+                                enum search_direction direction) {
+  struct buf *word = motion_word_under_cursor(ctx.editor->window);
+  struct buf *pattern = buf_create(1);
+  buf_printf(pattern, "[[:<:]]%s[[:>:]]", word->buf);
+  size_t result = editor_search_dest(
+      ctx.editor, pattern->buf, start, direction);
+  buf_free(word);
+  buf_free(pattern);
+  return result;
+}
+
 static size_t word_under_cursor_next(struct motion_context ctx) {
-  char word[256];
-  char pattern[256];
-  motion_word_under_cursor(ctx.editor->window, word);
-  snprintf(pattern, 256, "[[:<:]]%s[[:>:]]", word);
-  return editor_search_dest(ctx.editor, pattern, ctx.pos, SEARCH_FORWARDS);
+  return word_under_cursor(ctx, ctx.pos, SEARCH_FORWARDS);
 }
 
 static size_t word_under_cursor_prev(struct motion_context ctx) {
-  char word[256];
-  char pattern[256];
-  size_t start = motion_word_under_cursor(ctx.editor->window, word);
-  snprintf(pattern, 256, "[[:<:]]%s[[:>:]]", word);
-  return editor_search_dest(ctx.editor, pattern, start, SEARCH_BACKWARDS);
+  size_t start = is_word_start(ctx) ? ctx.pos : prev_word_start(ctx);
+  return word_under_cursor(ctx, start, SEARCH_BACKWARDS);
 }
 
 static size_t matching_paren(struct motion_context ctx) {
@@ -443,10 +448,9 @@ size_t motion_apply(struct motion *motion, struct editor *editor) {
   return ctx.pos;
 }
 
-size_t motion_word_under_cursor(struct window *window, char *buf) {
+struct buf *motion_word_under_cursor(struct window *window) {
   struct motion_context ctx = {window_cursor(window), window, NULL};
   size_t start = is_word_start(ctx) ? ctx.pos : prev_word_start(ctx);
   size_t end = is_word_end(ctx) ? ctx.pos : next_word_end(ctx);
-  gb_getstring(window->buffer->text, start, end - start + 1, buf);
-  return start;
+  return gb_getstring(window->buffer->text, start, end - start + 1);
 }

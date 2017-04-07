@@ -24,9 +24,9 @@ static void yank_op(struct editor *editor, struct region *region) {
   struct gapbuf *gb = editor->window->buffer->text;
 
   size_t n = region->end - region->start;
-  buf_grow(reg, n + 1);
-  gb_getstring(gb, region->start, n, reg->buf);
-  reg->len = n;
+  struct buf *buf = gb_getstring(gb, region->start, n);
+  buf_printf(reg, "%s", buf->buf);
+  buf_free(buf);
   editor->register_ = '"';
 }
 

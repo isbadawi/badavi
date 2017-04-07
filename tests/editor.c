@@ -21,9 +21,9 @@ static void assert_buffer_contents(const char *text) {
   size_t expected_len = strlen(text);
   size_t actual_len  = gb_size(buffer->text);
   cl_assert_equal_i(expected_len, actual_len);
-  struct buf *buf = buf_create(actual_len);
-  gb_getstring(buffer->text, 0, expected_len, buf->buf);
+  struct buf *buf = gb_getstring(buffer->text, 0, expected_len);
   cl_assert_equal_s(buf->buf, text);
+  buf_free(buf);
 }
 
 static void assert_cursor_at(

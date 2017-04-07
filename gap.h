@@ -40,8 +40,8 @@ void gb_save(struct gapbuf *gb, FILE *fp);
 
 // Returns the character at offset pos from the start of the buffer.
 char gb_getchar(struct gapbuf *gb, size_t pos);
-// Reads n characters starting at offset pos into buf.
-void gb_getstring(struct gapbuf *gb, size_t pos, size_t n, char *buf);
+// Reads n characters starting at offset pos.
+struct buf *gb_getstring(struct gapbuf *gb, size_t pos, size_t n);
 
 // Moves the gap so that gb->bufstart + pos == gb->gapstart.
 void gb_mvgap(struct gapbuf *gb, size_t pos);

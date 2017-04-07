@@ -365,62 +365,6 @@ void editor_execute_command(struct editor *editor, char *command) {
   }
 }
 
-void editor_draw(struct editor *editor) {
-  // FIXME(ibadawi): Hack to make the tests run.
-  // If termbox wasn't initialized (like in the tests), let's not try to draw,
-  // because we can hit a segfault when we try to access the tb_cell buffer.
-  // (search_motion() calls editor_draw(), which is why the tests draw).
-  if (tb_width() == -1) {
-    return;
-  }
-
-  tb_clear();
-
-  // FIXME(ibadawi): It's a bit kludgy to call this here.
-  // We want to visual mode selection to be up to date if we're searching inside
-  // visual mode with 'incsearch' enabled.
-  visual_mode_selection_update(editor);
-
-  window_draw(window_root(editor->window));
-  if (option_get_bool("hlsearch") && editor->highlight_search_matches) {
-    struct buf *pattern = editor_get_register(editor, '/');
-    if (pattern->len) {
-      window_draw_search_matches(window_root(editor->window), pattern->buf);
-    }
-  }
-  window_draw_cursor(editor->window);
-
-  for (size_t x = 0; x < editor->status->len; ++x) {
-    tb_change_cell((int) x, (int) editor->height - 1, (uint32_t) editor->status->buf[x],
-        editor->status_error ? TB_DEFAULT : TB_WHITE,
-        editor->status_error ? TB_RED : TB_DEFAULT);
-  }
-
-  if (editor->status_cursor) {
-    tb_change_cell((int) editor->status_cursor, (int) editor->height - 1,
-        (uint32_t) editor->status->buf[editor->status_cursor],
-        TB_BLACK, TB_WHITE);
-  }
-
-  // If there's only one window, draw the ruler on the bottom line.
-  // FIXME(ibadawi): It would be nicer not to special case this.
-  if (option_get_bool("ruler") &&
-      !editor->window->parent &&
-      !editor->status_cursor) {
-    char ruler[32];
-    window_get_ruler(editor->window, ruler, sizeof(ruler));
-    size_t rulerlen = strlen(ruler);
-    for (size_t i = 0; i < rulerlen; ++i) {
-      tb_change_cell(
-          (int) (editor->width - (rulerlen - i)),
-          (int) editor->height - 1,
-          (uint32_t) ruler[i], TB_WHITE, TB_DEFAULT);
-    }
-  }
-
-  tb_present();
-}
-
 static void editor_suspend(struct editor *editor) {
   terminal_suspend();
   editor_draw(editor);

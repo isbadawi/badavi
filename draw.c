@@ -17,6 +17,14 @@
 #include "search.h"
 #include "util.h"
 
+#define COLOR_DEFAULT TB_DEFAULT
+#define COLOR_BLACK 16
+#define COLOR_RED (TB_RED - 1)
+#define COLOR_YELLOW (TB_YELLOW - 1)
+#define COLOR_BLUE (TB_BLUE - 1)
+#define COLOR_WHITE (TB_WHITE - 1)
+#define COLOR_GREY 242
+
 // Number of columns to use for the line number (including the trailing space).
 // TODO(isbadawi): This might not be exactly correct for relativenumber mode.
 static size_t window_numberwidth(struct window* window) {
@@ -108,8 +116,8 @@ static void window_change_cell(struct window *window, size_t x, size_t y, char c
 static void window_draw_cursor(struct window *window) {
   struct tb_cell *cell = window_cell_for_pos(window, window_cursor(window));
   assert(cell);
-  cell->fg = TB_BLACK;
-  cell->bg = TB_WHITE;
+  cell->fg = COLOR_BLACK;
+  cell->bg = COLOR_WHITE;
 }
 
 // FIXME(ibadawi): avoid re-searching if e.g. we just moved the cursor
@@ -146,8 +154,8 @@ static void window_draw_search_matches(struct window *window, char *pattern) {
     for (size_t pos = start + match->start; pos < start + match->end; ++pos) {
       struct tb_cell *cell = window_cell_for_pos(window, pos);
       if (cell) {
-        cell->fg = TB_BLACK;
-        cell->bg = TB_YELLOW;
+        cell->fg = COLOR_BLACK;
+        cell->bg = COLOR_YELLOW;
       }
     }
   }
@@ -207,7 +215,7 @@ static void window_draw_plate(struct window *window) {
   size_t platelen = strlen(plate);
   for (size_t x = 0; x < window_w(window); ++x) {
     char c = x < platelen ? plate[x] : ' ';
-    window_change_cell(window, x, window_h(window) - 1, c, TB_BLACK, TB_WHITE);
+    window_change_cell(window, x, window_h(window) - 1, c, COLOR_BLACK, COLOR_WHITE);
   }
 }
 
@@ -232,7 +240,7 @@ static void window_draw_line_number(struct window *window, size_t line) {
   do {
     size_t digit = linenumber % 10;
     window_change_cell(window, col--, line - window->top,
-        (char) digit + '0', TB_YELLOW, TB_DEFAULT);
+        (char) digit + '0', COLOR_YELLOW, COLOR_DEFAULT);
     linenumber = (linenumber - digit) / 10;
   } while (linenumber > 0);
 }
@@ -246,8 +254,8 @@ static void window_draw_visual_mode_selection(struct window *window) {
       pos < window->visual_mode_selection->end; ++pos) {
     struct tb_cell *cell = window_cell_for_pos(window, pos);
     if (cell) {
-      cell->fg = TB_BLACK;
-      cell->bg = TB_WHITE;
+      cell->fg = COLOR_WHITE;
+      cell->bg = COLOR_GREY;
     }
   }
 }
@@ -289,7 +297,7 @@ static void window_draw_leaf(struct window *window) {
       size_t col = x + window->left;
       size_t pos = gb_linecol_to_pos(gb, line, col);
       char c = gb_getchar(gb, pos);
-      window_change_cell(window, numberwidth + x, y, c, TB_WHITE, TB_DEFAULT);
+      window_change_cell(window, numberwidth + x, y, c, COLOR_WHITE, COLOR_DEFAULT);
     }
   }
   window_draw_visual_mode_selection(window);
@@ -297,7 +305,7 @@ static void window_draw_leaf(struct window *window) {
 
   size_t nlines = gb_nlines(window->buffer->text);
   for (size_t y = nlines; y < h; ++y) {
-    window_change_cell(window, 0, y, '~', TB_BLUE, TB_DEFAULT);
+    window_change_cell(window, 0, y, '~', COLOR_BLUE, COLOR_DEFAULT);
   }
 
   if (window_should_draw_plate(window)) {
@@ -316,7 +324,7 @@ static void window_draw(struct window *window) {
   if (window->split_type == WINDOW_SPLIT_VERTICAL) {
     struct window *left = window->split.first;
     for (size_t y = 0; y < window_h(left); ++y) {
-      window_change_cell(left, window_w(left) - 1, y, '|', TB_BLACK, TB_WHITE);
+      window_change_cell(left, window_w(left) - 1, y, '|', COLOR_BLACK, COLOR_WHITE);
     }
   }
 }
@@ -348,14 +356,14 @@ void editor_draw(struct editor *editor) {
 
   for (size_t x = 0; x < editor->status->len; ++x) {
     tb_change_cell((int) x, (int) editor->height - 1, (uint32_t) editor->status->buf[x],
-        editor->status_error ? TB_DEFAULT : TB_WHITE,
-        editor->status_error ? TB_RED : TB_DEFAULT);
+        editor->status_error ? COLOR_DEFAULT : COLOR_WHITE,
+        editor->status_error ? COLOR_RED : COLOR_DEFAULT);
   }
 
   if (editor->status_cursor) {
     tb_change_cell((int) editor->status_cursor, (int) editor->height - 1,
         (uint32_t) editor->status->buf[editor->status_cursor],
-        TB_BLACK, TB_WHITE);
+        COLOR_BLACK, COLOR_WHITE);
   }
 
   // If there's only one window, draw the ruler on the bottom line.
@@ -370,7 +378,7 @@ void editor_draw(struct editor *editor) {
       tb_change_cell(
           (int) (editor->width - (rulerlen - i)),
           (int) editor->height - 1,
-          (uint32_t) ruler[i], TB_WHITE, TB_DEFAULT);
+          (uint32_t) ruler[i], COLOR_WHITE, COLOR_DEFAULT);
     }
   }
 

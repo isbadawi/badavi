@@ -116,3 +116,22 @@ void test_editor__yank_put(void) {
       "the quick brown fox jumps over the lazy dog\n"
   );
 }
+
+void test_editor__join_lines(void) {
+  type("ihello\n     world<esc>gg");
+  type("J");
+  assert_buffer_contents("hello world\n");
+  assert_cursor_at(0, 5);
+}
+
+void test_editor__percent_motion(void) {
+  type("i{ ( [ ) ] [ ] }<esc>0");
+  assert_cursor_over('{');
+  type("%"); assert_cursor_over('}');
+  type("%"); assert_cursor_over('{');
+  type("l%"); assert_cursor_over(')');
+  type("%"); assert_cursor_over('(');
+  type("l%"); assert_cursor_over(']'); assert_cursor_at(0, 8);
+  type("l%"); assert_cursor_over(']'); assert_cursor_at(0, 12);
+  type("%"); assert_cursor_over('['); assert_cursor_at(0, 10);
+}

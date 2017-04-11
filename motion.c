@@ -291,24 +291,18 @@ static size_t backward_search(struct motion_context ctx) {
   return search_motion(ctx, '?');
 }
 
-// editor_search awkwardly sets the window cursor instead of returning a value.
-// This shim keeps the cursor in place while returning the destination.
-// FIXME(ibadawi): Refactor search_mode / editor_search and remove this.
-static size_t editor_search_dest(struct editor *editor, char *pattern,
-                                size_t start, enum search_direction direction) {
-  size_t old_cursor = window_cursor(editor->window);
-  editor_search(editor, pattern, start, direction);
-  size_t result = window_cursor(editor->window);
-  window_set_cursor(editor->window, old_cursor);
-  return result;
+static size_t search_cycle(struct motion_context ctx,
+                           enum search_direction direction) {
+  struct region *match = editor_search(ctx.editor, NULL, ctx.pos, direction);
+  return match_or_default(match, ctx.pos);
 }
 
 static size_t search_next(struct motion_context ctx) {
-  return editor_search_dest(ctx.editor, NULL, ctx.pos, SEARCH_FORWARDS);
+  return search_cycle(ctx, SEARCH_FORWARDS);
 }
 
 static size_t search_prev(struct motion_context ctx) {
-  return editor_search_dest(ctx.editor, NULL, ctx.pos, SEARCH_BACKWARDS);
+  return search_cycle(ctx, SEARCH_BACKWARDS);
 }
 
 static size_t word_under_cursor(struct motion_context ctx, size_t start,
@@ -316,11 +310,11 @@ static size_t word_under_cursor(struct motion_context ctx, size_t start,
   struct buf *word = motion_word_under_cursor(ctx.editor->window);
   struct buf *pattern = buf_create(1);
   buf_printf(pattern, "[[:<:]]%s[[:>:]]", word->buf);
-  size_t result = editor_search_dest(
-      ctx.editor, pattern->buf, start, direction);
+  struct region *match =
+    editor_search(ctx.editor, pattern->buf, start, direction);
   buf_free(word);
   buf_free(pattern);
-  return result;
+  return match_or_default(match, ctx.pos);
 }
 
 static size_t word_under_cursor_next(struct motion_context ctx) {

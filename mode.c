@@ -90,10 +90,10 @@ static void search_done_cb(struct editor *editor, char *command,
                            enum search_direction direction) {
   size_t cursor = window_cursor(editor->window);
   if (*command) {
-    editor_search(editor, command, cursor, direction);
+    editor_jump_to_match(editor, command, cursor, direction);
     buf_printf(editor_get_register(editor, '/'), "%s", command);
   } else {
-    editor_search(editor, NULL, cursor, direction);
+    editor_jump_to_match(editor, NULL, cursor, direction);
   }
   editor->highlight_search_matches = true;
 }
@@ -105,9 +105,9 @@ static void search_char_cb(struct editor *editor, char *command,
     return;
   }
   struct cmdline_mode *mode = (struct cmdline_mode*) editor->mode;
-  if (!editor_search(editor, command, mode->cursor, direction)) {
-    window_set_cursor(editor->window, mode->cursor);
-  }
+  struct region *match =
+    editor_search(editor, command, mode->cursor, direction);
+  window_set_cursor(editor->window, match_or_default(match, mode->cursor));
 }
 
 static void forward_search_done_cb(struct editor *editor, char *command) {

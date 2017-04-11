@@ -69,8 +69,8 @@ void regex_search(char *str, char *pattern, struct search_result *result) {
   regfree(&regex);
 }
 
-bool editor_search(struct editor *editor, char *pattern,
-                   size_t start, enum search_direction direction) {
+struct region *editor_search(struct editor *editor, char *pattern,
+                             size_t start, enum search_direction direction) {
   if (!pattern) {
     struct buf *reg = editor_get_register(editor, '/');
     if (reg->len == 0) {
@@ -88,13 +88,13 @@ bool editor_search(struct editor *editor, char *pattern,
 
   if (!result.matches) {
     editor_status_err(editor, "Bad regex \"%s\": %s", pattern, result.error);
-    return false;
+    return NULL;
   }
 
   if (list_empty(result.matches)) {
     list_free(result.matches, free);
     editor_status_err(editor, "Pattern not found: \"%s\"", pattern);
-    return false;
+    return NULL;
   }
 
   struct region *match = NULL;
@@ -129,9 +129,23 @@ bool editor_search(struct editor *editor, char *pattern,
     }
   }
 
-  window_set_cursor(editor->window, match->start);
-
+  list_remove(result.matches, match);
   list_free(result.matches, free);
+  return match;
+}
 
-  return true;
+size_t match_or_default(struct region *match, size_t def) {
+  if (match) {
+    size_t start = match->start;
+    free(match);
+    return start;
+  }
+  return def;
+}
+
+void editor_jump_to_match(struct editor *editor, char *pattern,
+                          size_t start, enum search_direction direction) {
+  struct region *match = editor_search(editor, pattern, start, direction);
+  window_set_cursor(editor->window,
+      match_or_default(match, window_cursor(editor->window)));
 }

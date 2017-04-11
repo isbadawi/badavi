@@ -26,15 +26,17 @@
 #define COLOR_GREY 242
 
 // Number of columns to use for the line number (including the trailing space).
-// TODO(isbadawi): This might not be exactly correct for relativenumber mode.
 static size_t window_numberwidth(struct window* window) {
-  if (!option_get_bool("number") && !option_get_bool("relativenumber")) {
+  size_t largest;
+  if (option_get_bool("number")) {
+    largest = gb_nlines(window->buffer->text);
+  } else if (option_get_bool("relativenumber")) {
+    largest = window_h(window) / 2;
+  } else {
     return 0;
   }
-
-  size_t nlines = window->buffer->text->lines->len;
   char buf[10];
-  size_t maxwidth = (size_t) snprintf(buf, 10, "%zu", nlines);
+  size_t maxwidth = (size_t) snprintf(buf, sizeof(buf), "%zu", largest);
 
   return max((size_t) option_get_int("numberwidth"), maxwidth + 1);
 }

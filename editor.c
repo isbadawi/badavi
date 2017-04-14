@@ -334,7 +334,7 @@ static struct editor_command editor_commands[] = {
   {"split", "sp", editor_command_split},
   {"vsplit", "vsp", editor_command_vsplit},
   {"tag", "tag", editor_command_tag},
-  {"noh", "nohlsearch", editor_command_nohlsearch},
+  {"nohlsearch", "noh", editor_command_nohlsearch},
   {NULL, NULL, NULL}
 };
 

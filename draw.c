@@ -197,27 +197,40 @@ static void window_draw_plate(struct window *window) {
     --w;
   }
 
-  char name[256];
-  snprintf(name, sizeof(name), "%s%s",
+  char plate[256];
+  snprintf(plate, sizeof(plate), "%s%s",
       *window->buffer->name ? window->buffer->name : "[No Name]",
       window->buffer->dirty ? " [+]" : "");
-
-  char plate[256];
-
-  if (option_get_bool("ruler")) {
-    char ruler[32];
-    window_get_ruler(window, ruler, sizeof(ruler));
-    size_t namelen = strlen(name);
-    snprintf(plate, sizeof(plate), "%-*s %*s",
-        (int)namelen, name, (int)(w - namelen - 1), ruler);
-  } else {
-    strcpy(plate, name);
-  }
 
   size_t platelen = strlen(plate);
   for (size_t x = 0; x < window_w(window); ++x) {
     char c = x < platelen ? plate[x] : ' ';
     window_change_cell(window, x, window_h(window) - 1, c, COLOR_BLACK, COLOR_WHITE);
+  }
+}
+
+static void window_draw_ruler(struct window *window) {
+  if (window->split_type != WINDOW_LEAF) {
+    window_draw_ruler(window->split.first);
+    window_draw_ruler(window->split.second);
+    return;
+  }
+
+  size_t w = window_w(window);
+  size_t h = window_h(window) - 1;
+  int fg = COLOR_BLACK;
+  int bg = COLOR_WHITE;
+  if (!window->parent) {
+    ++h;
+    fg = COLOR_WHITE;
+    bg = COLOR_DEFAULT;
+  }
+
+  char ruler[32];
+  window_get_ruler(window, ruler, sizeof(ruler));
+  size_t rulerlen = strlen(ruler);
+  for (size_t i = 0; i < rulerlen; ++i) {
+    window_change_cell(window, w - (rulerlen - i + 1), h, ruler[i], fg, bg);
   }
 }
 
@@ -325,7 +338,7 @@ static void window_draw(struct window *window) {
   window_draw(window->split.second);
   if (window->split_type == WINDOW_SPLIT_VERTICAL) {
     struct window *left = window->split.first;
-    for (size_t y = 0; y < window_h(left); ++y) {
+    for (size_t y = 0; y < window_h(left) - 1; ++y) {
       window_change_cell(left, window_w(left) - 1, y, '|', COLOR_BLACK, COLOR_WHITE);
     }
   }
@@ -368,20 +381,9 @@ void editor_draw(struct editor *editor) {
         COLOR_BLACK, COLOR_WHITE);
   }
 
-  // If there's only one window, draw the ruler on the bottom line.
-  // FIXME(ibadawi): It would be nicer not to special case this.
   if (option_get_bool("ruler") &&
-      !editor->window->parent &&
-      !editor->status_cursor) {
-    char ruler[32];
-    window_get_ruler(editor->window, ruler, sizeof(ruler));
-    size_t rulerlen = strlen(ruler);
-    for (size_t i = 0; i < rulerlen; ++i) {
-      tb_change_cell(
-          (int) (editor->width - (rulerlen - i)),
-          (int) editor->height - 1,
-          (uint32_t) ruler[i], COLOR_WHITE, COLOR_DEFAULT);
-    }
+      (editor->window->parent || !editor->status_cursor)) {
+    window_draw_ruler(window_root(editor->window));
   }
 
   tb_present();

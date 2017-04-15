@@ -47,11 +47,19 @@ static void cmdline_mode_key_pressed(struct editor *editor, struct tb_event *ev)
     buf_clear(editor->status);
     editor_pop_mode(editor);
     return;
+  // FIXME(ibadawi): termbox doesn't support shift + arrow keys.
+  // vim uses <S-Left>, <S-Right> for moving cursor to prev/next WORD.
   case TB_KEY_ARROW_LEFT:
     editor->status_cursor = max(editor->status_cursor - 1, 1);
     return;
   case TB_KEY_ARROW_RIGHT:
     editor->status_cursor = min(editor->status_cursor + 1, editor->status->len);
+    return;
+  case TB_KEY_CTRL_B: case TB_KEY_HOME:
+    editor->status_cursor = 1;
+    return;
+  case TB_KEY_CTRL_E: case TB_KEY_END:
+    editor->status_cursor = editor->status->len;
     return;
   case TB_KEY_BACKSPACE2:
     buf_delete(editor->status, --editor->status_cursor, 1);

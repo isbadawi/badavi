@@ -21,7 +21,10 @@ struct search_result {
   struct list *matches;
 };
 
-void regex_search(char *str, char *pattern, struct search_result *result);
+bool editor_ignore_case(struct editor *editor, char *pattern);
+
+void regex_search(char *str, char *pattern, bool ignore_case,
+                  struct search_result *result);
 
 size_t match_or_default(struct region *match, size_t def);
 void editor_jump_to_match(struct editor *editor, char *pattern,

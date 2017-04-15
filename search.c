@@ -16,7 +16,7 @@
 #include "util.h"
 #include "window.h"
 
-static bool search_should_ignore_case(char *pattern) {
+bool editor_ignore_case(struct editor *editor __unused, char *pattern) {
   if (!option_get_bool("ignorecase")) {
     return false;
   }
@@ -32,10 +32,10 @@ static bool search_should_ignore_case(char *pattern) {
   return true;
 }
 
-void regex_search(char *str, char *pattern, struct search_result *result) {
+void regex_search(char *str, char *pattern, bool ignore_case, struct search_result *result) {
   regex_t regex;
   int flags = REG_EXTENDED | REG_NEWLINE;
-  if (search_should_ignore_case(pattern)) {
+  if (ignore_case) {
     flags |= REG_ICASE;
   }
   int err = regcomp(&regex, pattern, flags);
@@ -84,7 +84,8 @@ struct region *editor_search(struct editor *editor, char *pattern,
   // Move the gap so the searched region is contiguous.
   gb_mvgap(gb, 0);
   struct search_result result;
-  regex_search(gb->gapend, pattern, &result);
+  bool ignore_case = editor_ignore_case(editor, pattern);
+  regex_search(gb->gapend, pattern, ignore_case, &result);
 
   if (!result.matches) {
     editor_status_err(editor, "Bad regex \"%s\": %s", pattern, result.error);

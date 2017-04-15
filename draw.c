@@ -45,7 +45,13 @@ static bool window_should_draw_plate(struct window *window) {
   return window->parent != NULL;
 }
 
-static void window_ensure_cursor_visible(struct window *window) {
+static void window_scroll(struct window *window, size_t scroll) {
+  if (window->split_type != WINDOW_LEAF) {
+    window_scroll(window->split.first, scroll);
+    window_scroll(window->split.second, scroll);
+    return;
+  }
+
   struct gapbuf *gb = window->buffer->text;
   size_t x, y;
   gb_pos_to_linecol(gb, window_cursor(window), &y, &x);
@@ -65,7 +71,6 @@ static void window_ensure_cursor_visible(struct window *window) {
     window->top = y - h + 1;
   }
 
-  size_t scroll = (size_t) option_get_int("sidescroll");
   bool left = x < window->left;
   bool right = x > window->left + w - 1;
   if (left || right) {
@@ -123,10 +128,11 @@ static void window_draw_cursor(struct window *window) {
 }
 
 // FIXME(ibadawi): avoid re-searching if e.g. we just moved the cursor
-static void window_draw_search_matches(struct window *window, char *pattern) {
+static void window_draw_search_matches(struct window *window,
+                                       char *pattern, bool ignore_case) {
   if (window->split_type != WINDOW_LEAF) {
-    window_draw_search_matches(window->split.first, pattern);
-    window_draw_search_matches(window->split.second, pattern);
+    window_draw_search_matches(window->split.first, pattern, ignore_case);
+    window_draw_search_matches(window->split.second, pattern, ignore_case);
     return;
   }
 
@@ -145,7 +151,7 @@ static void window_draw_search_matches(struct window *window, char *pattern) {
   struct buf *text = gb_getstring(gb, start, end - start);
 
   struct search_result result;
-  regex_search(text->buf, pattern, &result);
+  regex_search(text->buf, pattern, ignore_case, &result);
   buf_free(text);
   if (!result.matches) {
     return;
@@ -293,7 +299,6 @@ static void window_draw_cursorline(struct window *window) {
 static void window_draw_leaf(struct window *window) {
   assert(window->split_type == WINDOW_LEAF);
 
-  window_ensure_cursor_visible(window);
   struct gapbuf *gb = window->buffer->text;
 
   size_t w = window_w(window) - window_numberwidth(window);
@@ -360,11 +365,15 @@ void editor_draw(struct editor *editor) {
   // visual mode with 'incsearch' enabled.
   visual_mode_selection_update(editor);
 
+  window_scroll(editor->window, (size_t) option_get_int("sidescroll"));
+
   window_draw(window_root(editor->window));
   if (option_get_bool("hlsearch") && editor->highlight_search_matches) {
     struct buf *pattern = editor_get_register(editor, '/');
     if (pattern->len) {
-      window_draw_search_matches(window_root(editor->window), pattern->buf);
+      bool ignore_case = editor_ignore_case(editor, pattern->buf);
+      window_draw_search_matches(
+          window_root(editor->window), pattern->buf, ignore_case);
     }
   }
   window_draw_cursor(editor->window);

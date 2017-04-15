@@ -215,10 +215,6 @@ struct window *window_split(struct window *window,
     window->split.second = sibling;
   }
 
-  if (option_get_bool("equalalways")) {
-    window_equalize(window, window->split_type);
-  }
-
   return sibling;
 }
 
@@ -432,10 +428,6 @@ struct window *window_close(struct window *window) {
     } else if (parent->split_type == WINDOW_SPLIT_VERTICAL) {
       parent->split.point = window_w(parent) - parent->split.point;
     }
-  }
-
-  if (option_get_bool("equalalways")) {
-    window_equalize(parent, old_parent_type);
   }
 
   window_free(window);

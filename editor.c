@@ -168,7 +168,12 @@ static void editor_command_force_close_window(struct editor *editor, char *arg) 
   }
   assert(editor->window->parent);
 
+  enum window_split_type split_type = editor->window->parent->split_type;
   editor->window = window_close(editor->window);
+
+  if (editor->opt.equalalways) {
+    window_equalize(editor->window, split_type);
+  }
 }
 
 static void editor_command_close_window(struct editor *editor, char *arg) {
@@ -293,7 +298,11 @@ static void editor_command_set(struct editor *editor, char *arg) {
 
 static void editor_command_split(struct editor *editor, char *arg) {
   editor->window = window_split(editor->window,
-      option_get_bool("splitbelow") ? WINDOW_SPLIT_BELOW : WINDOW_SPLIT_ABOVE);
+      editor->opt.splitbelow ? WINDOW_SPLIT_BELOW : WINDOW_SPLIT_ABOVE);
+
+  if (editor->opt.equalalways) {
+    window_equalize(editor->window, WINDOW_SPLIT_HORIZONTAL);
+  }
 
   if (arg) {
     editor_command_edit(editor, arg);
@@ -302,7 +311,11 @@ static void editor_command_split(struct editor *editor, char *arg) {
 
 static void editor_command_vsplit(struct editor *editor, char *arg) {
   editor->window = window_split(editor->window,
-      option_get_bool("splitright") ? WINDOW_SPLIT_RIGHT : WINDOW_SPLIT_LEFT);
+      editor->opt.splitright ? WINDOW_SPLIT_RIGHT : WINDOW_SPLIT_LEFT);
+
+  if (editor->opt.equalalways) {
+    window_equalize(editor->window, WINDOW_SPLIT_VERTICAL);
+  }
 
   if (arg) {
     editor_command_edit(editor, arg);

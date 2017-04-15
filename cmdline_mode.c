@@ -67,13 +67,18 @@ static void cmdline_mode_key_pressed(struct editor *editor, struct tb_event *ev)
       editor_pop_mode(editor);
       return;
     } else if (mode->char_cb) {
-      mode->char_cb(editor, editor->status->buf + 1);
+      char *command = xstrdup(editor->status->buf + 1);
+      mode->char_cb(editor, command);
+      free(command);
     }
     return;
-  case TB_KEY_ENTER:
+  case TB_KEY_ENTER: {
+    char *command = xstrdup(editor->status->buf + 1);
     editor_pop_mode(editor);
-    mode->done_cb(editor, editor->status->buf + 1);
+    mode->done_cb(editor, command);
+    free(command);
     return;
+  }
   case TB_KEY_SPACE:
     ch = ' ';
     break;

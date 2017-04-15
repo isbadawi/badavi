@@ -342,6 +342,7 @@ void editor_execute_command(struct editor *editor, char *command) {
   if (!*command) {
     return;
   }
+  char *copy = xstrdup(command);
   char *name = strtok(command, " ");
   char *arg = strtok(NULL, " ");
   for (int i = 0; editor_commands[i].name; ++i) {
@@ -361,8 +362,9 @@ void editor_execute_command(struct editor *editor, char *command) {
     snprintf(buf, 32, "%dk", line);
     editor_send_keys(editor, buf);
   } else {
-    editor_status_err(editor, "Not an editor command: %s", command);
+    editor_status_err(editor, "Not an editor command: %s", copy);
   }
+  free(copy);
 }
 
 static void editor_suspend(struct editor *editor) {

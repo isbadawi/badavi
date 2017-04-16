@@ -16,7 +16,6 @@
 #include "gap.h"
 #include "list.h"
 #include "mode.h"
-#include "options.h"
 #include "tags.h"
 #include "terminal.h"
 #include "util.h"
@@ -60,6 +59,12 @@ void editor_init(struct editor *editor, size_t width, size_t height) {
   editor->register_ = '"';
 
   editor->synthetic_events = list_create();
+
+#define OPTION(name, _, defaultval) \
+  editor->opt.name = defaultval;
+  BUFFER_OPTIONS
+  EDITOR_OPTIONS
+#undef OPTION
 }
 
 struct buf *editor_get_register(struct editor *editor, char name) {
@@ -94,6 +99,10 @@ void editor_open(struct editor *editor, char *path) {
           path, gb_nlines(buffer->text), gb_size(buffer->text));
     }
     list_append(editor->buffers, buffer);
+#define OPTION(name, _, __) \
+    buffer->opt.name = editor->opt.name;
+    BUFFER_OPTIONS
+#undef OPTION
   }
   window_set_buffer(editor->window, buffer);
 }
@@ -232,7 +241,43 @@ static void editor_command_source(struct editor *editor, char *arg) {
   editor_source(editor, arg);
 }
 
-static void editor_command_set(struct editor *editor, char *arg) {
+static void *editor_opt_val(struct editor *editor, struct opt *info,
+                            bool global) {
+  switch (info->scope) {
+  case OPTION_SCOPE_WINDOW:
+#define OPTION(optname, _, __) \
+    if (!strcmp(info->name, #optname)) { \
+      return &editor->window->opt.optname; \
+    }
+    WINDOW_OPTIONS
+#undef OPTION
+    break;
+  case OPTION_SCOPE_BUFFER:
+    if (!global) {
+#define OPTION(optname, _, __) \
+      if (!strcmp(info->name, #optname)) { \
+        return &editor->window->buffer->opt.optname; \
+      }
+      BUFFER_OPTIONS
+#undef OPTION
+    }
+    // fallthrough
+  case OPTION_SCOPE_EDITOR:
+#define OPTION(optname, _, __) \
+    if (!strcmp(info->name, #optname)) { \
+      return &editor->opt.optname; \
+    }
+    BUFFER_OPTIONS
+    EDITOR_OPTIONS
+#undef OPTION
+  }
+
+  assert(0);
+  return NULL;
+}
+
+static void editor_command_set_impl(struct editor *editor, char *arg,
+                                    bool global) {
   if (!arg) {
     // TODO(isbadawi): show current values of all options...
     editor_status_err(editor, "Argument required");
@@ -256,44 +301,63 @@ static void editor_command_set(struct editor *editor, char *arg) {
   strncpy(opt, arg + groups[2].rm_so, optlen);
   opt[optlen] = '\0';
 
-  if (!option_exists(opt)) {
+  struct opt *info = option_info(opt);
+
+  if (!info) {
     editor_status_err(editor, "Unknown option: %s", opt);
     return;
   }
 
+  void *val = editor_opt_val(editor, info, global);
+  bool *boolval = (bool*)val;
+  int *intval = (int*)val;
+
   if (groups[3].rm_so == -1) {
-    if (option_is_int(opt)) {
-      editor_status_msg(editor, "%s=%d", opt, option_get_int(opt));
-    } else if (option_is_bool(opt)) {
-      option_set_bool(opt, groups[1].rm_so == -1);
+    if (info->type == OPTION_TYPE_int) {
+      editor_status_msg(editor, "%s=%d", opt, *intval);
+    } else if (info->type == OPTION_TYPE_bool) {
+      *boolval = groups[1].rm_so == -1;
     }
     return;
   }
 
   switch (arg[groups[3].rm_so]) {
   case '!':
-    if (option_is_bool(opt)) {
-      option_set_bool(opt, !option_get_bool(opt));
+    if (info->type == OPTION_TYPE_bool) {
+      *boolval = !*boolval;
     } else {
       editor_status_err(editor, "Invalid argument: %s", arg);
     }
     break;
   case '?':
-    if (option_is_int(opt)) {
-      editor_status_msg(editor, "%s=%d", opt, option_get_int(opt));
-    } else {
-      editor_status_msg(editor, "%s%s", option_get_bool(opt) ? "" : "no", opt);
+    if (info->type == OPTION_TYPE_int) {
+      editor_status_msg(editor, "%s=%d", opt, *intval);
+    } else if (info->type == OPTION_TYPE_bool) {
+      editor_status_msg(editor, "%s%s", *boolval ? "" : "no", opt);
     }
     break;
   case '=':
-    if (option_is_int(opt)) {
-      option_set_int(opt, atoi(arg + groups[3].rm_so + 1));
+    if (info->type == OPTION_TYPE_int) {
+      *intval = atoi(arg + groups[3].rm_so + 1);
     } else {
       editor_status_err(editor, "Invalid argument: %s", arg);
     }
     break;
   }
   return;
+}
+
+static void editor_command_setglobal(struct editor *editor, char *arg) {
+  editor_command_set_impl(editor, arg, true);
+}
+
+static void editor_command_setlocal(struct editor *editor, char *arg) {
+  editor_command_set_impl(editor, arg, false);
+}
+
+static void editor_command_set(struct editor *editor, char *arg) {
+  editor_command_setglobal(editor, arg);
+  editor_command_setlocal(editor, arg);
 }
 
 static void editor_command_split(struct editor *editor, char *arg) {
@@ -344,6 +408,8 @@ static struct editor_command editor_commands[] = {
   {"edit", "e", editor_command_edit},
   {"source", "so", editor_command_source},
   {"set", "set", editor_command_set},
+  {"setlocal", "setl", editor_command_setlocal},
+  {"setglobal", "setg", editor_command_setglobal},
   {"split", "sp", editor_command_split},
   {"vsplit", "vsp", editor_command_vsplit},
   {"tag", "tag", editor_command_tag},

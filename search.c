@@ -12,15 +12,14 @@
 #include "editor.h"
 #include "gap.h"
 #include "list.h"
-#include "options.h"
 #include "util.h"
 #include "window.h"
 
-bool editor_ignore_case(struct editor *editor __unused, char *pattern) {
-  if (!option_get_bool("ignorecase")) {
+bool editor_ignore_case(struct editor *editor, char *pattern) {
+  if (!editor->opt.ignorecase) {
     return false;
   }
-  if (!option_get_bool("smartcase")) {
+  if (!editor->opt.smartcase) {
     return true;
   }
 

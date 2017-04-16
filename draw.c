@@ -13,7 +13,6 @@
 #include "gap.h"
 #include "list.h"
 #include "mode.h"
-#include "options.h"
 #include "search.h"
 #include "util.h"
 
@@ -28,9 +27,9 @@
 // Number of columns to use for the line number (including the trailing space).
 static size_t window_numberwidth(struct window* window) {
   size_t largest;
-  if (option_get_bool("number")) {
+  if (window->opt.number) {
     largest = gb_nlines(window->buffer->text);
-  } else if (option_get_bool("relativenumber")) {
+  } else if (window->opt.relativenumber) {
     largest = window_h(window) / 2;
   } else {
     return 0;
@@ -38,7 +37,7 @@ static size_t window_numberwidth(struct window* window) {
   char buf[10];
   size_t maxwidth = (size_t) snprintf(buf, sizeof(buf), "%zu", largest);
 
-  return max((size_t) option_get_int("numberwidth"), maxwidth + 1);
+  return max((size_t) window->opt.numberwidth, maxwidth + 1);
 }
 
 static bool window_should_draw_plate(struct window *window) {
@@ -241,8 +240,8 @@ static void window_draw_ruler(struct window *window) {
 }
 
 static void window_draw_line_number(struct window *window, size_t line) {
-  bool number = option_get_bool("number");
-  bool relativenumber = option_get_bool("relativenumber");
+  bool number = window->opt.number;
+  bool relativenumber = window->opt.relativenumber;
 
   if (!number && !relativenumber) {
     return;
@@ -282,7 +281,7 @@ static void window_draw_visual_mode_selection(struct window *window) {
 }
 
 static void window_draw_cursorline(struct window *window) {
-  if (!option_get_bool("cursorline") || window->visual_mode_selection) {
+  if (!window->opt.cursorline || window->visual_mode_selection) {
     return;
   }
 
@@ -365,10 +364,10 @@ void editor_draw(struct editor *editor) {
   // visual mode with 'incsearch' enabled.
   visual_mode_selection_update(editor);
 
-  window_scroll(editor->window, (size_t) option_get_int("sidescroll"));
+  window_scroll(editor->window, (size_t) editor->opt.sidescroll);
 
   window_draw(window_root(editor->window));
-  if (option_get_bool("hlsearch") && editor->highlight_search_matches) {
+  if (editor->opt.hlsearch && editor->highlight_search_matches) {
     struct buf *pattern = editor_get_register(editor, '/');
     if (pattern->len) {
       bool ignore_case = editor_ignore_case(editor, pattern->buf);
@@ -390,7 +389,7 @@ void editor_draw(struct editor *editor) {
         COLOR_BLACK, COLOR_WHITE);
   }
 
-  if (option_get_bool("ruler") &&
+  if (editor->opt.ruler &&
       (editor->window->parent || !editor->status_cursor)) {
     window_draw_ruler(window_root(editor->window));
   }

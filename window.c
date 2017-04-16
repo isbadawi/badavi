@@ -26,6 +26,11 @@ struct window *window_create(struct buffer *buffer, size_t w, size_t h) {
   window->tag_stack = list_create();
   window->tag = NULL;
 
+#define OPTION(name, _, defaultval) \
+  window->opt.name = defaultval;
+  WINDOW_OPTIONS
+#undef OPTION
+
   return window;
 }
 
@@ -188,6 +193,12 @@ struct window *window_split(struct window *window,
 
   copy->parent = window;
   sibling->parent = window;
+
+#define OPTION(name, _, __) \
+  copy->opt.name = window->opt.name; \
+  sibling->opt.name = window->opt.name;
+  WINDOW_OPTIONS
+#undef OPTION
 
   switch (direction) {
   case WINDOW_SPLIT_LEFT:

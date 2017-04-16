@@ -1,88 +1,28 @@
 #include "options.h"
 
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 
-struct option {
-  const char *name;
-
-  enum option_type {
-    OPTION_TYPE_INT,
-    OPTION_TYPE_BOOL,
-  } type;
-
-  union {
-    bool b;
-    int i;
-  } value;
+static struct opt opts_meta[] = {
+#define OPTION(name, type, _) \
+  {#name, OPTION_SCOPE_BUFFER, OPTION_TYPE_##type},
+  BUFFER_OPTIONS
+#undef OPTION
+#define OPTION(name, type, _) \
+  {#name, OPTION_SCOPE_WINDOW, OPTION_TYPE_##type},
+  WINDOW_OPTIONS
+#undef OPTION
+#define OPTION(name, type, _) \
+  {#name, OPTION_SCOPE_EDITOR, OPTION_TYPE_##type},
+  EDITOR_OPTIONS
+#undef OPTION
 };
 
-#define OPTION(name, type, defaultval) {#name, type, {defaultval}}
-
-#define BOOL_OPTION(name, defaultval) OPTION(name, OPTION_TYPE_BOOL, .b = defaultval)
-#define INT_OPTION(name, defaultval) OPTION(name, OPTION_TYPE_INT, .i = defaultval)
-
-static struct option option_table[] = {
-  INT_OPTION(numberwidth, 4),
-  INT_OPTION(sidescroll, 0),
-  BOOL_OPTION(number, false),
-  BOOL_OPTION(relativenumber, false),
-  BOOL_OPTION(ignorecase, false),
-  BOOL_OPTION(smartcase, false),
-  BOOL_OPTION(cursorline, false),
-  BOOL_OPTION(splitright, false),
-  BOOL_OPTION(splitbelow, false),
-  BOOL_OPTION(equalalways, true),
-  BOOL_OPTION(hlsearch, false),
-  BOOL_OPTION(incsearch, false),
-  BOOL_OPTION(ruler, false),
-  {NULL, OPTION_TYPE_INT, {-1}},
-};
-
-static struct option *option_find(const char *name) {
-  for (int i = 0; option_table[i].name; ++i) {
-    if (!strcmp(option_table[i].name, name)) {
-      return &option_table[i];
+struct opt *option_info(char *name) {
+  for (int i = 0; i < TOTAL_NUM_OPTIONS; ++i) {
+    if (!strcmp(opts_meta[i].name, name)) {
+      return &opts_meta[i];
     }
   }
   return NULL;
-}
-
-static bool option_has_type(const char *name, enum option_type type) {
-  struct option *option = option_find(name);
-  return option && option->type == type;
-}
-
-bool option_exists(const char *name) {
-  return option_find(name) != NULL;
-}
-
-bool option_is_bool(const char *name) {
-  return option_has_type(name, OPTION_TYPE_BOOL);
-}
-
-bool option_get_bool(const char *name) {
-  assert(option_is_bool(name));
-  return option_find(name)->value.b;
-}
-
-void option_set_bool(const char *name, bool value) {
-  assert(option_is_bool(name));
-  option_find(name)->value.b = value;
-}
-
-bool option_is_int(const char *name) {
-  return option_has_type(name, OPTION_TYPE_INT);
-}
-
-int option_get_int(const char *name) {
-  assert(option_is_int(name));
-  return option_find(name)->value.i;
-}
-
-void option_set_int(const char *name, int value) {
-  assert(option_is_int(name));
-  option_find(name)->value.i = value;
 }

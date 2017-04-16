@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "options.h"
+
 #define BUFFER_NAME_MAXLEN 255
 
 struct buf;
@@ -24,6 +26,12 @@ struct buffer {
   // Marked regions, whose positions are updated as edits are made via
   // buffer_do_insert and buffer_do_delete.
   struct list *marks;
+
+  struct {
+#define OPTION(name, type, _) type name;
+  BUFFER_OPTIONS
+#undef OPTION
+  } opt;
 };
 
 // Reads the given path into a struct buffer object. The path must exist.

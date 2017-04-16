@@ -2,6 +2,8 @@
 
 #include <stddef.h>
 
+#include "options.h"
+
 struct window {
   struct window *parent;
   enum window_split_type {
@@ -13,6 +15,12 @@ struct window {
   // The size of the window. Only valid for the root window.
   size_t w;
   size_t h;
+
+  struct {
+#define OPTION(name, type, _) type name;
+  WINDOW_OPTIONS
+#undef OPTION
+  } opt;
 
   union {
     struct {

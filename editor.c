@@ -99,10 +99,7 @@ void editor_open(struct editor *editor, char *path) {
           path, gb_nlines(buffer->text), gb_size(buffer->text));
     }
     list_append(editor->buffers, buffer);
-#define OPTION(name, _, __) \
-    buffer->opt.name = editor->opt.name;
-    BUFFER_OPTIONS
-#undef OPTION
+    memcpy(&buffer->opt, &editor->opt, sizeof(buffer->opt));
   }
   window_set_buffer(editor->window, buffer);
 }

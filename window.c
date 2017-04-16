@@ -194,11 +194,8 @@ struct window *window_split(struct window *window,
   copy->parent = window;
   sibling->parent = window;
 
-#define OPTION(name, _, __) \
-  copy->opt.name = window->opt.name; \
-  sibling->opt.name = window->opt.name;
-  WINDOW_OPTIONS
-#undef OPTION
+  copy->opt = window->opt;
+  sibling->opt = window->opt;
 
   switch (direction) {
   case WINDOW_SPLIT_LEFT:

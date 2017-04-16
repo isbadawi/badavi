@@ -16,10 +16,11 @@ static struct opt opts_meta[] = {
   {#name, OPTION_SCOPE_EDITOR, OPTION_TYPE_##type},
   EDITOR_OPTIONS
 #undef OPTION
+  {NULL, 0, 0},
 };
 
 struct opt *option_info(char *name) {
-  for (int i = 0; i < TOTAL_NUM_OPTIONS; ++i) {
+  for (int i = 0; opts_meta[i].name; ++i) {
     if (!strcmp(opts_meta[i].name, name)) {
       return &opts_meta[i];
     }

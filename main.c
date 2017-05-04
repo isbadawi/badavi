@@ -52,6 +52,19 @@ int main(int argc, char *argv[]) {
   struct editor editor;
   editor_init(&editor, (size_t) tb_width(), (size_t) tb_height());
 
+  if (!rc) {
+    const char *home = getenv("HOME");
+    home = home ? home : getpwuid(getuid())->pw_dir;
+    snprintf(default_rc, sizeof(default_rc), "%s/.badavimrc", home);
+    if (!access(default_rc, F_OK)) {
+      rc = default_rc;
+    }
+  }
+
+  if (rc && strcmp(rc, "NONE") != 0) {
+    editor_source(&editor, rc);
+  }
+
   if (tag) {
     editor_jump_to_tag(&editor, tag);
   } else if (i < argc) {
@@ -70,6 +83,7 @@ int main(int argc, char *argv[]) {
         editor_open(&editor, argv[i]);
       }
       editor.window = window_first_leaf(window_root(editor.window));
+      window_equalize(editor.window, split_type);
     }
 
     if (line && (!*line || atoi(line) > 0)) {
@@ -77,19 +91,6 @@ int main(int argc, char *argv[]) {
       snprintf(buf, 32, "%sG", line);
       editor_send_keys(&editor, buf);
     }
-  }
-
-  if (!rc) {
-    const char *home = getenv("HOME");
-    home = home ? home : getpwuid(getuid())->pw_dir;
-    snprintf(default_rc, sizeof(default_rc), "%s/.badavimrc", home);
-    if (!access(default_rc, F_OK)) {
-      rc = default_rc;
-    }
-  }
-
-  if (rc && strcmp(rc, "NONE") != 0) {
-    editor_source(&editor, rc);
   }
 
   editor_draw(&editor);

@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 #include <termbox.h>
 
@@ -143,11 +144,13 @@ static void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) 
     editor_push_mode(editor, command_mode());
     break;
   case 'p': {
-    struct buf *reg = editor_get_register(editor, editor->register_);
+    struct editor_register *r = editor_get_register(editor, editor->register_);
+    char *text = r->read(r);
     size_t where = gb_getchar(gb, cursor) == '\n' ? cursor : cursor + 1;
     buffer_start_action_group(editor->window->buffer);
-    buffer_do_insert(editor->window->buffer, buf_copy(reg), where);
+    buffer_do_insert(editor->window->buffer, buf_from_cstr(text), where);
     editor->register_ = '"';
+    free(text);
     break;
   }
   case 'u': editor_undo(editor); break;

@@ -9,6 +9,7 @@
 #include <regex.h>
 #include <unistd.h>
 
+#include <libclipboard.h>
 #include <termbox.h>
 
 #include "buf.h"
@@ -20,6 +21,30 @@
 #include "terminal.h"
 #include "util.h"
 #include "window.h"
+
+static clipboard_c *clipboard = NULL;
+
+static char* register_buffer_read(struct editor_register *reg) {
+  return strdup(reg->buf->buf);
+}
+
+static void register_buffer_write(struct editor_register *reg, char *text) {
+  buf_clear(reg->buf);
+  buf_append(reg->buf, text);
+}
+
+static char *register_clipboard_read(struct editor_register *reg) {
+  assert(reg->name == '*' || reg->name == '+');
+  clipboard_mode mode = reg->name == '+' ? LCB_CLIPBOARD : LCB_SELECTION;
+  return clipboard_text_ex(clipboard, NULL, mode);
+}
+
+static void register_clipboard_write(struct editor_register *reg, char *text) {
+  assert(reg->name == '*' || reg->name == '+');
+  clipboard_mode mode = reg->name == '+' ? LCB_CLIPBOARD : LCB_SELECTION;
+  bool rc = clipboard_set_text_ex(clipboard, text, -1, mode);
+  assert(rc);
+}
 
 void editor_init(struct editor *editor, size_t width, size_t height) {
   editor->buffers = list_create();
@@ -38,9 +63,13 @@ void editor_init(struct editor *editor, size_t width, size_t height) {
   editor->highlight_search_matches = true;
   editor->mode = normal_mode();
 
+  if (!clipboard) {
+    clipboard = clipboard_new(NULL);
+  }
+
 #define R(n) \
-  editor->registers[next_register].name = n; \
-  editor->registers[next_register++].buf = buf_create(1);
+  editor->registers[next_register++] = (struct editor_register) \
+      {n, buf_create(1), register_buffer_read, register_buffer_write};
   int next_register = 0;
   // Named registers
   for (char c = 'a'; c <= 'z'; ++c) {
@@ -50,6 +79,12 @@ void editor_init(struct editor *editor, size_t width, size_t height) {
   R('/');
   // Unnamed default register
   R('"');
+  // Global clipboard register
+  editor->registers[next_register++] = (struct editor_register)
+    {'+', NULL, register_clipboard_read, register_clipboard_write};
+  // Selection clipboard register
+  editor->registers[next_register++] = (struct editor_register)
+    {'*', NULL, register_clipboard_read, register_clipboard_write};
   assert(next_register == EDITOR_NUM_REGISTERS);
 #undef R
 
@@ -67,10 +102,10 @@ void editor_init(struct editor *editor, size_t width, size_t height) {
 #undef OPTION
 }
 
-struct buf *editor_get_register(struct editor *editor, char name) {
+struct editor_register *editor_get_register(struct editor *editor, char name) {
   for (int i = 0; i < EDITOR_NUM_REGISTERS; ++i) {
     if (editor->registers[i].name == name) {
-      return editor->registers[i].buf;
+      return &editor->registers[i];
     }
   }
   return NULL;

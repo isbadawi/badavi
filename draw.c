@@ -368,12 +368,14 @@ void editor_draw(struct editor *editor) {
 
   window_draw(window_root(editor->window));
   if (editor->opt.hlsearch && editor->highlight_search_matches) {
-    struct buf *pattern = editor_get_register(editor, '/');
-    if (pattern->len) {
-      bool ignore_case = editor_ignore_case(editor, pattern->buf);
+    struct editor_register *lsp = editor_get_register(editor, '/');
+    char *pattern = lsp->read(lsp);
+    if (*pattern) {
+      bool ignore_case = editor_ignore_case(editor, pattern);
       window_draw_search_matches(
-          window_root(editor->window), pattern->buf, ignore_case);
+          window_root(editor->window), pattern, ignore_case);
     }
+    free(pattern);
   }
   window_draw_cursor(editor->window);
 

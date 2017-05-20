@@ -25,11 +25,15 @@ struct editor {
   // The position of the cursor in cmdline mode.
   size_t status_cursor;
 
-  // An array of registers (a-z, / and ").
-  #define EDITOR_NUM_REGISTERS 28
+  // An array of registers (a-z, /, ", * and +).
+  #define EDITOR_NUM_REGISTERS 30
   struct editor_register {
     char name;
     struct buf *buf;
+    // Read from the register. Caller must free the returned buffer.
+    char *(*read)(struct editor_register *reg);
+    // Write to the register. Makes a copy of the input buffer.
+    void (*write)(struct editor_register *reg, char*);
   } registers[EDITOR_NUM_REGISTERS];
 
   // List of loaded ctags.
@@ -69,7 +73,7 @@ void editor_save_buffer(struct editor *editor, char *path);
 void editor_execute_command(struct editor *editor, char *command);
 void editor_draw(struct editor *editor);
 
-struct buf *editor_get_register(struct editor *editor, char name);
+struct editor_register *editor_get_register(struct editor *editor, char name);
 
 struct tb_event;
 bool editor_waitkey(struct editor *editor, struct tb_event *ev);

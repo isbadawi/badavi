@@ -20,12 +20,12 @@ struct operator_pending_mode {
 };
 
 static void yank_op(struct editor *editor, struct region *region) {
-  struct buf *reg = editor_get_register(editor, editor->register_);
+  struct editor_register *reg = editor_get_register(editor, editor->register_);
   struct gapbuf *gb = editor->window->buffer->text;
 
   size_t n = region->end - region->start;
   struct buf *buf = gb_getstring(gb, region->start, n);
-  buf_printf(reg, "%s", buf->buf);
+  reg->write(reg, buf->buf);
   buf_free(buf);
   editor->register_ = '"';
 }

@@ -51,6 +51,15 @@ static void visual_mode_key_pressed(struct editor* editor, struct tb_event* ev) 
     }
   }
 
+  if (ev->ch == '"') {
+    editor_waitkey(editor, ev);
+    char name = (char) tolower((int) ev->ch);
+    if (editor_get_register(editor, name)) {
+      editor->register_ = name;
+    }
+    return;
+  }
+
   switch (ev->key) {
   case TB_KEY_ESC: case TB_KEY_CTRL_C:
     editor_pop_mode(editor);

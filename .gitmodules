@@ -4,3 +4,6 @@
 [submodule "vendor/termbox"]
 	path = vendor/termbox
 	url = https://github.com/nsf/termbox
+[submodule "vendor/libclipboard"]
+	path = vendor/libclipboard
+	url = https://github.com/jtanx/libclipboard

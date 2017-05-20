@@ -98,7 +98,8 @@ static void search_done_cb(struct editor *editor, char *command,
   size_t cursor = window_cursor(editor->window);
   if (*command) {
     editor_jump_to_match(editor, command, cursor, direction);
-    buf_printf(editor_get_register(editor, '/'), "%s", command);
+    struct editor_register *lsp = editor_get_register(editor, '/');
+    lsp->write(lsp, command);
   } else {
     editor_jump_to_match(editor, NULL, cursor, direction);
   }

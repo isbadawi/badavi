@@ -8,6 +8,23 @@ TERMBOX_HEADER := $(TERMBOX_INSTALL_DIR)/include/termbox.h
 TERMBOX_LIBRARY := $(TERMBOX_INSTALL_DIR)/lib/libtermbox.a
 TERMBOX := $(TERMBOX_HEADER) $(TERMBOX_LIBRARY)
 
+LIBCLIPBOARD_DIR := vendor/libclipboard
+LIBCLIPBOARD_INSTALL_DIR := $(BUILD_DIR)/libclipboard
+LIBCLIPBOARD_HEADER := $(LIBCLIPBOARD_INSTALL_DIR)/include/libclipboard.h
+LIBCLIPBOARD_LIBRARY := $(LIBCLIPBOARD_INSTALL_DIR)/lib/libclipboard.a
+LIBCLIPBOARD := $(LIBCLIPBOARD_HEADER) $(LIBCLIPBOARD_LIBRARY)
+
+OS := $(shell uname)
+ifeq ($(OS),Darwin)
+LIBCLIPBOARD_LDFLAGS := -framework Cocoa
+else ifeq ($(OS),Linux)
+LIBCLIPBOARD_LDFLAGS := -lxcb -lpthread
+endif
+LDFLAGS := $(LIBCLIPBOARD_LDFLAGS)
+
+THIRD_PARTY_HEADERS := $(TERMBOX_HEADER) $(LIBCLIPBOARD_HEADER)
+THIRD_PARTY_LIBRARIES := $(TERMBOX_LIBRARY) $(LIBCLIPBOARD_LIBRARY)
+
 WARNING_CFLAGS := -Wall -Wextra
 ifneq (,$(findstring clang,$(realpath $(shell which $(CC)))))
 WARNING_CFLAGS := -Weverything -Wno-padded
@@ -18,7 +35,7 @@ COVERAGE_CFLAGS := $(if $(COVERAGE),-coverage)
 
 # Use C11 for anonymous structs.
 COMMON_CFLAGS := -g -std=c11 -D_GNU_SOURCE \
-	-isystem $(dir $(TERMBOX_HEADER)) \
+	$(addprefix -isystem ,$(dir $(THIRD_PARTY_HEADERS))) \
 	$(WARNING_CFLAGS)
 
 CFLAGS := $(COMMON_CFLAGS) $(COVERAGE_CFLAGS)
@@ -78,11 +95,20 @@ $(TERMBOX_INSTALL_DIR): | $$(@D)/.
 
 $(TERMBOX): $(TERMBOX_INSTALL_DIR)
 
+$(LIBCLIPBOARD_INSTALL_DIR): | $$($D)/.
+	(cd $(LIBCLIPBOARD_DIR) && \
+	  cmake -DCMAKE_INSTALL_PREFIX=$(abspath $@) . && \
+	  $(MAKE) && \
+	  $(MAKE) install)
+
+$(LIBCLIPBOARD): $(LIBCLIPBOARD_INSTALL_DIR)
+
+
 # We define the rule for test objects first because in GNU make 3.81, when
 # multiple pattern rules match a target, the first one is chosen. This is
 # different than 3.82 and later, where the most specific one (i.e. the one with
 # the shortest stem) is chosen.
-$(BUILD_DIR)/tests/%.o: tests/%.c $(TERMBOX_HEADER) | $$(@D)/.
+$(BUILD_DIR)/tests/%.o: tests/%.c $(THIRD_PARTY_HEADERS) | $$(@D)/.
 	$(CC) $(TEST_CFLAGS) -c -o $@ $<
 
 $(BUILD_DIR)/tests/clar.o: \
@@ -93,14 +119,14 @@ $(BUILD_DIR)/tests/clar.suite: $(TEST_SRCS) | $$(@D)/.
 	$(CLAR_DIR)/generate.py tests
 	mv tests/clar.suite $@
 
-$(BUILD_DIR)/%.o: %.c $(TERMBOX_HEADER) | $$(@D)/.
+$(BUILD_DIR)/%.o: %.c $(THIRD_PARTY_HEADERS) | $$(@D)/.
 	$(CC) -MMD -MP -o $@ -c $< $(CFLAGS)
 
 -include $(DEPS)
 
 define program_template
-$(1): $(2) $(TERMBOX_LIBRARY) | $$$$(@D)/.
-	$(CC) -o $$@ $(COVERAGE_CFLAGS) $$^
+$(1): $(2) $(THIRD_PARTY_LIBRARIES) | $$$$(@D)/.
+	$(CC) -o $$@ $(COVERAGE_CFLAGS) $$^ $(LDFLAGS)
 endef
 $(eval $(call program_template,$(BUILD_DIR)/$(PROG),$(OBJS)))
 $(eval $(call program_template,$(BUILD_DIR)/$(TEST_PROG),$(TEST_OBJS)))

@@ -70,13 +70,16 @@ void regex_search(char *str, char *pattern, bool ignore_case, struct search_resu
 
 struct region *editor_search(struct editor *editor, char *pattern,
                              size_t start, enum search_direction direction) {
+  bool free_pattern = false;
   if (!pattern) {
-    struct buf *reg = editor_get_register(editor, '/');
-    if (reg->len == 0) {
+    struct editor_register *reg = editor_get_register(editor, '/');
+    pattern = reg->read(reg);
+    if (!*pattern) {
       editor_status_err(editor, "No previous regular expression");
+      free(pattern);
       return false;
     }
-    pattern = reg->buf;
+    free_pattern = true;
   }
 
   struct gapbuf *gb = editor->window->buffer->text;
@@ -129,6 +132,9 @@ struct region *editor_search(struct editor *editor, char *pattern,
     }
   }
 
+  if (free_pattern) {
+    free(pattern);
+  }
   list_remove(result.matches, match);
   list_free(result.matches, free);
   return match;

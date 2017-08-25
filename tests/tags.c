@@ -56,21 +56,19 @@ void test_tags__deleted(void) {
   cl_assert_equal_i(tags->len, 0);
 }
 
-static void assert_editor_error(const char *msg) {
-  cl_assert_equal_i(editor->status_error, true);
-  cl_assert_equal_s(editor->status->buf, msg);
-}
+#define assert_editor_error(msg) \
+  cl_assert_equal_i(editor->status_error, true); \
+  cl_assert_equal_s(editor->status->buf, msg); \
 
 // FIXME(ibadawi): Copied from tests/editor.c
-static void assert_cursor_at(
-    size_t expected_line, size_t expected_column) {
-  size_t actual_line, actual_column;
-  gb_pos_to_linecol(
-      editor->window->buffer->text,
-      editor->window->cursor->start,
-      &actual_line, &actual_column);
-  cl_assert_equal_i(expected_line, actual_line);
-  cl_assert_equal_i(expected_column, actual_column);
+#define assert_cursor_at(expected_line, expected_column) { \
+  size_t actual_line, actual_column; \
+  gb_pos_to_linecol( \
+      editor->window->buffer->text, \
+      editor->window->cursor->start, \
+      &actual_line, &actual_column); \
+  cl_assert_equal_i(expected_line, actual_line); \
+  cl_assert_equal_i(expected_column, actual_column); \
 }
 
 void test_tags__editor_tag_stack(void) {

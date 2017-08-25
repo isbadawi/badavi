@@ -16,31 +16,30 @@ static void type(const char *keys) {
   editor_send_keys(editor, keys);
 }
 
-static void assert_buffer_contents(const char *text) {
-  struct buffer* buffer = editor->window->buffer;
-  size_t expected_len = strlen(text);
-  size_t actual_len  = gb_size(buffer->text);
-  cl_assert_equal_i(expected_len, actual_len);
-  struct buf *buf = gb_getstring(buffer->text, 0, expected_len);
-  cl_assert_equal_s(buf->buf, text);
-  buf_free(buf);
+#define assert_buffer_contents(text_) { \
+  struct buffer* buffer = editor->window->buffer; \
+  size_t expected_len = strlen(text_); \
+  size_t actual_len  = gb_size(buffer->text); \
+  cl_assert_equal_i(expected_len, actual_len); \
+  struct buf *buf = gb_getstring(buffer->text, 0, expected_len); \
+  cl_assert_equal_s(buf->buf, text_); \
+  buf_free(buf); \
 }
 
-static void assert_cursor_at(
-    size_t expected_line, size_t expected_column) {
-  size_t actual_line, actual_column;
-  gb_pos_to_linecol(
-      editor->window->buffer->text,
-      editor->window->cursor->start,
-      &actual_line, &actual_column);
-  cl_assert_equal_i(expected_line, actual_line);
-  cl_assert_equal_i(expected_column, actual_column);
+#define assert_cursor_at(expected_line, expected_column) { \
+  size_t actual_line, actual_column; \
+  gb_pos_to_linecol( \
+      editor->window->buffer->text, \
+      editor->window->cursor->start, \
+      &actual_line, &actual_column); \
+  cl_assert_equal_i(expected_line, actual_line); \
+  cl_assert_equal_i(expected_column, actual_column); \
 }
 
-static void assert_cursor_over(char c) {
-  struct gapbuf *text = editor->window->buffer->text;
-  size_t cursor = editor->window->cursor->start;
-  cl_assert_equal_i(gb_getchar(text, cursor), c);
+#define assert_cursor_over(c) { \
+  struct gapbuf *text = editor->window->buffer->text; \
+  size_t cursor = editor->window->cursor->start; \
+  cl_assert_equal_i(gb_getchar(text, cursor), c); \
 }
 
 void test_editor__initialize(void) {

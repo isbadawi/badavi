@@ -3,13 +3,11 @@
 
 #include "buffer.h"
 
-static void assert_window_whxy(
-    struct window *window, size_t w, size_t h, size_t x, size_t y) {
-  cl_assert_equal_i(window_w(window), w);
-  cl_assert_equal_i(window_h(window), h);
-  cl_assert_equal_i(window_x(window), x);
-  cl_assert_equal_i(window_y(window), y);
-}
+#define assert_window_whxy(window, w, h, x, y) \
+  cl_assert_equal_i(window_w(window), w); \
+  cl_assert_equal_i(window_h(window), h); \
+  cl_assert_equal_i(window_x(window), x); \
+  cl_assert_equal_i(window_y(window), y); \
 
 void test_window__create(void) {
   struct window *window = window_create(buffer_create(NULL), 80, 16);

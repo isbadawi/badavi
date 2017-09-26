@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "attrs.h"
 #include "options.h"
 
 // The "editor" holds the main state of the program.
@@ -80,9 +81,9 @@ bool editor_waitkey(struct editor *editor, struct tb_event *ev);
 char editor_getchar(struct editor *editor);
 void editor_handle_key_press(struct editor *editor, struct tb_event *ev);
 
-__attribute__((__format__(__printf__, 2, 3)))
+ATTR_PRINTFLIKE(2, 3)
 void editor_status_msg(struct editor *editor, const char *format, ...);
-__attribute__((__format__(__printf__, 2, 3)))
+ATTR_PRINTFLIKE(2, 3)
 void editor_status_err(struct editor *editor, const char *format, ...);
 
 void editor_send_keys(struct editor *editor, const char *keys);

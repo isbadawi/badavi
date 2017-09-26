@@ -79,7 +79,7 @@ static size_t line_end(struct motion_context ctx) {
   return gb_indexof(gb, '\n', ctx.pos);
 }
 
-static size_t buffer_top(struct motion_context __unused ctx) {
+static size_t buffer_top(struct motion_context ctx ATTR_UNUSED) {
   return 0;
 }
 

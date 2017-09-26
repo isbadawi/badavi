@@ -184,7 +184,7 @@ struct editor_command {
   void (*action)(struct editor*, char*);
 };
 
-static void editor_command_quit(struct editor *editor, char __unused *arg) {
+static void editor_command_quit(struct editor *editor, char *arg ATTR_UNUSED) {
   struct buffer *b;
   LIST_FOREACH(editor->buffers, b) {
     if (b->dirty) {
@@ -197,9 +197,9 @@ static void editor_command_quit(struct editor *editor, char __unused *arg) {
   exit(0);
 }
 
-__attribute__((noreturn))
-static void editor_command_force_quit(struct editor __unused *editor,
-                                      char __unused *arg) {
+ATTR_NORETURN
+static void editor_command_force_quit(
+    struct editor *editor ATTR_UNUSED, char *arg ATTR_UNUSED) {
   exit(0);
 }
 
@@ -426,7 +426,8 @@ static void editor_command_tag(struct editor *editor, char *arg) {
   }
 }
 
-static void editor_command_nohlsearch(struct editor *editor, char *arg __unused) {
+static void editor_command_nohlsearch(
+    struct editor *editor, char *arg ATTR_UNUSED) {
   editor->highlight_search_matches = false;
 }
 

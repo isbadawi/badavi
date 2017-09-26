@@ -3,14 +3,12 @@
 #include <stdio.h>
 #include <stddef.h>
 
+#include "attrs.h"
+
 #define min(x, y) ((x) < (y) ? (x) : (y))
 #define max(x, y) ((x) > (y) ? (x) : (y))
 
-#ifndef __unused
-#define __unused __attribute__((unused))
-#endif
-
-__attribute__((__format__(__printf__, 1, 2)))
+ATTR_PRINTFLIKE(1, 2)
 void debug(const char *format, ...);
 
 void *xmalloc(size_t size);

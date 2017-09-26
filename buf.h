@@ -3,6 +3,8 @@
 #include <stdarg.h>
 #include <stddef.h>
 
+#include "attrs.h"
+
 // struct buf is a simple growable string.
 struct buf {
   char *buf;
@@ -24,9 +26,9 @@ void buf_append(struct buf *buf, char *s);
 
 // Write the formatted data to buf (overwriting what was there),
 // automatically growing it if needed.
-__attribute__((__format__(__printf__, 2, 3)))
+ATTR_PRINTFLIKE(2, 3)
 void buf_printf(struct buf *buf, const char *format, ...);
-__attribute__((__format__(__printf__, 2, 0)))
+ATTR_PRINTFLIKE(2, 0)
 void buf_vprintf(struct buf *buf, const char *format, va_list args);
 
 // Similar to struct buf but for ints.

@@ -367,6 +367,17 @@ void editor_draw(struct editor *editor) {
   window_scroll(editor->window, (size_t) editor->opt.sidescroll);
 
   window_draw(window_root(editor->window));
+
+  struct region *match = editor->window->incsearch_match;
+  if (match) {
+    for (size_t pos = match->start; pos < match->end; ++pos) {
+      struct tb_cell *cell = window_cell_for_pos(editor->window, pos);
+      assert(cell);
+      cell->fg = COLOR_BLACK;
+      cell->bg = COLOR_WHITE;
+    }
+  }
+
   if (editor->opt.hlsearch && editor->highlight_search_matches) {
     struct editor_register *lsp = editor_get_register(editor, '/');
     char *pattern = lsp->read(lsp);

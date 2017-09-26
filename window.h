@@ -33,6 +33,9 @@ struct window {
       // The offset of the cursor.
       struct region *cursor;
 
+      // The incremental match if 'incsearch' is enabled.
+      struct region *incsearch_match;
+
       // The visual mode selection.
       // NULL if not in visual mode.
       struct region *visual_mode_selection;

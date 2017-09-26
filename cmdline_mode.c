@@ -31,11 +31,20 @@ static void cmdline_mode_entered(struct editor *editor) {
   editor->status_silence = true;
 }
 
+static void clear_incsearch_match(struct editor *editor) {
+  struct region **match = &editor->window->incsearch_match;
+  if (*match) {
+    free(*match);
+    *match = NULL;
+  }
+}
+
 static void cmdline_mode_exited(struct editor *editor) {
   struct cmdline_mode *mode = (struct cmdline_mode*) editor->mode;
   window_set_cursor(editor->window, mode->cursor);
   editor->status_cursor = 0;
   editor->status_silence = false;
+  clear_incsearch_match(editor);
 }
 
 static void cmdline_mode_key_pressed(struct editor *editor, struct tb_event *ev) {
@@ -106,7 +115,6 @@ static void search_done_cb(struct editor *editor, char *command,
   editor->highlight_search_matches = true;
 }
 
-// FIXME(ibadawi): Highlight the incremental match with hlsearch
 static void search_char_cb(struct editor *editor, char *command,
                            enum search_direction direction) {
   if (!editor->opt.incsearch || !*command) {
@@ -115,7 +123,14 @@ static void search_char_cb(struct editor *editor, char *command,
   struct cmdline_mode *mode = (struct cmdline_mode*) editor->mode;
   struct region *match =
     editor_search(editor, command, mode->cursor, direction);
-  window_set_cursor(editor->window, match_or_default(match, mode->cursor));
+  if (match) {
+    editor->window->incsearch_match = match;
+    window_set_cursor(editor->window, match->start);
+  } else {
+    free(match);
+    window_set_cursor(editor->window, mode->cursor);
+    clear_incsearch_match(editor);
+  }
 }
 
 static void forward_search_done_cb(struct editor *editor, char *command) {

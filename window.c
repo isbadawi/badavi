@@ -289,6 +289,7 @@ void window_set_buffer(struct window *window, struct buffer* buffer) {
   window->top = 0;
   window->left = 0;
   window->cursor = region_create(0, 1);
+  window->incsearch_match = NULL;
   list_append(buffer->marks, window->cursor);
 }
 

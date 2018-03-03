@@ -4,6 +4,7 @@ CLAR_DIR := vendor/clar
 
 TERMBOX_DIR := vendor/termbox
 TERMBOX_INSTALL_DIR := $(BUILD_DIR)/termbox
+TERMBOX_BUILD_DIR := $(TERMBOX_INSTALL_DIR)/build
 TERMBOX_HEADER := $(TERMBOX_INSTALL_DIR)/include/termbox.h
 TERMBOX_LIBRARY := $(TERMBOX_INSTALL_DIR)/lib/libtermbox.a
 TERMBOX := $(TERMBOX_HEADER) $(TERMBOX_LIBRARY)
@@ -88,9 +89,11 @@ $(BUILD_DIR)/.:
 $(BUILD_DIR)%/.:
 	mkdir -p $@
 
-$(TERMBOX_INSTALL_DIR): | $$(@D)/.
+$(TERMBOX_INSTALL_DIR): | $$(@D)/. $(TERMBOX_BUILD_DIR)/.
 	(cd $(TERMBOX_DIR) && \
-	  ./waf configure --prefix=$(abspath $@) && \
+	  ./waf configure \
+	    --prefix=$(abspath $@) \
+	    --out=$(abspath $(TERMBOX_BUILD_DIR)) && \
 	  ./waf && \
 	  ./waf install --targets=termbox_static)
 

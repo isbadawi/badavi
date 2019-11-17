@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches:
+    - master
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+        compiler: [gcc, clang]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: true
+    - name: make
+      run: make CC=${{ matrix.compiler }}
+    - name: make test
+      run: make test CC=${{ matrix.compiler }}
+
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install lcov
+      run: sudo apt-get install lcov
+    - uses: actions/checkout@v1
+      with:
+        submodules: true
+    - name: make coverage
+      run: make coverage CC=gcc
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v1
+      with:
+        name: Coverage
+        path: ./coverage

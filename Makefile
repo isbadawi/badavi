@@ -95,7 +95,7 @@ $(TERMBOX_INSTALL_DIR): | $$(@D)/. $(TERMBOX_BUILD_DIR)/.
 	    --prefix=$(abspath $@) \
 	    --out=$(abspath $(TERMBOX_BUILD_DIR)) && \
 	  ./waf && \
-	  ./waf install --targets=termbox_static)
+	  ./waf install)
 
 $(TERMBOX): $(TERMBOX_INSTALL_DIR)
 

@@ -11,14 +11,14 @@
 
 static struct buffer *buffer = NULL;
 
-#define assert_contents(text_) { \
+#define assert_contents(text_) do { \
   size_t expected_len = strlen(text_); \
   size_t actual_len  = gb_size(buffer->text); \
   cl_assert_equal_i(expected_len, actual_len); \
   struct buf *buf = gb_getstring(buffer->text, 0, expected_len); \
   cl_assert_equal_s(buf->buf, text_); \
   buf_free(buf); \
-}
+} while (0)
 
 static void insert_text(size_t pos, char *text) {
   buffer_do_insert(buffer, buf_from_cstr(text), pos);

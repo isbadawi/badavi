@@ -3,11 +3,12 @@
 
 #include "buffer.h"
 
-#define assert_window_whxy(window, w, h, x, y) \
+#define assert_window_whxy(window, w, h, x, y) do { \
   cl_assert_equal_i(window_w(window), w); \
   cl_assert_equal_i(window_h(window), h); \
   cl_assert_equal_i(window_x(window), x); \
   cl_assert_equal_i(window_y(window), y); \
+} while (0)
 
 void test_window__create(void) {
   struct window *window = window_create(buffer_create(NULL), 80, 16);

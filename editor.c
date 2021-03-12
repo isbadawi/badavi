@@ -12,6 +12,7 @@
 #include <libclipboard.h>
 #include <termbox.h>
 
+#include "attrs.h"
 #include "buf.h"
 #include "buffer.h"
 #include "gap.h"
@@ -69,7 +70,7 @@ void editor_init(struct editor *editor, size_t width, size_t height) {
 
 #define R(n) \
   editor->registers[next_register++] = (struct editor_register) \
-      {n, buf_create(1), register_buffer_read, register_buffer_write};
+      {n, buf_create(1), register_buffer_read, register_buffer_write}
   int next_register = 0;
   // Named registers
   for (char c = 'a'; c <= 'z'; ++c) {
@@ -293,7 +294,7 @@ static void *editor_opt_val(struct editor *editor, struct opt *info,
       BUFFER_OPTIONS
 #undef OPTION
     }
-    // fallthrough
+    ATTR_FALLTHROUGH;
   case OPTION_SCOPE_EDITOR:
 #define OPTION(optname, _, __) \
     if (!strcmp(info->name, #optname)) { \

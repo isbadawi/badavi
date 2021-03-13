@@ -2,6 +2,8 @@
 
 #include <stddef.h>
 
+#include <sys/queue.h>
+
 #include "options.h"
 
 struct window {
@@ -31,16 +33,16 @@ struct window {
       size_t left;
 
       // The offset of the cursor.
-      struct region *cursor;
+      struct mark *cursor;
 
       // The incremental match if 'incsearch' is enabled.
-      struct region *incsearch_match;
+      struct search_match *incsearch_match;
 
       // The visual mode selection.
       // NULL if not in visual mode.
       struct region *visual_mode_selection;
 
-      struct list *tag_stack;
+      TAILQ_HEAD(tag_list, tag_jump) tag_stack;
       struct tag_jump *tag;
     };
 

@@ -30,7 +30,7 @@ static void type(const char *keys) {
   size_t actual_line, actual_column; \
   gb_pos_to_linecol( \
       editor->window->buffer->text, \
-      editor->window->cursor->start, \
+      window_cursor(editor->window), \
       &actual_line, &actual_column); \
   cl_assert_equal_i(expected_line, actual_line); \
   cl_assert_equal_i(expected_column, actual_column); \
@@ -38,7 +38,7 @@ static void type(const char *keys) {
 
 #define assert_cursor_over(c) do { \
   struct gapbuf *text = editor->window->buffer->text; \
-  size_t cursor = editor->window->cursor->start; \
+  size_t cursor = window_cursor(editor->window); \
   cl_assert_equal_i(gb_getchar(text, cursor), c); \
 } while (0)
 

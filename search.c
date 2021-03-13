@@ -11,7 +11,6 @@
 #include "buffer.h"
 #include "editor.h"
 #include "gap.h"
-#include "list.h"
 #include "util.h"
 #include "window.h"
 
@@ -39,12 +38,13 @@ void regex_search(char *str, char *pattern, bool ignore_case, struct search_resu
   }
   int err = regcomp(&regex, pattern, flags);
   if (err) {
-    result->matches = NULL;
+    result->ok = false;
     regerror(err, &regex, result->error, sizeof(result->error));
     return;
   }
+  result->ok = true;
 
-  result->matches = list_create();
+  TAILQ_INIT(&result->matches);
 
   int nomatch = 0;
   size_t start = 0;
@@ -59,16 +59,18 @@ void regex_search(char *str, char *pattern, bool ignore_case, struct search_resu
 
     nomatch = regexec(&regex, str + start, 1, &match, flags);
     if (!nomatch) {
-      struct region *region = region_create(
-          start + (size_t) match.rm_so, start + (size_t) match.rm_eo);
-      list_append(result->matches, region);
+      struct search_match *smatch = xmalloc(sizeof(*smatch));
+      region_set(&smatch->region,
+                 start + (size_t) match.rm_so,
+                 start + (size_t) match.rm_eo);
+      TAILQ_INSERT_TAIL(&result->matches, smatch, pointers);
       start += max(1, (size_t) match.rm_eo);
     }
   }
   regfree(&regex);
 }
 
-struct region *editor_search(struct editor *editor, char *pattern,
+struct search_match *editor_search(struct editor *editor, char *pattern,
                              size_t start, enum search_direction direction) {
   bool free_pattern = false;
   if (!pattern) {
@@ -89,22 +91,21 @@ struct region *editor_search(struct editor *editor, char *pattern,
   bool ignore_case = editor_ignore_case(editor, pattern);
   regex_search(gb->gapend, pattern, ignore_case, &result);
 
-  if (!result.matches) {
+  if (!result.ok) {
     editor_status_err(editor, "Bad regex \"%s\": %s", pattern, result.error);
     return NULL;
   }
 
-  if (list_empty(result.matches)) {
-    list_free(result.matches, free);
+  if (TAILQ_EMPTY(&result.matches)) {
     editor_status_err(editor, "Pattern not found: \"%s\"", pattern);
     return NULL;
   }
 
-  struct region *match = NULL;
-  struct region *m;
+  struct search_match *match = NULL;
+  struct search_match *m;
   if (direction == SEARCH_FORWARDS) {
-    LIST_FOREACH(result.matches, m) {
-      if (m->start > start) {
+    TAILQ_FOREACH(m, &result.matches, pointers) {
+      if (m->region.start > start) {
         match = m;
         break;
       }
@@ -112,37 +113,45 @@ struct region *editor_search(struct editor *editor, char *pattern,
 
     if (!match) {
       editor_status_msg(editor, "search hit BOTTOM, continuing at TOP");
-      match = list_first(result.matches);
+      match = TAILQ_FIRST(&result.matches);
     }
   } else {
-    struct region *last = NULL;
-    LIST_FOREACH(result.matches, m) {
-      if (last && last->start < start && start <= m->start) {
+    struct search_match *last = NULL;
+    TAILQ_FOREACH(m, &result.matches, pointers) {
+      if (last && last->region.start < start && start <= m->region.start) {
         match = last;
         break;
       }
       last = m;
     }
-    if (last->start < start) {
+    if (last->region.start < start) {
       match = last;
     }
     if (!match) {
       editor_status_msg(editor, "search hit TOP, continuing at BOTTOM");
-      match = list_last(result.matches);
+      match = TAILQ_LAST(&result.matches, match_list);
     }
   }
 
   if (free_pattern) {
     free(pattern);
   }
-  list_remove(result.matches, match);
-  list_free(result.matches, free);
+
+  TAILQ_REMOVE(&result.matches, match, pointers);
+  search_result_free_matches(&result);
   return match;
 }
 
-size_t match_or_default(struct region *match, size_t def) {
+void search_result_free_matches(struct search_result *result) {
+  struct search_match *m, *tm;
+  TAILQ_FOREACH_SAFE(m, &result->matches, pointers, tm) {
+    free(m);
+  }
+}
+
+size_t match_or_default(struct search_match *match, size_t def) {
   if (match) {
-    size_t start = match->start;
+    size_t start = match->region.start;
     free(match);
     return start;
   }
@@ -151,7 +160,7 @@ size_t match_or_default(struct region *match, size_t def) {
 
 void editor_jump_to_match(struct editor *editor, char *pattern,
                           size_t start, enum search_direction direction) {
-  struct region *match = editor_search(editor, pattern, start, direction);
+  struct search_match *match = editor_search(editor, pattern, start, direction);
   window_set_cursor(editor->window,
       match_or_default(match, window_cursor(editor->window)));
 }

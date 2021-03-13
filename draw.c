@@ -11,7 +11,6 @@
 #include "buffer.h"
 #include "editor.h"
 #include "gap.h"
-#include "list.h"
 #include "mode.h"
 #include "search.h"
 #include "util.h"
@@ -152,13 +151,13 @@ static void window_draw_search_matches(struct window *window,
   struct search_result result;
   regex_search(text->buf, pattern, ignore_case, &result);
   buf_free(text);
-  if (!result.matches) {
+  if (!result.ok) {
     return;
   }
 
-  struct region *match;
-  LIST_FOREACH(result.matches, match) {
-    for (size_t pos = start + match->start; pos < start + match->end; ++pos) {
+  struct search_match *match;
+  TAILQ_FOREACH(match, &result.matches, pointers) {
+    for (size_t pos = start + match->region.start; pos < start + match->region.end; ++pos) {
       struct tb_cell *cell = window_cell_for_pos(window, pos);
       if (cell) {
         cell->fg = COLOR_BLACK;
@@ -167,7 +166,7 @@ static void window_draw_search_matches(struct window *window,
     }
   }
 
-  list_free(result.matches, free);
+  search_result_free_matches(&result);
 }
 
 void window_get_ruler(struct window *window, char *buf, size_t buflen) {
@@ -368,9 +367,9 @@ void editor_draw(struct editor *editor) {
 
   window_draw(window_root(editor->window));
 
-  struct region *match = editor->window->incsearch_match;
+  struct search_match *match = editor->window->incsearch_match;
   if (match) {
-    for (size_t pos = match->start; pos < match->end; ++pos) {
+    for (size_t pos = match->region.start; pos < match->region.end; ++pos) {
       struct tb_cell *cell = window_cell_for_pos(editor->window, pos);
       assert(cell);
       cell->fg = COLOR_BLACK;

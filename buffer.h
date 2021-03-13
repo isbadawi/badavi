@@ -3,11 +3,39 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include <sys/queue.h>
+
 #include "options.h"
+#include "util.h"
 
 #define BUFFER_NAME_MAXLEN 255
 
 struct buf;
+
+struct mark {
+  struct region region;
+
+  TAILQ_ENTRY(mark) pointers;
+};
+
+// A single edit action -- either an insert or delete.
+struct edit_action {
+  enum { EDIT_ACTION_INSERT, EDIT_ACTION_DELETE } type;
+  // The position at which the action occurred.
+  size_t pos;
+  // The text added (for insertions) or removed (for deletions).
+  struct buf *buf;
+
+  TAILQ_ENTRY(edit_action) pointers;
+};
+
+struct edit_action_group {
+  TAILQ_HEAD(action_list, edit_action) actions;
+
+  TAILQ_ENTRY(edit_action_group) pointers;
+};
+
+TAILQ_HEAD(action_group_list, edit_action_group);
 
 // struct buffer is the in-memory text of a file.
 struct buffer {
@@ -20,18 +48,20 @@ struct buffer {
 
   // Undo and redo stacks.
   // The elements are lists of actions.
-  struct list *undo_stack;
-  struct list *redo_stack;
+  struct action_group_list undo_stack;
+  struct action_group_list redo_stack;
 
   // Marked regions, whose positions are updated as edits are made via
   // buffer_do_insert and buffer_do_delete.
-  struct list *marks;
+  TAILQ_HEAD(mark_list, mark) marks;
 
   struct {
 #define OPTION(name, type, _) type name;
   BUFFER_OPTIONS
 #undef OPTION
   } opt;
+
+  TAILQ_ENTRY(buffer) pointers;
 };
 
 // Reads the given path into a struct buffer object. The path must exist.

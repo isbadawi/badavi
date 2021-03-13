@@ -16,7 +16,6 @@
 #include "buf.h"
 #include "buffer.h"
 #include "gap.h"
-#include "list.h"
 #include "mode.h"
 #include "tags.h"
 #include "terminal.h"
@@ -48,9 +47,9 @@ static void register_clipboard_write(struct editor_register *reg, char *text) {
 }
 
 void editor_init(struct editor *editor, size_t width, size_t height) {
-  editor->buffers = list_create();
+  TAILQ_INIT(&editor->buffers);
   struct buffer *buffer = buffer_create(NULL);
-  list_append(editor->buffers, buffer);
+  TAILQ_INSERT_TAIL(&editor->buffers, buffer, pointers);
 
   editor->width = width;
   editor->height = height;
@@ -94,7 +93,7 @@ void editor_init(struct editor *editor, size_t width, size_t height) {
   editor->count = 0;
   editor->register_ = '"';
 
-  editor->synthetic_events = list_create();
+  TAILQ_INIT(&editor->synthetic_events);
 
 #define OPTION(name, _, defaultval) \
   editor->opt.name = defaultval;
@@ -114,7 +113,7 @@ struct editor_register *editor_get_register(struct editor *editor, char name) {
 
 static struct buffer *editor_get_buffer_by_name(struct editor* editor, char *name) {
   struct buffer *b;
-  LIST_FOREACH(editor->buffers, b) {
+  TAILQ_FOREACH(b, &editor->buffers, pointers) {
     if (!strcmp(b->name, name)) {
       return b;
     }
@@ -134,7 +133,7 @@ void editor_open(struct editor *editor, char *path) {
       editor_status_msg(editor, "\"%s\" %zuL, %zuC",
           path, gb_nlines(buffer->text), gb_size(buffer->text));
     }
-    list_append(editor->buffers, buffer);
+    TAILQ_INSERT_TAIL(&editor->buffers, buffer, pointers);
     memcpy(&buffer->opt, &editor->opt, sizeof(buffer->opt));
   }
   window_set_buffer(editor->window, buffer);
@@ -187,7 +186,7 @@ struct editor_command {
 
 static void editor_command_quit(struct editor *editor, char *arg ATTR_UNUSED) {
   struct buffer *b;
-  LIST_FOREACH(editor->buffers, b) {
+  TAILQ_FOREACH(b, &editor->buffers, pointers) {
     if (b->dirty) {
       editor_status_err(editor,
           "No write since last change for buffer \"%s\"",
@@ -486,9 +485,12 @@ static void editor_suspend(struct editor *editor) {
 }
 
 static int editor_poll_event(struct editor *editor, struct tb_event *ev) {
-  if (!list_empty(editor->synthetic_events)) {
-    struct tb_event *top = list_pop(editor->synthetic_events);
-    *ev = *top;
+  struct editor_event *top = TAILQ_FIRST(&editor->synthetic_events);
+  if (top) {
+    TAILQ_REMOVE(&editor->synthetic_events, top, pointers);
+    ev->type = top->type;
+    ev->key = top->key;
+    ev->ch = top->ch;
     free(top);
     return ev->type;
   }
@@ -532,9 +534,9 @@ void editor_handle_key_press(struct editor *editor, struct tb_event *ev) {
 }
 
 void editor_send_keys(struct editor *editor, const char *keys) {
-  struct tb_event *last = NULL;
+  struct editor_event *last = NULL;
   for (const char *k = keys; *k; ++k) {
-    struct tb_event *ev = xmalloc(sizeof(*ev));
+    struct editor_event *ev = xmalloc(sizeof(*ev));
     ev->type = TB_EVENT_KEY;
     ev->key = 0;
     switch (*k) {
@@ -566,18 +568,17 @@ void editor_send_keys(struct editor *editor, const char *keys) {
     // n.b. We want to correctly handle the case where editor_send_keys
     // indirectly recurses. For example 'o' is send_keys("A<cr>"), and 'A' is
     // send_keys("$i"). So we need to insert all the events in order, but
-    // before any events that existed before we started this call. That's why
-    // this isn't just a call to list_append.
+    // before any events that existed before we started this call.
     if (last) {
-      list_insert_after(editor->synthetic_events, last, ev);
+      TAILQ_INSERT_AFTER(&editor->synthetic_events, last, ev, pointers);
     } else {
-      list_prepend(editor->synthetic_events, ev);
+      TAILQ_INSERT_HEAD(&editor->synthetic_events, ev, pointers);
     }
     last = ev;
   }
 
   struct tb_event ev;
-  while (!list_empty(editor->synthetic_events)) {
+  while (!TAILQ_EMPTY(&editor->synthetic_events)) {
     bool ok = editor_waitkey(editor, &ev);
     assert(ok);
     editor_handle_key_press(editor, &ev);

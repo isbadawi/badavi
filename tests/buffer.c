@@ -6,7 +6,6 @@
 
 #include "buf.h"
 #include "gap.h"
-#include "list.h"
 #include "util.h"
 
 static struct buffer *buffer = NULL;
@@ -81,14 +80,15 @@ void test_buffer__undo_group(void) {
 
 void test_buffer__marks(void) {
   buffer = buffer_create(NULL);
-  struct region mark = {0, 1};
-  list_append(buffer->marks, &mark);
+  struct mark mark;
+  region_set(&mark.region, 0, 1);
+  TAILQ_INSERT_TAIL(&buffer->marks, &mark, pointers);
 
-  cl_assert_equal_i(mark.start, 0);
-  cl_assert_equal_i(mark.end, 1);
+  cl_assert_equal_i(mark.region.start, 0);
+  cl_assert_equal_i(mark.region.end, 1);
 
   insert_text(0, "hello, world");
 
-  cl_assert_equal_i(mark.start, 12);
-  cl_assert_equal_i(mark.end, 13);
+  cl_assert_equal_i(mark.region.start, 12);
+  cl_assert_equal_i(mark.region.end, 13);
 }

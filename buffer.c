@@ -7,7 +7,6 @@
 
 #include "buf.h"
 #include "gap.h"
-#include "list.h"
 #include "util.h"
 
 static struct buffer *buffer_of(char *path, struct gapbuf *gb) {
@@ -17,10 +16,10 @@ static struct buffer *buffer_of(char *path, struct gapbuf *gb) {
   strcpy(buffer->name, path ? path : "");
   buffer->dirty = false;
 
-  buffer->undo_stack = list_create();
-  buffer->redo_stack = list_create();
+  TAILQ_INIT(&buffer->undo_stack);
+  TAILQ_INIT(&buffer->redo_stack);
 
-  buffer->marks = list_create();
+  TAILQ_INIT(&buffer->marks);
 
 #define OPTION(name, _, defaultval) \
   buffer->opt.name = defaultval;
@@ -69,36 +68,27 @@ bool buffer_saveas(struct buffer *buffer, char *path) {
   return true;
 }
 
-// A single edit action -- either an insert or delete.
-struct edit_action {
-  enum { EDIT_ACTION_INSERT, EDIT_ACTION_DELETE } type;
-  // The position at which the action occurred.
-  size_t pos;
-  // The text added (for insertions) or removed (for deletions).
-  struct buf *buf;
-};
-
 static void buffer_update_marks_after_insert(
     struct buffer *buffer, size_t pos, size_t n) {
-  struct region *region;
-  LIST_FOREACH(buffer->marks, region) {
-    assert(region->end - region->start == 1);
-    if (pos <= region->start) {
-      region->start += n;
-      region->end += n;
+  struct mark *mark;
+  TAILQ_FOREACH(mark, &buffer->marks, pointers) {
+    assert(mark->region.end - mark->region.start == 1);
+    if (pos <= mark->region.start) {
+      mark->region.start += n;
+      mark->region.end += n;
     }
   }
 }
 
 static void buffer_update_marks_after_delete(
     struct buffer *buffer, size_t pos, size_t n) {
-  struct region *region;
-  LIST_FOREACH(buffer->marks, region) {
-    assert(region->end - region->start == 1);
-    if (pos <= region->start) {
-      size_t diff = min(n, region->start - pos);
-      region->start -= diff;
-      region->end -= diff;
+  struct mark *mark;
+  TAILQ_FOREACH(mark, &buffer->marks, pointers) {
+    assert(mark->region.end - mark->region.start == 1);
+    if (pos <= mark->region.start) {
+      size_t diff = min(n, mark->region.start - pos);
+      mark->region.start -= diff;
+      mark->region.end -= diff;
     }
   }
 }
@@ -108,9 +98,9 @@ void buffer_do_insert(struct buffer *buffer, struct buf *buf, size_t pos) {
   action->type = EDIT_ACTION_INSERT;
   action->pos = pos;
   action->buf = buf;
-  struct list *group = list_first(buffer->undo_stack);
+  struct edit_action_group *group = TAILQ_FIRST(&buffer->undo_stack);
   if (group) {
-    list_prepend(group, action);
+    TAILQ_INSERT_HEAD(&group->actions, action, pointers);
   }
   gb_putstring(buffer->text, buf->buf, buf->len, pos);
   buffer->dirty = true;
@@ -123,9 +113,9 @@ void buffer_do_delete(struct buffer *buffer, size_t n, size_t pos) {
   action->type = EDIT_ACTION_DELETE;
   action->pos = pos;
   action->buf = gb_getstring(buffer->text, pos, n);
-  struct list *group = list_first(buffer->undo_stack);
+  struct edit_action_group *group = TAILQ_FIRST(&buffer->undo_stack);
   if (group) {
-    list_prepend(group, action);
+    TAILQ_INSERT_HEAD(&group->actions, action, pointers);
   }
   gb_del(buffer->text, n, pos + n);
   buffer->dirty = true;
@@ -134,15 +124,16 @@ void buffer_do_delete(struct buffer *buffer, size_t n, size_t pos) {
 }
 
 bool buffer_undo(struct buffer* buffer) {
-  if (list_empty(buffer->undo_stack)) {
+  struct edit_action_group *group = TAILQ_FIRST(&buffer->undo_stack);
+  if (!group) {
     return false;
   }
 
-  struct list *group = list_pop(buffer->undo_stack);
+  TAILQ_REMOVE(&buffer->undo_stack, group, pointers);
 
   struct gapbuf *gb = buffer->text;
   struct edit_action *action;
-  LIST_FOREACH(group, action) {
+  TAILQ_FOREACH(action, &group->actions, pointers) {
     switch (action->type) {
     case EDIT_ACTION_INSERT:
       gb_del(gb, action->buf->len, action->pos + action->buf->len);
@@ -155,20 +146,21 @@ bool buffer_undo(struct buffer* buffer) {
     }
   }
 
-  list_prepend(buffer->redo_stack, group);
+  TAILQ_INSERT_HEAD(&buffer->redo_stack, group, pointers);
   return true;
 }
 
 bool buffer_redo(struct buffer* buffer) {
-  if (list_empty(buffer->redo_stack)) {
+  struct edit_action_group *group = TAILQ_FIRST(&buffer->redo_stack);
+  if (!group) {
     return false;
   }
 
-  struct list *group = list_pop(buffer->redo_stack);
+  TAILQ_REMOVE(&buffer->redo_stack, group, pointers);
 
   struct gapbuf *gb = buffer->text;
   struct edit_action *action;
-  LIST_FOREACH_REVERSE(group, action) {
+  TAILQ_FOREACH_REVERSE(action, &group->actions, action_list, pointers) {
     switch (action->type) {
     case EDIT_ACTION_INSERT:
       gb_putstring(gb, action->buf->buf, action->buf->len, action->pos);
@@ -181,22 +173,24 @@ bool buffer_redo(struct buffer* buffer) {
     }
   }
 
-  list_prepend(buffer->undo_stack, group);
+  TAILQ_INSERT_HEAD(&buffer->undo_stack, group, pointers);
   return true;
 }
 
-static void edit_action_free(void *p) {
-  struct edit_action *action = p;
-  buf_free(action->buf);
-  free(action);
-}
-
-static void edit_action_group_free(void *p) {
-  struct list *group = p;
-  list_free(group, edit_action_free);
-}
-
 void buffer_start_action_group(struct buffer *buffer) {
-  list_clear(buffer->redo_stack, edit_action_group_free);
-  list_prepend(buffer->undo_stack, list_create());
+  struct edit_action_group *group, *tg;
+  TAILQ_FOREACH_SAFE(group, &buffer->redo_stack, pointers, tg) {
+    struct edit_action *action, *ta;
+    TAILQ_FOREACH_SAFE(action, &group->actions, pointers, ta) {
+      buf_free(action->buf);
+      free(action);
+    }
+    TAILQ_REMOVE(&buffer->redo_stack, group, pointers);
+    free(group);
+  }
+
+  group = xmalloc(sizeof(*group));
+  TAILQ_INIT(&group->actions);
+
+  TAILQ_INSERT_HEAD(&buffer->undo_stack, group, pointers);
 }

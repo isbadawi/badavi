@@ -32,7 +32,7 @@ static void cmdline_mode_entered(struct editor *editor) {
 }
 
 static void clear_incsearch_match(struct editor *editor) {
-  struct region **match = &editor->window->incsearch_match;
+  struct search_match **match = &editor->window->incsearch_match;
   if (*match) {
     free(*match);
     *match = NULL;
@@ -121,11 +121,11 @@ static void search_char_cb(struct editor *editor, char *command,
     return;
   }
   struct cmdline_mode *mode = (struct cmdline_mode*) editor->mode;
-  struct region *match =
+  struct search_match *match =
     editor_search(editor, command, mode->cursor, direction);
   if (match) {
     editor->window->incsearch_match = match;
-    window_set_cursor(editor->window, match->start);
+    window_set_cursor(editor->window, match->region.start);
   } else {
     free(match);
     window_set_cursor(editor->window, mode->cursor);

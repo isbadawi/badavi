@@ -6,8 +6,8 @@
 #include <string.h>
 
 #include "buffer.h"
-#include "list.h"
 #include "options.h"
+#include "tags.h"
 #include "util.h"
 
 struct window *window_create(struct buffer *buffer, size_t w, size_t h) {
@@ -17,13 +17,14 @@ struct window *window_create(struct buffer *buffer, size_t w, size_t h) {
   window->parent = NULL;
 
   window->buffer = NULL;
+  window->cursor = xmalloc(sizeof(*window->cursor));
   window_set_buffer(window, buffer);
   window->visual_mode_selection = NULL;
 
   window->w = w;
   window->h = h;
 
-  window->tag_stack = list_create();
+  TAILQ_INIT(&window->tag_stack);
   window->tag = NULL;
 
 #define OPTION(name, _, defaultval) \
@@ -281,20 +282,19 @@ void window_resize(struct window *window, int dw, int dh) {
 
 void window_set_buffer(struct window *window, struct buffer* buffer) {
   if (window->buffer) {
-    list_remove(window->buffer->marks, window->cursor);
-    free(window->cursor);
+    TAILQ_REMOVE(&window->buffer->marks, window->cursor, pointers);
   }
 
   window->buffer = buffer;
   window->top = 0;
   window->left = 0;
-  window->cursor = region_create(0, 1);
+  region_set(&window->cursor->region, 0, 1);
   window->incsearch_match = NULL;
-  list_append(buffer->marks, window->cursor);
+  TAILQ_INSERT_TAIL(&buffer->marks, window->cursor, pointers);
 }
 
 size_t window_cursor(struct window *window) {
-  return window->cursor->start;
+  return window->cursor->region.start;
 }
 
 struct window *window_first_leaf(struct window *window) {
@@ -400,9 +400,12 @@ struct window *window_down(struct window *window) {
 
 static void window_free(struct window *window) {
   if (window->split_type == WINDOW_LEAF) {
-    list_free(window->tag_stack, free);
+    struct tag_jump *j, *tj;
+    TAILQ_FOREACH_SAFE(j, &window->tag_stack, pointers, tj) {
+      free(j);
+    }
     if (window->buffer) {
-      list_remove(window->buffer->marks, window->cursor);
+      TAILQ_REMOVE(&window->buffer->marks, window->cursor, pointers);
       free(window->cursor);
     }
   }
@@ -447,6 +450,5 @@ struct window *window_close(struct window *window) {
 }
 
 void window_set_cursor(struct window *window, size_t pos) {
-  window->cursor->start = pos;
-  window->cursor->end = pos + 1;
+  region_set(&window->cursor->region, pos, pos + 1);
 }

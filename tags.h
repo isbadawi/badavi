@@ -3,6 +3,8 @@
 #include <stddef.h>
 #include <time.h>
 
+#include <sys/queue.h>
+
 struct editor;
 
 struct tag {
@@ -15,6 +17,8 @@ struct tag_jump {
   struct buffer *buffer;
   size_t cursor;
   struct tag *tag;
+
+  TAILQ_ENTRY(tag_jump) pointers;
 };
 
 struct tags {

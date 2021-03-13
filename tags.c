@@ -8,7 +8,6 @@
 
 #include "buf.h"
 #include "editor.h"
-#include "list.h"
 #include "search.h"
 #include "util.h"
 #include "window.h"
@@ -126,14 +125,17 @@ void editor_jump_to_tag(struct editor *editor, char *name) {
   jump->cursor = window_cursor(editor->window);
   jump->tag = tag;
 
-  struct list *stack = editor->window->tag_stack;
   if (editor->window->tag) {
-    struct list_node *node = list_get_node(stack, editor->window->tag);
-    if (node->next != stack->tail) {
-      list_free(list_steal(node->next, stack->tail->prev), free);
+    struct tag_jump *j, *tj;
+    TAILQ_FOREACH_REVERSE_SAFE(j, &editor->window->tag_stack, tag_list, pointers, tj) {
+      if (j == editor->window->tag) {
+        break;
+      }
+      TAILQ_REMOVE(&editor->window->tag_stack, j, pointers);
+      free(j);
     }
   }
-  list_append(stack, jump);
+  TAILQ_INSERT_TAIL(&editor->window->tag_stack, jump, pointers);
   editor->window->tag = jump;
 
   editor_open(editor, tag->path);
@@ -141,7 +143,7 @@ void editor_jump_to_tag(struct editor *editor, char *name) {
 }
 
 void editor_tag_stack_prev(struct editor *editor) {
-  if (list_empty(editor->window->tag_stack)) {
+  if (TAILQ_EMPTY(&editor->window->tag_stack)) {
     editor_status_err(editor, "tag stack empty");
   } else if (!editor->window->tag) {
     editor_status_err(editor, "at bottom of tag stack");
@@ -150,22 +152,21 @@ void editor_tag_stack_prev(struct editor *editor) {
     editor->status_error = false;
     window_set_buffer(editor->window, editor->window->tag->buffer);
     window_set_cursor(editor->window, editor->window->tag->cursor);
-    editor->window->tag =
-      list_prev(editor->window->tag_stack, editor->window->tag);
+    editor->window->tag = TAILQ_PREV(editor->window->tag, tag_list, pointers);
   }
 }
 
 void editor_tag_stack_next(struct editor *editor) {
-  if (list_empty(editor->window->tag_stack)) {
+  if (TAILQ_EMPTY(&editor->window->tag_stack)) {
     editor_status_err(editor, "tag stack empty");
     return;
   }
 
   struct tag_jump *next;
   if (!editor->window->tag) {
-    next = list_first(editor->window->tag_stack);
+    next = TAILQ_FIRST(&editor->window->tag_stack);
   } else {
-    next = list_next(editor->window->tag_stack, editor->window->tag);
+    next = TAILQ_NEXT(editor->window->tag, pointers);
   }
   if (!next) {
     editor_status_err(editor, "at top of tag stack");

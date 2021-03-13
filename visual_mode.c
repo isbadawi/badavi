@@ -132,7 +132,7 @@ void visual_mode_selection_update(struct editor *editor) {
 
   struct region *selection = editor->window->visual_mode_selection;
   assert(selection);
-  region_set(selection, editor->window->cursor->start, mode->cursor);
+  region_set(selection, window_cursor(editor->window), mode->cursor);
 
   struct gapbuf *gb = editor->window->buffer->text;
   if (mode->kind == VISUAL_MODE_LINEWISE) {

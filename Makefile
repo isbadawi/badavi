@@ -27,11 +27,7 @@ LDFLAGS := $(LIBCLIPBOARD_LDFLAGS)
 THIRD_PARTY_HEADERS := $(TERMBOX_HEADER) $(LIBCLIPBOARD_HEADER)
 THIRD_PARTY_LIBRARIES := $(TERMBOX_LIBRARY) $(LIBCLIPBOARD_LIBRARY)
 
-WARNING_CFLAGS := -Wall -Wextra
-ifneq (,$(findstring clang,$(realpath $(shell which $(CC)))))
-WARNING_CFLAGS := -Weverything -Wno-padded
-endif
-WARNING_CFLAGS += -Werror
+WARNING_CFLAGS := -Wall -Wextra -Werror
 
 COVERAGE_CFLAGS := $(if $(COVERAGE),-coverage)
 

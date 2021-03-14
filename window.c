@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "buffer.h"
+#include "gap.h"
 #include "options.h"
 #include "tags.h"
 #include "util.h"
@@ -451,4 +452,35 @@ struct window *window_close(struct window *window) {
 
 void window_set_cursor(struct window *window, size_t pos) {
   region_set(&window->cursor->region, pos, pos + 1);
+}
+
+void window_page_up(struct window *window) {
+  if (window->top == 0) {
+    return;
+  }
+
+  window_set_cursor(window, gb_linecol_to_pos(
+      window->buffer->text, window->top + 1, 0));
+
+  if (window->top < window_h(window)) {
+    window->top = 0;
+  } else {
+    window->top -= window_h(window);
+  }
+}
+
+void window_page_down(struct window *window) {
+  size_t nlines = gb_nlines(window->buffer->text);
+  if (window->top == nlines - 1) {
+    return;
+  }
+
+  if (window->top + window_h(window) > nlines - 3) {
+    window->top = nlines - 1;
+  } else {
+    window->top += window_h(window) - 2;
+  }
+
+  window_set_cursor(window, gb_linecol_to_pos(
+      window->buffer->text, window->top, 0));
 }

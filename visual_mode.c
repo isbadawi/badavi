@@ -64,6 +64,12 @@ static void visual_mode_key_pressed(struct editor* editor, struct tb_event* ev) 
   case TB_KEY_ESC: case TB_KEY_CTRL_C:
     editor_pop_mode(editor);
     return;
+  case TB_KEY_CTRL_B:
+    window_page_up(editor->window);
+    break;
+  case TB_KEY_CTRL_F:
+    window_page_down(editor->window);
+    break;
   default: {
     struct motion *motion = motion_get(editor, ev);
     if (motion) {

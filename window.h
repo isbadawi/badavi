@@ -90,3 +90,6 @@ size_t window_x(struct window *window);
 size_t window_y(struct window *window);
 
 void window_get_ruler(struct window *window, char *buf, size_t buflen);
+
+void window_page_up(struct window *window);
+void window_page_down(struct window *window);

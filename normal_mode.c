@@ -56,9 +56,15 @@ static void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) 
   }
 
   switch (ev->key) {
+  case TB_KEY_CTRL_B:
+    window_page_up(editor->window);
+    break;
   case TB_KEY_CTRL_C:
     editor_status_msg(editor, "Type :q<Enter> to exit badavi");
     return;
+  case TB_KEY_CTRL_F:
+    window_page_down(editor->window);
+    break;
   case TB_KEY_CTRL_R:
     editor_redo(editor);
     return;

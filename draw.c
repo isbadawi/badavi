@@ -322,7 +322,7 @@ static void window_draw_leaf(struct window *window) {
   window_draw_cursorline(window);
 
   size_t nlines = gb_nlines(window->buffer->text);
-  for (size_t y = nlines; y < h; ++y) {
+  for (size_t y = nlines - window->top; y < h; ++y) {
     window_change_cell(window, 0, y, '~', COLOR_BLUE, COLOR_DEFAULT);
   }
 

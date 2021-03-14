@@ -32,12 +32,18 @@ struct gapbuf *gb_load(FILE *fp) {
   size_t filesize = (size_t) info.st_size;
   size_t bufsize = filesize + GAPSIZE;
 
-  gb->bufstart = xmalloc(bufsize);
+  gb->bufstart = xmalloc(bufsize + 1);
   gb->gapstart = gb->bufstart;
   gb->gapend = gb->bufstart + GAPSIZE;
   gb->bufend = gb->bufstart + bufsize;
 
   fread(gb->gapend, 1, filesize, fp);
+
+  if (gb->bufend[-1] != '\n') {
+    gb->bufend[0] = '\n';
+    gb->bufend++;
+    filesize++;
+  }
 
   gb->lines = intbuf_create(10);
   ssize_t last = -1;

@@ -32,6 +32,10 @@ static void yank_op(struct editor *editor, struct region *region) {
 
 static void delete_op(struct editor *editor, struct region *region) {
   yank_op(editor, region);
+  if (region->end == gb_size(editor->window->buffer->text)) {
+    region->end--;
+  }
+
   buffer_start_action_group(editor->window->buffer);
   buffer_do_delete(editor->window->buffer, region->end - region->start, region->start);
   window_set_cursor(editor->window, region->start);

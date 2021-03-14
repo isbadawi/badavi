@@ -87,9 +87,9 @@ void buffer_do_insert(struct buffer *buffer, struct buf *buf, size_t pos);
 void buffer_do_delete(struct buffer *buffer, size_t n, size_t pos);
 
 // Undo the last action group. Return false if there is nothing to undo.
-bool buffer_undo(struct buffer *buffer);
+bool buffer_undo(struct buffer *buffer, size_t *cursor_pos);
 // Redo the last undone action group. Return false if there is nothing to redo.
-bool buffer_redo(struct buffer *buffer);
+bool buffer_redo(struct buffer *buffer, size_t *cursor_pos);
 
 // Start a new action group, clearing the redo stack as a side effect.
 // Subsequent calls to buffer_do_insert or buffer_do_delete will add actions to

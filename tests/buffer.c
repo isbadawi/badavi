@@ -23,6 +23,10 @@ static void insert_text(size_t pos, char *text) {
   buffer_do_insert(buffer, buf_from_cstr(text), pos);
 }
 
+static void delete_text(size_t pos, size_t len) {
+  buffer_do_delete(buffer, len, pos);
+}
+
 void test_buffer__empty(void) {
   buffer = buffer_create(NULL);
   cl_assert_equal_s(buffer->name, "");
@@ -30,15 +34,21 @@ void test_buffer__empty(void) {
   assert_contents("\n");
 }
 
-void test_buffer__insert(void) {
+void test_buffer__insert_delete(void) {
   buffer = buffer_create(NULL);
+
   insert_text(0, "hello, world");
   assert_contents("hello, world\n");
+
+  delete_text(1, 3);
+  assert_contents("ho, world\n");
+
   cl_assert(buffer->dirty);
 }
 
 void test_buffer__undo_redo(void) {
   buffer = buffer_create(NULL);
+  size_t cursor_pos;
 
   assert_contents("\n");
 
@@ -50,20 +60,35 @@ void test_buffer__undo_redo(void) {
   insert_text(0, "hello, ");
   assert_contents("hello, world\n");
 
-  buffer_undo(buffer);
+  buffer_undo(buffer, &cursor_pos);
   assert_contents("world\n");
-  buffer_undo(buffer);
-  assert_contents("\n");
+  cl_assert_equal_i(cursor_pos, 0);
 
-  buffer_redo(buffer);
+  buffer_undo(buffer, &cursor_pos);
+  assert_contents("\n");
+  cl_assert_equal_i(cursor_pos, 0);
+
+  buffer_redo(buffer, &cursor_pos);
   assert_contents("world\n");
-  buffer_redo(buffer);
+  cl_assert_equal_i(cursor_pos, 0);
+
+  buffer_redo(buffer, &cursor_pos);
   assert_contents("hello, world\n");
+  cl_assert_equal_i(cursor_pos, 0);
+
+  buffer_start_action_group(buffer);
+  delete_text(1, 3);
+  assert_contents("ho, world\n");
+
+  buffer_undo(buffer, &cursor_pos);
+  assert_contents("hello, world\n");
+  cl_assert_equal_i(cursor_pos, 1);
 }
 
 void test_buffer__undo_group(void) {
   buffer = buffer_create(NULL);
   buffer_start_action_group(buffer);
+  size_t cursor_pos;
 
   assert_contents("\n");
 
@@ -72,10 +97,13 @@ void test_buffer__undo_group(void) {
   insert_text(0, "hello, ");
   assert_contents("hello, world\n");
 
-  buffer_undo(buffer);
+  buffer_undo(buffer, &cursor_pos);
   assert_contents("\n");
-  buffer_redo(buffer);
+  cl_assert_equal_i(cursor_pos, 0);
+
+  buffer_redo(buffer, &cursor_pos);
   assert_contents("hello, world\n");
+  cl_assert_equal_i(cursor_pos, 0);
 }
 
 void test_buffer__marks(void) {

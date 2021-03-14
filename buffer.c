@@ -123,7 +123,7 @@ void buffer_do_delete(struct buffer *buffer, size_t n, size_t pos) {
   buffer_update_marks_after_delete(buffer, pos, n);
 }
 
-bool buffer_undo(struct buffer* buffer) {
+bool buffer_undo(struct buffer* buffer, size_t *cursor_pos) {
   struct edit_action_group *group = TAILQ_FIRST(&buffer->undo_stack);
   if (!group) {
     return false;
@@ -147,10 +147,11 @@ bool buffer_undo(struct buffer* buffer) {
   }
 
   TAILQ_INSERT_HEAD(&buffer->redo_stack, group, pointers);
+  *cursor_pos = TAILQ_LAST(&group->actions, action_list)->pos;
   return true;
 }
 
-bool buffer_redo(struct buffer* buffer) {
+bool buffer_redo(struct buffer* buffer, size_t *cursor_pos) {
   struct edit_action_group *group = TAILQ_FIRST(&buffer->redo_stack);
   if (!group) {
     return false;
@@ -174,6 +175,7 @@ bool buffer_redo(struct buffer* buffer) {
   }
 
   TAILQ_INSERT_HEAD(&buffer->undo_stack, group, pointers);
+  *cursor_pos = TAILQ_LAST(&group->actions, action_list)->pos;
   return true;
 }
 

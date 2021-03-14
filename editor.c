@@ -608,13 +608,19 @@ void editor_status_err(struct editor *editor, const char *format, ...) {
 }
 
 void editor_undo(struct editor *editor) {
-  if (!buffer_undo(editor->window->buffer)) {
+  size_t cursor_pos;
+  if (!buffer_undo(editor->window->buffer, &cursor_pos)) {
     editor_status_msg(editor, "Already at oldest change");
+    return;
   }
+  window_set_cursor(editor->window, cursor_pos);
 }
 
 void editor_redo(struct editor *editor) {
-  if (!buffer_redo(editor->window->buffer)) {
+  size_t cursor_pos;
+  if (!buffer_redo(editor->window->buffer, &cursor_pos)) {
     editor_status_msg(editor, "Already at newest change");
+    return;
   }
+  window_set_cursor(editor->window, cursor_pos);
 }

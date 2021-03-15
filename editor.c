@@ -100,6 +100,9 @@ void editor_init(struct editor *editor, size_t width, size_t height) {
   BUFFER_OPTIONS
   EDITOR_OPTIONS
 #undef OPTION
+
+  history_init(&editor->command_history, &editor->opt.history);
+  history_init(&editor->search_history, &editor->opt.history);
 }
 
 struct editor_register *editor_get_register(struct editor *editor, char name) {
@@ -551,6 +554,10 @@ void editor_send_keys(struct editor *editor, const char *keys) {
         ev->key = TB_KEY_BACKSPACE2;
       } else if (!strcmp("esc", key)) {
         ev->key = TB_KEY_ESC;
+      } else if (!strcmp("up", key)) {
+        ev->key = TB_KEY_ARROW_UP;
+      } else if (!strcmp("down", key)) {
+        ev->key = TB_KEY_ARROW_DOWN;
       } else {
         debug("BUG: editor_send_keys got <%s>\n", key);
         exit(1);

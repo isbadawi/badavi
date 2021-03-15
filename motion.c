@@ -310,6 +310,7 @@ static size_t word_under_cursor(struct motion_context ctx, size_t start,
   struct buf *word = motion_word_under_cursor(ctx.editor->window);
   struct buf *pattern = buf_create(1);
   buf_printf(pattern, "[[:<:]]%s[[:>:]]", word->buf);
+  history_add_item(&ctx.editor->search_history, pattern->buf);
   struct search_match *match =
     editor_search(ctx.editor, pattern->buf, start, direction);
   buf_free(word);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stddef.h>
 
 #include "attrs.h"
@@ -30,6 +31,9 @@ ATTR_PRINTFLIKE(2, 3)
 void buf_printf(struct buf *buf, const char *format, ...);
 ATTR_PRINTFLIKE(2, 0)
 void buf_vprintf(struct buf *buf, const char *format, va_list args);
+
+bool buf_equals(struct buf *buf, char *s);
+bool buf_startswith(struct buf *buf, char *prefix);
 
 // Similar to struct buf but for ints.
 struct intbuf {

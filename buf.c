@@ -119,6 +119,13 @@ void buf_vprintf(struct buf *buf, const char *format, va_list args) {
   buf->len = n;
 }
 
+bool buf_equals(struct buf *buf, char *s) {
+  return !strcmp(buf->buf, s);
+}
+
+bool buf_startswith(struct buf *buf, char *prefix) {
+  return !strncmp(buf->buf, prefix, strlen(prefix));
+}
 
 static void intbuf_grow(struct intbuf *buf, size_t cap) {
   buf->buf = xrealloc(buf->buf, cap * sizeof(*buf->buf));

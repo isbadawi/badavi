@@ -12,8 +12,9 @@
 
 static struct editor *editor = NULL;
 
-static void type(const char *keys) {
+static char *type(const char *keys) {
   editor_send_keys(editor, keys);
+  return editor->status->buf;
 }
 
 #define assert_buffer_contents(text_) do { \
@@ -133,4 +134,48 @@ void test_editor__percent_motion(void) {
   type("l%"); assert_cursor_over(']'); assert_cursor_at(0, 8);
   type("l%"); assert_cursor_over(']'); assert_cursor_at(0, 12);
   type("%"); assert_cursor_over('['); assert_cursor_at(0, 10);
+}
+
+void test_editor__command_history_traversal(void) {
+  type(":set number<cr>");
+  type(":set norelativenumber<cr>");
+
+  type(":");
+
+  cl_assert_equal_s(type("<up>"), ":set norelativenumber");
+  cl_assert_equal_s(type("<up>"), ":set number");
+  cl_assert_equal_s(type("<up>"), ":set number");
+  cl_assert_equal_s(type("<down>"), ":set norelativenumber");
+  cl_assert_equal_s(type("<down>"), ":");
+  cl_assert_equal_s(type("<down>"), ":");
+}
+
+void test_editor__command_history_filter_prefix(void) {
+  type(":set number<cr>");
+  type(":set norelativenumber<cr>");
+  type(":nohlsearch<cr>");
+  type(":set nomodifiable<cr>");
+  type(":vsplit<cr>");
+
+  type(":set no");
+
+  cl_assert_equal_s(type("<up>"), ":set nomodifiable");
+  cl_assert_equal_s(type("<up>"), ":set norelativenumber");
+  cl_assert_equal_s(type("<up>"), ":set norelativenumber");
+  cl_assert_equal_s(type("<down>"), ":set nomodifiable");
+  cl_assert_equal_s(type("<down>"), ":set no");
+}
+
+void test_editor__command_history_duplicates_move_to_front(void) {
+  type(":nohlsearch<cr>");
+  type(":set nomodifiable<cr>");
+  type(":vsplit<cr>");
+  type(":set nomodifiable<cr>");
+
+  type(":");
+
+  cl_assert_equal_s(type("<up>"), ":set nomodifiable");
+  cl_assert_equal_s(type("<up>"), ":vsplit");
+  cl_assert_equal_s(type("<up>"), ":nohlsearch");
+  cl_assert_equal_s(type("<up>"), ":nohlsearch");
 }

@@ -12,6 +12,7 @@
   OPTION(cursorline, bool, false) \
 
 #define EDITOR_OPTIONS \
+  OPTION(history, int, 50) \
   OPTION(sidescroll, int, 0) \
   OPTION(ignorecase, bool, false) \
   OPTION(smartcase, bool, false) \

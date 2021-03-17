@@ -14,34 +14,27 @@
 #include "util.h"
 #include "window.h"
 
-struct visual_mode {
-  struct editing_mode mode;
-  enum visual_mode_kind kind;
-  // The position of the cursor when the mode was entered.
-  size_t cursor;
-};
-
-static void visual_mode_entered(struct editor *editor) {
-  struct visual_mode *mode = (struct visual_mode*) editor->mode;
+void visual_mode_entered(struct editor *editor) {
+  struct visual_mode *mode = editor_get_visual_mode(editor);
+  mode->kind = (enum visual_mode_kind) mode->mode.arg;
   // If we're entering the mode by popping (e.g. because we did a search and
   // finished), then keep the current anchor.
   if (!mode->cursor) {
     mode->cursor = window_cursor(editor->window);
-    editor->window->visual_mode_selection = xmalloc(sizeof(struct region));
+    editor->window->visual_mode_selection = &mode->selection;
     visual_mode_selection_update(editor);
   }
   editor_status_msg(editor, "-- VISUAL --");
 }
 
-static void visual_mode_exited(struct editor *editor) {
-  struct visual_mode *mode = (struct visual_mode*) editor->mode;
+void visual_mode_exited(struct editor *editor) {
+  struct visual_mode *mode = editor_get_visual_mode(editor);
   mode->cursor = 0;
-  free(editor->window->visual_mode_selection);
   editor->window->visual_mode_selection = NULL;
   buf_clear(editor->status);
 }
 
-static void visual_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
+void visual_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
   if (ev->ch != '0' && isdigit((int) ev->ch)) {
     editor->count = 0;
     while (isdigit((int) ev->ch)) {
@@ -89,21 +82,6 @@ static void visual_mode_key_pressed(struct editor* editor, struct tb_event* ev) 
   }
 }
 
-static struct visual_mode impl = {
-  {
-    .entered = visual_mode_entered,
-    .exited = visual_mode_exited,
-    .key_pressed = visual_mode_key_pressed,
-    .parent = NULL
-  },
-  VISUAL_MODE_CHARACTERWISE, 0
-};
-
-struct editing_mode *visual_mode(enum visual_mode_kind kind) {
-  impl.kind = kind;
-  return (struct editing_mode*) &impl;
-}
-
 // FIXME(ibadawi): Duplicated from motion.c
 static bool is_line_start(struct gapbuf *gb, size_t pos) {
   return pos == 0 || gb_getchar(gb, pos - 1) == '\n';
@@ -129,15 +107,14 @@ static size_t line_end(struct gapbuf *gb, size_t pos) {
 
 void visual_mode_selection_update(struct editor *editor) {
   struct visual_mode *mode = (struct visual_mode*) editor->mode;
-  while (mode && mode != &impl) {
+  while (mode && mode != &editor->modes.visual) {
     mode = (struct visual_mode*) mode->mode.parent;
   }
   if (!mode) {
     return;
   }
 
-  struct region *selection = editor->window->visual_mode_selection;
-  assert(selection);
+  struct region *selection = &mode->selection;
   region_set(selection, window_cursor(editor->window), mode->cursor);
 
   struct gapbuf *gb = editor->window->buffer->text;

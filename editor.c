@@ -61,7 +61,20 @@ void editor_init(struct editor *editor, size_t width, size_t height) {
   editor->status_cursor = 0;
 
   editor->highlight_search_matches = true;
-  editor->mode = normal_mode();
+
+  memset(&editor->modes, 0, sizeof(editor->modes));
+#define MODE(name) do { \
+    struct editing_mode *mode = (struct editing_mode*) &editor->modes.name; \
+    mode->kind = EDITING_MODE_##name; \
+    mode->entered = name##_mode_entered; \
+    mode->exited = name##_mode_exited; \
+    mode->key_pressed = name##_mode_key_pressed; \
+  } while (0);
+  MODES
+#undef MODE
+
+  editor->mode = NULL;
+  editor_push_normal_mode(editor, 0);
 
   if (!clipboard) {
     clipboard = clipboard_new(NULL);
@@ -631,3 +644,18 @@ void editor_redo(struct editor *editor) {
   }
   window_set_cursor(editor->window, cursor_pos);
 }
+
+#define MODE(name) \
+  void editor_push_##name##_mode(struct editor *editor, uint64_t arg) { \
+    struct name##_mode *mode = &editor->modes.name; \
+    mode->mode.arg = arg; \
+    memset(mode + sizeof(mode->mode), 0, sizeof(*mode) - sizeof(mode->mode)); \
+    editor_push_mode(editor, &mode->mode); \
+  } \
+  struct name##_mode *editor_get_##name##_mode(struct editor *editor) { \
+    assert(editor->mode->kind == EDITING_MODE_##name); \
+    return (struct name##_mode*) editor->mode; \
+  }
+MODES
+#undef MODE
+

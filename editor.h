@@ -8,6 +8,7 @@
 
 #include "attrs.h"
 #include "history.h"
+#include "mode.h"
 #include "options.h"
 
 struct editor_event {
@@ -28,6 +29,12 @@ struct editor {
 
   // A stack of editing modes.
   struct editing_mode* mode;
+
+  struct {
+#define MODE(name) struct name##_mode name;
+    MODES
+#undef MODE
+  } modes;
 
   // What's written to the status bar.
   struct buf* status;

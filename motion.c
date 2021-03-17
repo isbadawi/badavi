@@ -269,8 +269,8 @@ static size_t till_backward_exclusive(struct motion_context ctx) {
 }
 
 static size_t search_motion(struct motion_context ctx, char direction) {
-  struct editing_mode *mode = search_mode(direction);
-  editor_push_mode(ctx.editor, mode);
+  editor_push_cmdline_mode(ctx.editor, direction);
+  struct editing_mode *mode = ctx.editor->mode;
   editor_draw(ctx.editor);
   while (ctx.editor->mode == mode) {
     struct tb_event event;

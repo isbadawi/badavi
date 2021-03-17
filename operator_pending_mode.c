@@ -6,6 +6,7 @@
 
 #include <termbox.h>
 
+#include "attrs.h"
 #include "buf.h"
 #include "buffer.h"
 #include "editor.h"
@@ -13,11 +14,6 @@
 #include "motion.h"
 #include "window.h"
 #include "util.h"
-
-struct operator_pending_mode {
-  struct editing_mode mode;
-  op_func* op;
-};
 
 static void yank_op(struct editor *editor, struct region *region) {
   struct editor_register *reg = editor_get_register(editor, editor->register_);
@@ -43,7 +39,7 @@ static void delete_op(struct editor *editor, struct region *region) {
 
 static void change_op(struct editor *editor, struct region *region) {
   delete_op(editor, region);
-  editor_push_mode(editor, insert_mode());
+  editor_push_insert_mode(editor, 0);
 }
 
 static struct { char name; op_func *op; } op_table[] = {
@@ -62,7 +58,22 @@ op_func *op_find(char name) {
   return NULL;
 }
 
-static void key_pressed(struct editor *editor, struct tb_event *ev) {
+void operator_pending_mode_entered(struct editor *editor) {
+  struct operator_pending_mode *mode = editor_get_operator_pending_mode(editor);
+  op_func *op = op_find((char) mode->mode.arg);
+  if (!op) {
+    editor_pop_mode(editor);
+    return;
+  }
+  mode->op = op;
+}
+
+void operator_pending_mode_exited(struct editor *editor ATTR_UNUSED) {
+  return;
+}
+
+void operator_pending_mode_key_pressed(
+    struct editor *editor, struct tb_event *ev) {
   if (ev->ch != '0' && isdigit((int) ev->ch)) {
     editor->count = 0;
     while (isdigit((int) ev->ch)) {
@@ -95,27 +106,8 @@ static void key_pressed(struct editor *editor, struct tb_event *ev) {
     region->end = min(region->end + 1, next);
   }
 
-  struct operator_pending_mode* mode = (struct operator_pending_mode*) editor->mode;
+  struct operator_pending_mode* mode = editor_get_operator_pending_mode(editor);
   editor_pop_mode(editor);
   mode->op(editor, region);
   free(region);
-}
-
-static struct operator_pending_mode impl = {
-  {
-    .entered = NULL,
-    .exited = NULL,
-    .key_pressed = key_pressed,
-    NULL
-  },
-  NULL
-};
-
-struct editing_mode *operator_pending_mode(char op_name) {
-  op_func *op = op_find(op_name);
-  if (!op) {
-    return NULL;
-  }
-  impl.op = op;
-  return (struct editing_mode*) &impl;
 }

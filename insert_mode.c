@@ -7,12 +7,12 @@
 #include "editor.h"
 #include "window.h"
 
-static void insert_mode_entered(struct editor *editor) {
+void insert_mode_entered(struct editor *editor) {
   editor_status_msg(editor, "-- INSERT --");
   buffer_start_action_group(editor->window->buffer);
 }
 
-static void insert_mode_exited(struct editor *editor) {
+void insert_mode_exited(struct editor *editor) {
   // If we exit insert mode without making changes, let's not add a
   // useless undo action.
   // TODO(isbadawi): Maybe this belongs in an "editor_end_action_group"
@@ -25,7 +25,7 @@ static void insert_mode_exited(struct editor *editor) {
   buf_clear(editor->status);
 }
 
-static void insert_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
+void insert_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
   struct buffer *buffer = editor->window->buffer;
   size_t cursor = window_cursor(editor->window);
   char ch;
@@ -43,15 +43,4 @@ static void insert_mode_key_pressed(struct editor* editor, struct tb_event* ev) 
   default: ch = (char) ev->ch; break;
   }
   buffer_do_insert(buffer, buf_from_char(ch), cursor);
-}
-
-static struct editing_mode impl = {
-  .entered = insert_mode_entered,
-  .exited = insert_mode_exited,
-  .key_pressed = insert_mode_key_pressed,
-  .parent = NULL
-};
-
-struct editing_mode *insert_mode(void) {
-  return &impl;
 }

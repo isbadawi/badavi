@@ -7,6 +7,7 @@
 
 #include <termbox.h>
 
+#include "attrs.h"
 #include "buf.h"
 #include "buffer.h"
 #include "editor.h"
@@ -45,7 +46,15 @@ static void editor_join_lines(struct editor *editor) {
   window_set_cursor(editor->window, newline);
 }
 
-static void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
+void normal_mode_entered(struct editor *editor ATTR_UNUSED) {
+  return;
+}
+
+void normal_mode_exited(struct editor *editor ATTR_UNUSED) {
+  return;
+}
+
+void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
   if (ev->ch != '0' && isdigit((int) ev->ch)) {
     editor->count = 0;
     while (isdigit((int) ev->ch)) {
@@ -138,16 +147,16 @@ static void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) 
     break;
   }
   case 'i':
-    editor_push_mode(editor, insert_mode());
+    editor_push_insert_mode(editor, 0);
     break;
   case 'v':
-    editor_push_mode(editor, visual_mode(VISUAL_MODE_CHARACTERWISE));
+    editor_push_visual_mode(editor, VISUAL_MODE_CHARACTERWISE);
     break;
   case 'V':
-    editor_push_mode(editor, visual_mode(VISUAL_MODE_LINEWISE));
+    editor_push_visual_mode(editor, VISUAL_MODE_LINEWISE);
     break;
   case ':':
-    editor_push_mode(editor, command_mode());
+    editor_push_cmdline_mode(editor, ':');
     break;
   case 'p': {
     struct editor_register *r = editor_get_register(editor, editor->register_);
@@ -177,21 +186,7 @@ static void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) 
       window_set_cursor(editor->window, motion_apply(motion, editor));
       break;
     }
-    struct editing_mode *mode = operator_pending_mode((char) ev->ch);
-    if (mode) {
-      editor_push_mode(editor, mode);
-    }
+    editor_push_operator_pending_mode(editor, ev->ch);
   }
   }
-}
-
-static struct editing_mode impl = {
-  .entered = NULL,
-  .exited = NULL,
-  .key_pressed = normal_mode_key_pressed,
-  .parent = NULL
-};
-
-struct editing_mode *normal_mode(void) {
-  return &impl;
 }

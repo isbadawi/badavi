@@ -89,6 +89,7 @@ $(TERMBOX_INSTALL_DIR): | $$(@D)/. $(TERMBOX_BUILD_DIR)/.
 	(cd $(TERMBOX_DIR) && \
 	  ./waf configure \
 	    --prefix=$(abspath $@) \
+	    --libdir=lib \
 	    --out=$(abspath $(TERMBOX_BUILD_DIR)) && \
 	  ./waf && \
 	  ./waf install)

@@ -636,7 +636,7 @@ void editor_redo(struct editor *editor) {
   void editor_push_##name##_mode(struct editor *editor, uint64_t arg) { \
     struct name##_mode *mode = &editor->modes.name; \
     mode->mode.arg = arg; \
-    memset(mode + sizeof(mode->mode), 0, sizeof(*mode) - sizeof(mode->mode)); \
+    memset((char*)mode + sizeof(mode->mode), 0, sizeof(*mode) - sizeof(mode->mode)); \
     editor_push_mode(editor, &mode->mode); \
   } \
   struct name##_mode *editor_get_##name##_mode(struct editor *editor) { \

@@ -34,6 +34,8 @@ void buf_vprintf(struct buf *buf, const char *format, va_list args);
 
 bool buf_equals(struct buf *buf, char *s);
 bool buf_startswith(struct buf *buf, char *prefix);
+bool buf_endswith(struct buf *buf, char *suffix);
+void buf_strip_whitespace(struct buf *buf);
 
 // Similar to struct buf but for ints.
 struct intbuf {

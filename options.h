@@ -7,6 +7,9 @@
 typedef char* string;
 
 #define BUFFER_OPTIONS \
+  OPTION(autoindent, bool, false) \
+  OPTION(smartindent, bool, false) \
+  OPTION(shiftwidth, int, 8) \
   OPTION(cinwords, string, "if,else,while,do,for,switch") \
   OPTION(modifiable, bool, true) \
 

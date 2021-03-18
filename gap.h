@@ -43,6 +43,9 @@ char gb_getchar(struct gapbuf *gb, size_t pos);
 // Reads n characters starting at offset pos.
 struct buf *gb_getstring(struct gapbuf *gb, size_t pos, size_t n);
 
+// Returns the line the given pos is on.
+struct buf *gb_getline(struct gapbuf *gb, size_t pos);
+
 // Moves the gap so that gb->bufstart + pos == gb->gapstart.
 void gb_mvgap(struct gapbuf *gb, size_t pos);
 

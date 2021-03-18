@@ -173,7 +173,13 @@ void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
   case 'I': editor_send_keys(editor, "0i"); break;
   case 'A': editor_send_keys(editor, "$i"); break;
   case 'o': editor_send_keys(editor, "A<cr>"); break;
-  case 'O': editor_send_keys(editor, "0i<cr><esc>ki"); break;
+  case 'O':
+    if (cursor < gb->lines->buf[0]) {
+      editor_send_keys(editor, "0i<cr><esc>0\"zy^k\"zpi");
+    } else {
+      editor_send_keys(editor, "ko");
+    }
+    break;
   case 'x': editor_send_keys(editor, "dl"); break;
   case 'D': editor_send_keys(editor, "d$"); break;
   case 'C': editor_send_keys(editor, "c$"); break;

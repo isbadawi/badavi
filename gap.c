@@ -108,6 +108,12 @@ struct buf *gb_getstring(struct gapbuf *gb, size_t pos, size_t n) {
   return strbuf;
 }
 
+struct buf *gb_getline(struct gapbuf *gb, size_t pos) {
+  size_t line, column;
+  gb_pos_to_linecol(gb, pos, &line, &column);
+  return gb_getstring(gb, pos - column, gb->lines->buf[line]);
+}
+
 // Moves the gap so that gb->bufstart + pos == gb->gapstart.
 void gb_mvgap(struct gapbuf *gb, size_t pos) {
   char *point = gb->bufstart + gb_index(gb, pos);

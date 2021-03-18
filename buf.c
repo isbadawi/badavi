@@ -1,5 +1,6 @@
 #include "buf.h"
 
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -125,6 +126,23 @@ bool buf_equals(struct buf *buf, char *s) {
 
 bool buf_startswith(struct buf *buf, char *prefix) {
   return !strncmp(buf->buf, prefix, strlen(prefix));
+}
+
+bool buf_endswith(struct buf *buf, char *suffix) {
+  size_t suffix_len = strlen(suffix);
+  if (buf->len < suffix_len) {
+    return false;
+  }
+  return !strcmp(buf->buf + (buf->len - suffix_len), suffix);
+}
+
+void buf_strip_whitespace(struct buf *buf) {
+  while (buf->len && isspace(buf->buf[0])) {
+    buf_delete(buf, 0, 1);
+  }
+  while (buf->len && isspace(buf->buf[buf->len - 1])) {
+    buf_delete(buf, buf->len - 1, 1);
+  }
 }
 
 static void intbuf_grow(struct intbuf *buf, size_t cap) {

@@ -179,3 +179,21 @@ void test_editor__command_history_duplicates_move_to_front(void) {
   cl_assert_equal_s(type("<up>"), ":nohlsearch");
   cl_assert_equal_s(type("<up>"), ":nohlsearch");
 }
+
+void test_editor__autoindent(void) {
+  type(":set autoindent<cr>");
+  type("i    hello<cr>world");
+  assert_buffer_contents("    hello\n    world\n");
+
+  type("<esc>ggdG");
+  type(":set smartindent<cr>");
+  type(":set shiftwidth=2<cr>");
+
+  type("ihello {<cr>world");
+  assert_buffer_contents("hello {\n  world\n");
+
+  type("<esc>ggdG");
+  type(":set cinwords=custom<cr>");
+  type("icustom<cr>indented");
+  assert_buffer_contents("custom\n  indented\n");
+}

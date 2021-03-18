@@ -28,10 +28,7 @@ struct window *window_create(struct buffer *buffer, size_t w, size_t h) {
   TAILQ_INIT(&window->tag_stack);
   window->tag = NULL;
 
-#define OPTION(name, _, defaultval) \
-  window->opt.name = defaultval;
-  WINDOW_OPTIONS
-#undef OPTION
+  window_init_options(window);
 
   return window;
 }
@@ -194,10 +191,10 @@ struct window *window_split(struct window *window,
       window->buffer, window->w, window->h);
 
   copy->parent = window;
-  sibling->parent = window;
+  window_inherit_parent_options(copy);
 
-  copy->opt = window->opt;
-  sibling->opt = window->opt;
+  sibling->parent = window;
+  window_inherit_parent_options(sibling);
 
   switch (direction) {
   case WINDOW_SPLIT_LEFT:

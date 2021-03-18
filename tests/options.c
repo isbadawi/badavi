@@ -2,6 +2,9 @@
 #include "editor.h"
 
 #include "buf.h"
+#include "buffer.h"
+#include "window.h"
+
 #include "util.h"
 
 static struct editor *editor = NULL;
@@ -14,6 +17,21 @@ static char *type(const char *keys) {
 void test_options__initialize(void) {
   editor = xmalloc(sizeof(*editor));
   editor_init(editor, 600, 600);
+}
+
+void test_options__option_types(void) {
+  type(":set ruler<cr>");
+  cl_assert(editor->opt.ruler);
+  cl_assert_equal_s(type(":set ruler?<cr>"), "ruler");
+
+  type(":set numberwidth=6<cr>");
+  cl_assert_equal_i(editor->window->opt.numberwidth, 6);
+  cl_assert_equal_s(type(":set numberwidth?<cr>"), "numberwidth=6");
+
+  type(":set cinwords=hello,world<cr>");
+  cl_assert_equal_s(type(":set cinwords?<cr>"), "cinwords=hello,world");
+  cl_assert_equal_s(editor->opt.cinwords, "hello,world");
+  cl_assert_equal_s(editor->window->buffer->opt.cinwords, "hello,world");
 }
 
 void test_options__buffer_local(void) {

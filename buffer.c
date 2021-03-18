@@ -21,11 +21,6 @@ static struct buffer *buffer_of(char *path, struct gapbuf *gb) {
 
   TAILQ_INIT(&buffer->marks);
 
-#define OPTION(name, _, defaultval) \
-  buffer->opt.name = defaultval;
-  BUFFER_OPTIONS
-#undef OPTION
-
   return buffer;
 }
 

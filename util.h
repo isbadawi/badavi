@@ -1,7 +1,8 @@
 #pragma once
 
-#include <stdio.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdio.h>
 
 #include <sys/queue.h>
 
@@ -34,6 +35,7 @@ void debug(const char *format, ...);
 void *xmalloc(size_t size);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *s);
+bool strtoi(char *s, int *result);
 
 struct region {
   size_t start;
@@ -42,3 +44,4 @@ struct region {
 
 struct region *region_create(size_t start, size_t end);
 struct region *region_set(struct region *region, size_t start, size_t end);
+

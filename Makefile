@@ -124,6 +124,9 @@ $(BUILD_DIR)/tests/clar.suite: $(TEST_SRCS) | $$(@D)/.
 $(BUILD_DIR)/%.o: %.c $(THIRD_PARTY_HEADERS) | $$(@D)/.
 	$(CC) -MMD -MP -o $@ -c $< $(CFLAGS)
 
+$(BUILD_DIR)/%.pp: %.c $(THIRD_PARTY_HEADERS) | $$(@D)/.
+	$(CC) -E -o $@ -c $< $(CFLAGS)
+
 -include $(DEPS)
 
 define program_template

@@ -2,7 +2,12 @@
 
 #include <stdbool.h>
 
+#include "util.h"
+
+typedef char* string;
+
 #define BUFFER_OPTIONS \
+  OPTION(cinwords, string, "if,else,while,do,for,switch") \
   OPTION(modifiable, bool, true) \
 
 #define WINDOW_OPTIONS \
@@ -33,7 +38,31 @@ struct opt {
   enum opt_type {
     OPTION_TYPE_bool,
     OPTION_TYPE_int,
+    OPTION_TYPE_string,
   } type;
 };
 
+static inline void option_set_int(int *p, int v) {
+  *p = v;
+}
+
+static inline void option_set_bool(bool *p, bool v) {
+  *p = v;
+}
+
+static inline void option_set_string(string *p, string v) {
+  *p = xstrdup(v);
+}
+
 struct opt *option_info(char *name);
+
+struct editor;
+struct window;
+struct buffer;
+
+void editor_init_options(struct editor *editor);
+void window_init_options(struct window *window);
+void buffer_inherit_editor_options(struct buffer *buffer, struct editor *editor);
+void window_inherit_parent_options(struct window *window);
+
+void *editor_opt_val(struct editor *editor, struct opt *info, bool global);

@@ -52,6 +52,15 @@ char *xstrdup(const char *s) {
   return copy;
 }
 
+bool strtoi(char *s, int *result) {
+  char *nptr;
+  long val = strtol(s, &nptr, 10);
+  if (*nptr == '\0') {
+    *result = (int) val;
+    return true;
+  }
+  return false;
+}
 
 struct region *region_set(struct region *region, size_t start, size_t end) {
   region->start = min(start, end);

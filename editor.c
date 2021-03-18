@@ -47,13 +47,8 @@ static void register_clipboard_write(struct editor_register *reg, char *text) {
 }
 
 void editor_init(struct editor *editor, size_t width, size_t height) {
-  TAILQ_INIT(&editor->buffers);
-  struct buffer *buffer = buffer_create(NULL);
-  TAILQ_INSERT_TAIL(&editor->buffers, buffer, pointers);
-
   editor->width = width;
   editor->height = height;
-  editor->window = window_create(buffer, editor->width, editor->height - 1);
 
   editor->status = buf_create(editor->width);
   editor->status_error = false;
@@ -108,11 +103,14 @@ void editor_init(struct editor *editor, size_t width, size_t height) {
 
   TAILQ_INIT(&editor->synthetic_events);
 
-#define OPTION(name, _, defaultval) \
-  editor->opt.name = defaultval;
-  BUFFER_OPTIONS
-  EDITOR_OPTIONS
-#undef OPTION
+  editor_init_options(editor);
+
+  TAILQ_INIT(&editor->buffers);
+  struct buffer *buffer = buffer_create(NULL);
+  buffer_inherit_editor_options(buffer, editor);
+  TAILQ_INSERT_TAIL(&editor->buffers, buffer, pointers);
+
+  editor->window = window_create(buffer, editor->width, editor->height - 1);
 
   history_init(&editor->command_history, &editor->opt.history);
   history_init(&editor->search_history, &editor->opt.history);
@@ -149,8 +147,8 @@ void editor_open(struct editor *editor, char *path) {
       editor_status_msg(editor, "\"%s\" %zuL, %zuC",
           path, gb_nlines(buffer->text), gb_size(buffer->text));
     }
+    buffer_inherit_editor_options(buffer, editor);
     TAILQ_INSERT_TAIL(&editor->buffers, buffer, pointers);
-    memcpy(&buffer->opt, &editor->opt, sizeof(buffer->opt));
   }
   window_set_buffer(editor->window, buffer);
 }
@@ -289,41 +287,6 @@ static void editor_command_source(struct editor *editor, char *arg) {
   editor_source(editor, arg);
 }
 
-static void *editor_opt_val(struct editor *editor, struct opt *info,
-                            bool global) {
-  switch (info->scope) {
-  case OPTION_SCOPE_WINDOW:
-#define OPTION(optname, _, __) \
-    if (!strcmp(info->name, #optname)) { \
-      return &editor->window->opt.optname; \
-    }
-    WINDOW_OPTIONS
-#undef OPTION
-    break;
-  case OPTION_SCOPE_BUFFER:
-    if (!global) {
-#define OPTION(optname, _, __) \
-      if (!strcmp(info->name, #optname)) { \
-        return &editor->window->buffer->opt.optname; \
-      }
-      BUFFER_OPTIONS
-#undef OPTION
-    }
-    ATTR_FALLTHROUGH;
-  case OPTION_SCOPE_EDITOR:
-#define OPTION(optname, _, __) \
-    if (!strcmp(info->name, #optname)) { \
-      return &editor->opt.optname; \
-    }
-    BUFFER_OPTIONS
-    EDITOR_OPTIONS
-#undef OPTION
-  }
-
-  assert(0);
-  return NULL;
-}
-
 static void editor_command_set_impl(struct editor *editor, char *arg,
                                     bool global) {
   if (!arg) {
@@ -333,7 +296,7 @@ static void editor_command_set_impl(struct editor *editor, char *arg,
   }
 
   regex_t regex;
-  regcomp(&regex, "(no)?([a-z]+)(=[0-9]+|!|\\?)?", REG_EXTENDED);
+  regcomp(&regex, "(no)?([a-z]+)(=[0-9a-zA-Z,_]+|!|\\?)?", REG_EXTENDED);
 
   regmatch_t groups[4];
   int nomatch = regexec(&regex, arg, 4, groups, 0);
@@ -359,36 +322,60 @@ static void editor_command_set_impl(struct editor *editor, char *arg,
   void *val = editor_opt_val(editor, info, global);
   bool *boolval = (bool*)val;
   int *intval = (int*)val;
+  char **stringval = (char**)val;
 
   if (groups[3].rm_so == -1) {
-    if (info->type == OPTION_TYPE_int) {
+    switch (info->type) {
+    case OPTION_TYPE_int:
       editor_status_msg(editor, "%s=%d", opt, *intval);
-    } else if (info->type == OPTION_TYPE_bool) {
+      break;
+    case OPTION_TYPE_string:
+      editor_status_msg(editor, "%s=%s", opt, *stringval);
+      break;
+    case OPTION_TYPE_bool:
       *boolval = groups[1].rm_so == -1;
+      break;
     }
     return;
   }
 
   switch (arg[groups[3].rm_so]) {
   case '!':
-    if (info->type == OPTION_TYPE_bool) {
+    switch (info->type) {
+    case OPTION_TYPE_bool:
       *boolval = !*boolval;
-    } else {
+      break;
+    case OPTION_TYPE_int:
+    case OPTION_TYPE_string:
       editor_status_err(editor, "Invalid argument: %s", arg);
+      break;
     }
     break;
   case '?':
-    if (info->type == OPTION_TYPE_int) {
+    switch (info->type) {
+    case OPTION_TYPE_int:
       editor_status_msg(editor, "%s=%d", opt, *intval);
-    } else if (info->type == OPTION_TYPE_bool) {
+      break;
+    case OPTION_TYPE_string:
+      editor_status_msg(editor, "%s=%s", opt, *stringval);
+      break;
+    case OPTION_TYPE_bool:
       editor_status_msg(editor, "%s%s", *boolval ? "" : "no", opt);
+      break;
     }
     break;
   case '=':
-    if (info->type == OPTION_TYPE_int) {
-      *intval = atoi(arg + groups[3].rm_so + 1);
-    } else {
+    switch (info->type) {
+    case OPTION_TYPE_int:
+      strtoi(arg + groups[3].rm_so + 1, intval);
+      break;
+    case OPTION_TYPE_string:
+      free(*stringval);
+      option_set_string(stringval, arg + groups[3].rm_so + 1);
+      break;
+    case OPTION_TYPE_bool:
       editor_status_err(editor, "Invalid argument: %s", arg);
+      break;
     }
     break;
   }

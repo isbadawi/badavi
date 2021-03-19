@@ -1,6 +1,8 @@
 #include "clar.h"
 #include "editor.h"
 
+#include <termbox.h>
+
 #include "buf.h"
 #include "buffer.h"
 #include "window.h"
@@ -15,8 +17,9 @@ static char *type(const char *keys) {
 }
 
 void test_options__initialize(void) {
+  tb_init();
   editor = xmalloc(sizeof(*editor));
-  editor_init(editor, 600, 600);
+  editor_init(editor, tb_width(), tb_height());
 }
 
 void test_options__option_types(void) {

@@ -5,6 +5,8 @@
 #include <sys/time.h>
 #include <time.h>
 
+#include <termbox.h>
+
 #include "buf.h"
 #include "buffer.h"
 #include "gap.h"
@@ -18,8 +20,9 @@ static struct tags *tags = NULL;
 void test_tags__initialize(void) {
   cl_fixture_sandbox("tags.c");
   cl_fixture_sandbox("tags");
+  tb_init();
   editor = xmalloc(sizeof(*editor));
-  editor_init(editor, 600, 600);
+  editor_init(editor, tb_width(), tb_height());
   tags = editor->tags;
   cl_assert(tags && tags->len > 0);
 }

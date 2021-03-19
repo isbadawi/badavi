@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <termbox.h>
 
 #include "buf.h"
 #include "buffer.h"
@@ -44,8 +45,9 @@ static char *type(const char *keys) {
 } while (0)
 
 void test_editor__initialize(void) {
+  tb_init();
   editor = xmalloc(sizeof(*editor));
-  editor_init(editor, 600, 600);
+  editor_init(editor, tb_width(), tb_height());
   assert_buffer_contents("\n");
   assert_cursor_at(0, 0);
 }

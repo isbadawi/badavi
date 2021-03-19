@@ -130,12 +130,11 @@ $(BUILD_DIR)/%.pp: %.c $(THIRD_PARTY_HEADERS) | $$(@D)/.
 
 -include $(DEPS)
 
-define program_template
-$(1): $(2) $(THIRD_PARTY_LIBRARIES) | $$$$(@D)/.
-	$(CC) -o $$@ $(COVERAGE_CFLAGS) $$^ $(LDFLAGS)
-endef
-$(eval $(call program_template,$(BUILD_DIR)/$(PROG),$(OBJS)))
-$(eval $(call program_template,$(BUILD_DIR)/$(TEST_PROG),$(TEST_OBJS)))
+$(BUILD_DIR)/$(PROG): $(OBJS) $(THIRD_PARTY_LIBRARIES) | $$(@D)/.
+	$(CC) -o $@ $(COVERAGE_CFLAGS) $^ $(LDFLAGS)
+
+$(BUILD_DIR)/$(TEST_PROG): $(TEST_OBJS) $(filter-out $(TERMBOX_LIBRARY),$(THIRD_PARTY_LIBRARIES)) | $$(@D)/.
+	$(CC) -o $@ $(COVERAGE_CFLAGS) $^ $(LDFLAGS)
 
 tags: $(SRCS) $(HDRS)
 	ctags $^

@@ -348,14 +348,6 @@ static void window_draw(struct window *window) {
 }
 
 void editor_draw(struct editor *editor) {
-  // FIXME(ibadawi): Hack to make the tests run.
-  // If termbox wasn't initialized (like in the tests), let's not try to draw,
-  // because we can hit a segfault when we try to access the tb_cell buffer.
-  // (search_motion() calls editor_draw(), which is why the tests draw).
-  if (tb_width() == -1) {
-    return;
-  }
-
   tb_clear();
 
   // FIXME(ibadawi): It's a bit kludgy to call this here.

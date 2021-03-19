@@ -407,6 +407,7 @@ static void window_free(struct window *window) {
       free(window->cursor);
     }
   }
+  window_free_options(window);
   free(window);
 }
 

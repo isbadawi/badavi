@@ -48,6 +48,13 @@ void window_init_options(struct window *window) {
 #undef OPTION
 }
 
+void window_free_options(struct window *window) {
+#define OPTION(name, type, _) \
+  option_free_##type(window->opt.name);
+  WINDOW_OPTIONS
+#undef OPTION
+}
+
 void buffer_inherit_editor_options(
     struct buffer *buffer, struct editor *editor) {
 #define OPTION(name, type, _) \

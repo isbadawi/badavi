@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "util.h"
 
@@ -57,6 +58,18 @@ static inline void option_set_string(string *p, string v) {
   *p = xstrdup(v);
 }
 
+static inline void option_free_int(int i ATTR_UNUSED) {
+  return;
+}
+
+static inline void option_free_bool(bool b ATTR_UNUSED) {
+  return;
+}
+
+static inline void option_free_string(string s) {
+  free(s);
+}
+
 struct opt *option_info(char *name);
 
 struct editor;
@@ -65,6 +78,7 @@ struct buffer;
 
 void editor_init_options(struct editor *editor);
 void window_init_options(struct window *window);
+void window_free_options(struct window *window);
 void buffer_inherit_editor_options(struct buffer *buffer, struct editor *editor);
 void window_inherit_parent_options(struct window *window);
 

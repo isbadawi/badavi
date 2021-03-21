@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "buffer.h"
+#include "editor.h"
 #include "gap.h"
 #include "options.h"
 #include "tags.h"
@@ -481,4 +482,30 @@ void window_page_down(struct window *window) {
 
   window_set_cursor(window, gb_linecol_to_pos(
       window->buffer->text, window->top, 0));
+}
+
+EDITOR_COMMAND(split, sp) {
+  editor->window = window_split(editor->window,
+      editor->opt.splitbelow ? WINDOW_SPLIT_BELOW : WINDOW_SPLIT_ABOVE);
+
+  if (editor->opt.equalalways) {
+    window_equalize(editor->window, WINDOW_SPLIT_HORIZONTAL);
+  }
+
+  if (arg) {
+    editor_open(editor, arg);
+  }
+}
+
+EDITOR_COMMAND(vsplit, vsp) {
+  editor->window = window_split(editor->window,
+      editor->opt.splitright ? WINDOW_SPLIT_RIGHT : WINDOW_SPLIT_LEFT);
+
+  if (editor->opt.equalalways) {
+    window_equalize(editor->window, WINDOW_SPLIT_VERTICAL);
+  }
+
+  if (arg) {
+    editor_open(editor, arg);
+  }
 }

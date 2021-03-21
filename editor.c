@@ -6,7 +6,6 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include <regex.h>
 #include <unistd.h>
 
 #include <libclipboard.h>
@@ -21,6 +20,17 @@
 #include "terminal.h"
 #include "util.h"
 #include "window.h"
+
+TAILQ_HEAD(editor_command_list, editor_command) editor_commands;
+bool commands_init_done = false;
+
+void register_editor_command(struct editor_command *command) {
+  if (!commands_init_done) {
+    TAILQ_INIT(&editor_commands);
+    commands_init_done = true;
+  }
+  TAILQ_INSERT_TAIL(&editor_commands, command, pointers);
+}
 
 static clipboard_c *clipboard = NULL;
 
@@ -192,36 +202,33 @@ void editor_save_buffer(struct editor *editor, char *path) {
   }
 }
 
-struct editor_command {
-  const char *name;
-  const char *shortname;
-  void (*action)(struct editor*, char*);
-};
-
-static void editor_command_quit(struct editor *editor, char *arg ATTR_UNUSED) {
-  struct buffer *b;
-  TAILQ_FOREACH(b, &editor->buffers, pointers) {
-    if (b->dirty) {
-      editor_status_err(editor,
-          "No write since last change for buffer \"%s\"",
-          *b->name ? b->name : "[No Name]");
-      return;
+EDITOR_COMMAND(qall, qa) {
+  if (!force) {
+    struct buffer *b;
+    TAILQ_FOREACH(b, &editor->buffers, pointers) {
+      if (b->dirty) {
+        editor_status_err(editor,
+            "No write since last change for buffer \"%s\"",
+            *b->name ? b->name : "[No Name]");
+        return;
+      }
     }
   }
   exit(0);
 }
 
-ATTR_NORETURN
-static void editor_command_force_quit(
-    struct editor *editor ATTR_UNUSED, char *arg ATTR_UNUSED) {
-  exit(0);
-}
-
-static void editor_command_force_close_window(struct editor *editor, char *arg) {
+EDITOR_COMMAND(quit, q) {
   if (window_root(editor->window)->split_type == WINDOW_LEAF) {
-    editor_command_force_quit(editor, arg);
+    editor_command_qall(editor, arg, force);
+    return;
   }
   assert(editor->window->parent);
+
+  if (!force && editor->window->buffer->dirty) {
+    editor_status_err(editor,
+        "No write since last change (add ! to override)");
+    return;
+  }
 
   enum window_split_type split_type = editor->window->parent->split_type;
   editor->window = window_close(editor->window);
@@ -231,27 +238,12 @@ static void editor_command_force_close_window(struct editor *editor, char *arg) 
   }
 }
 
-static void editor_command_close_window(struct editor *editor, char *arg) {
-  if (window_root(editor->window)->split_type == WINDOW_LEAF) {
-    editor_command_quit(editor, arg);
-    return;
-  }
-
-  if (editor->window->buffer->dirty) {
-      editor_status_err(editor,
-          "No write since last change (add ! to override)");
-      return;
-  }
-
-  editor_command_force_close_window(editor, arg);
-}
-
-static void editor_command_write_quit(struct editor *editor, char *arg) {
+EDITOR_COMMAND(wq, wq) {
   editor_save_buffer(editor, NULL);
-  editor_command_close_window(editor, arg);
+  editor_command_quit(editor, arg, false);
 }
 
-static void editor_command_edit(struct editor *editor, char *arg) {
+EDITOR_COMMAND(edit, e) {
   if (arg) {
     editor_open(editor, arg);
   } else {
@@ -278,7 +270,7 @@ void editor_source(struct editor *editor, char *path) {
   fclose(fp);
 }
 
-static void editor_command_source(struct editor *editor, char *arg) {
+EDITOR_COMMAND(source, so) {
   if (!arg) {
     editor_status_err(editor, "Argument required");
     return;
@@ -287,183 +279,23 @@ static void editor_command_source(struct editor *editor, char *arg) {
   editor_source(editor, arg);
 }
 
-static void editor_command_set_impl(struct editor *editor, char *arg,
-                                    bool global) {
-  if (!arg) {
-    // TODO(isbadawi): show current values of all options...
-    editor_status_err(editor, "Argument required");
-    return;
-  }
-
-  regex_t regex;
-  regcomp(&regex, "(no)?([a-z]+)(=[0-9a-zA-Z,_]+|!|\\?)?", REG_EXTENDED);
-
-  regmatch_t groups[4];
-  int nomatch = regexec(&regex, arg, 4, groups, 0);
-  regfree(&regex);
-
-  if (nomatch) {
-    editor_status_err(editor, "Invalid argument: %s", arg);
-    return;
-  }
-
-  char opt[32];
-  size_t optlen = (size_t) (groups[2].rm_eo - groups[2].rm_so);
-  strncpy(opt, arg + groups[2].rm_so, optlen);
-  opt[optlen] = '\0';
-
-  struct opt *info = option_info(opt);
-
-  if (!info) {
-    editor_status_err(editor, "Unknown option: %s", opt);
-    return;
-  }
-
-  void *val = editor_opt_val(editor, info, global);
-  bool *boolval = (bool*)val;
-  int *intval = (int*)val;
-  char **stringval = (char**)val;
-
-  if (groups[3].rm_so == -1) {
-    switch (info->type) {
-    case OPTION_TYPE_int:
-      editor_status_msg(editor, "%s=%d", opt, *intval);
-      break;
-    case OPTION_TYPE_string:
-      editor_status_msg(editor, "%s=%s", opt, *stringval);
-      break;
-    case OPTION_TYPE_bool:
-      *boolval = groups[1].rm_so == -1;
-      break;
-    }
-    return;
-  }
-
-  switch (arg[groups[3].rm_so]) {
-  case '!':
-    switch (info->type) {
-    case OPTION_TYPE_bool:
-      *boolval = !*boolval;
-      break;
-    case OPTION_TYPE_int:
-    case OPTION_TYPE_string:
-      editor_status_err(editor, "Invalid argument: %s", arg);
-      break;
-    }
-    break;
-  case '?':
-    switch (info->type) {
-    case OPTION_TYPE_int:
-      editor_status_msg(editor, "%s=%d", opt, *intval);
-      break;
-    case OPTION_TYPE_string:
-      editor_status_msg(editor, "%s=%s", opt, *stringval);
-      break;
-    case OPTION_TYPE_bool:
-      editor_status_msg(editor, "%s%s", *boolval ? "" : "no", opt);
-      break;
-    }
-    break;
-  case '=':
-    switch (info->type) {
-    case OPTION_TYPE_int:
-      strtoi(arg + groups[3].rm_so + 1, intval);
-      break;
-    case OPTION_TYPE_string:
-      free(*stringval);
-      option_set_string(stringval, arg + groups[3].rm_so + 1);
-      break;
-    case OPTION_TYPE_bool:
-      editor_status_err(editor, "Invalid argument: %s", arg);
-      break;
-    }
-    break;
-  }
-  return;
-}
-
-static void editor_command_setglobal(struct editor *editor, char *arg) {
-  editor_command_set_impl(editor, arg, true);
-}
-
-static void editor_command_setlocal(struct editor *editor, char *arg) {
-  editor_command_set_impl(editor, arg, false);
-}
-
-static void editor_command_set(struct editor *editor, char *arg) {
-  editor_command_setglobal(editor, arg);
-  editor_command_setlocal(editor, arg);
-}
-
-static void editor_command_split(struct editor *editor, char *arg) {
-  editor->window = window_split(editor->window,
-      editor->opt.splitbelow ? WINDOW_SPLIT_BELOW : WINDOW_SPLIT_ABOVE);
-
-  if (editor->opt.equalalways) {
-    window_equalize(editor->window, WINDOW_SPLIT_HORIZONTAL);
-  }
-
-  if (arg) {
-    editor_command_edit(editor, arg);
-  }
-}
-
-static void editor_command_vsplit(struct editor *editor, char *arg) {
-  editor->window = window_split(editor->window,
-      editor->opt.splitright ? WINDOW_SPLIT_RIGHT : WINDOW_SPLIT_LEFT);
-
-  if (editor->opt.equalalways) {
-    window_equalize(editor->window, WINDOW_SPLIT_VERTICAL);
-  }
-
-  if (arg) {
-    editor_command_edit(editor, arg);
-  }
-}
-
-static void editor_command_tag(struct editor *editor, char *arg) {
-  if (!arg) {
-    editor_tag_stack_next(editor);
-  } else {
-    editor_jump_to_tag(editor, arg);
-  }
-}
-
-static void editor_command_nohlsearch(
-    struct editor *editor, char *arg ATTR_UNUSED) {
-  editor->highlight_search_matches = false;
-}
-
-static struct editor_command editor_commands[] = {
-  {"quit", "q", editor_command_close_window},
-  {"quit!", "q!", editor_command_force_close_window},
-  {"qall", "qa", editor_command_quit},
-  {"qall!", "qa!", editor_command_force_quit},
-  {"write", "w", editor_save_buffer},
-  {"wq", "wq", editor_command_write_quit},
-  {"edit", "e", editor_command_edit},
-  {"source", "so", editor_command_source},
-  {"set", "set", editor_command_set},
-  {"setlocal", "setl", editor_command_setlocal},
-  {"setglobal", "setg", editor_command_setglobal},
-  {"split", "sp", editor_command_split},
-  {"vsplit", "vsp", editor_command_vsplit},
-  {"tag", "tag", editor_command_tag},
-  {"nohlsearch", "noh", editor_command_nohlsearch},
-  {NULL, NULL, NULL}
-};
-
 void editor_execute_command(struct editor *editor, char *command) {
   if (!*command) {
     return;
   }
   char *copy = xstrdup(command);
   char *name = strtok(command, " ");
+  size_t namelen = strlen(name);
+  bool force = false;
+  if (name[namelen - 1] == '!') {
+    force = true;
+    name[namelen - 1] = '\0';
+  }
   char *arg = strtok(NULL, " ");
-  for (int i = 0; editor_commands[i].name; ++i) {
-    struct editor_command *cmd = &editor_commands[i];
+  struct editor_command *cmd;
+  TAILQ_FOREACH(cmd, &editor_commands, pointers) {
     if (!strcmp(name, cmd->name) || !strcmp(name, cmd->shortname)) {
-      cmd->action(editor, arg);
+      cmd->action(editor, arg, force);
       return;
     }
   }
@@ -645,4 +477,3 @@ void editor_redo(struct editor *editor) {
   }
 MODES
 #undef MODE
-

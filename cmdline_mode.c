@@ -56,6 +56,10 @@ static void search_done_cb(struct editor *editor, char *command) {
   editor->highlight_search_matches = true;
 }
 
+EDITOR_COMMAND(nohlsearch, noh) {
+  editor->highlight_search_matches = false;
+}
+
 static void search_char_cb(struct editor *editor, char *command) {
   if (!editor->opt.incsearch || !*command) {
     return;

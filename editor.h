@@ -114,3 +114,25 @@ void editor_undo(struct editor *editor);
 void editor_redo(struct editor *editor);
 
 void editor_source(struct editor *editor, char *path);
+
+struct editor_command {
+  const char *name;
+  const char *shortname;
+  void (*action)(struct editor*, char*, bool);
+
+  TAILQ_ENTRY(editor_command) pointers;
+};
+void register_editor_command(struct editor_command *command);
+
+#define EDITOR_COMMAND(name, shortname) \
+  static void editor_command_##name(struct editor*, char*, bool); \
+  struct editor_command command_##name = { \
+      #name, #shortname, editor_command_##name, {0}}; \
+  __attribute__((constructor)) \
+  static void _constructor_##name(void) { \
+    register_editor_command(&command_##name); \
+  } \
+  static void editor_command_##name( \
+      struct editor *editor ATTR_UNUSED, \
+      char *arg ATTR_UNUSED, \
+      bool force ATTR_UNUSED)

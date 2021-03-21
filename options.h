@@ -81,5 +81,3 @@ void window_init_options(struct window *window);
 void window_free_options(struct window *window);
 void buffer_inherit_editor_options(struct buffer *buffer, struct editor *editor);
 void window_inherit_parent_options(struct window *window);
-
-void *editor_opt_val(struct editor *editor, struct opt *info, bool global);

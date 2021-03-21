@@ -177,3 +177,11 @@ void editor_tag_stack_next(struct editor *editor) {
   editor_jump_to_match(editor, next->tag->cmd + 1, 0, SEARCH_FORWARDS);
   editor->window->tag = next;
 }
+
+EDITOR_COMMAND(tag, tag) {
+  if (!arg) {
+    editor_tag_stack_next(editor);
+  } else {
+    editor_jump_to_tag(editor, arg);
+  }
+}

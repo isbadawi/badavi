@@ -9,6 +9,45 @@
 #include "editor.h"
 #include "window.h"
 
+static inline void option_set_int(int *p, int v) {
+  *p = v;
+}
+
+static inline void option_set_bool(bool *p, bool v) {
+  *p = v;
+}
+
+static inline void option_set_string(string *p, string v) {
+  *p = xstrdup(v);
+}
+
+static inline void option_free_int(int i ATTR_UNUSED) {
+  return;
+}
+
+static inline void option_free_bool(bool b ATTR_UNUSED) {
+  return;
+}
+
+ATTR_UNUSED
+static inline void option_free_string(string s) {
+  free(s);
+}
+
+struct opt {
+  char *name;
+  enum opt_scope {
+    OPTION_SCOPE_EDITOR,
+    OPTION_SCOPE_WINDOW,
+    OPTION_SCOPE_BUFFER,
+  } scope;
+  enum opt_type {
+    OPTION_TYPE_bool,
+    OPTION_TYPE_int,
+    OPTION_TYPE_string,
+  } type;
+};
+
 static struct opt opts_meta[] = {
 #define OPTION(name, type, _) \
   {#name, OPTION_SCOPE_BUFFER, OPTION_TYPE_##type},
@@ -25,7 +64,7 @@ static struct opt opts_meta[] = {
   {NULL, 0, 0},
 };
 
-struct opt *option_info(char *name) {
+static struct opt *option_info(char *name) {
   for (int i = 0; opts_meta[i].name; ++i) {
     if (!strcmp(opts_meta[i].name, name)) {
       return &opts_meta[i];

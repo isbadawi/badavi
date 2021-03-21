@@ -1,9 +1,6 @@
 #pragma once
 
 #include <stdbool.h>
-#include <stdlib.h>
-
-#include "util.h"
 
 typedef char* string;
 
@@ -31,46 +28,6 @@ typedef char* string;
   OPTION(hlsearch, bool, false) \
   OPTION(incsearch, bool, false) \
   OPTION(ruler, bool, false) \
-
-struct opt {
-  char *name;
-  enum opt_scope {
-    OPTION_SCOPE_EDITOR,
-    OPTION_SCOPE_WINDOW,
-    OPTION_SCOPE_BUFFER,
-  } scope;
-  enum opt_type {
-    OPTION_TYPE_bool,
-    OPTION_TYPE_int,
-    OPTION_TYPE_string,
-  } type;
-};
-
-static inline void option_set_int(int *p, int v) {
-  *p = v;
-}
-
-static inline void option_set_bool(bool *p, bool v) {
-  *p = v;
-}
-
-static inline void option_set_string(string *p, string v) {
-  *p = xstrdup(v);
-}
-
-static inline void option_free_int(int i ATTR_UNUSED) {
-  return;
-}
-
-static inline void option_free_bool(bool b ATTR_UNUSED) {
-  return;
-}
-
-static inline void option_free_string(string s) {
-  free(s);
-}
-
-struct opt *option_info(char *name);
 
 struct editor;
 struct window;

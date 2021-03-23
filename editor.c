@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdarg.h>
 
+#include <errno.h>
 #include <unistd.h>
 
 #include <libclipboard.h>
@@ -145,21 +146,43 @@ static struct buffer *editor_get_buffer_by_name(struct editor* editor, char *nam
   return NULL;
 }
 
+static void editor_status_buffer_info(struct editor *editor, struct buffer *buffer) {
+  editor_status_msg(editor, "\"%s\" %s%zuL, %zuC",
+      buffer->name,
+      buffer->opt.readonly ? "[readonly] " : "",
+      gb_nlines(buffer->text),
+      gb_size(buffer->text));
+}
+
 void editor_open(struct editor *editor, char *path) {
   struct buffer *buffer = editor_get_buffer_by_name(editor, path);
-
-  if (!buffer) {
-    if (access(path, F_OK) < 0) {
-      buffer = buffer_create(path);
-      editor_status_msg(editor, "\"%s\" [New File]", path);
-    } else {
-      buffer = buffer_open(path);
-      editor_status_msg(editor, "\"%s\" %zuL, %zuC",
-          path, gb_nlines(buffer->text), gb_size(buffer->text));
-    }
-    buffer_inherit_editor_options(buffer, editor);
-    TAILQ_INSERT_TAIL(&editor->buffers, buffer, pointers);
+  if (buffer) {
+    editor_status_buffer_info(editor, buffer);
+    window_set_buffer(editor->window, buffer);
+    return;
   }
+
+  buffer = buffer_open(path);
+  int open_errno = errno;
+  if (buffer) {
+    buffer_inherit_editor_options(buffer, editor);
+    buffer->opt.readonly = access(path, W_OK) < 0;
+    editor_status_buffer_info(editor, buffer);
+  } else {
+    buffer = buffer_create(path);
+    buffer_inherit_editor_options(buffer, editor);
+    switch (open_errno) {
+    case ENOENT:
+      editor_status_msg(editor, "\"%s\" [New File]", path);
+      break;
+    case EACCES:
+      buffer->opt.readonly = true;
+      editor_status_msg(editor, "\"%s\" [Permission Denied]", path);
+      break;
+    default: break;
+    }
+  }
+  TAILQ_INSERT_TAIL(&editor->buffers, buffer, pointers);
   window_set_buffer(editor->window, buffer);
 }
 
@@ -197,6 +220,8 @@ bool editor_save_buffer(struct editor *editor, char *path) {
   if (rc) {
     editor_status_msg(editor, "\"%s\" %zuL, %zuC written",
         name, gb_nlines(buffer->text), gb_size(buffer->text));
+  } else if (errno) {
+    editor_status_err(editor, "%s", strerror(errno));
   } else {
     editor_status_err(editor, "No file name");
   }

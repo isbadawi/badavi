@@ -64,18 +64,15 @@ void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
     }
   }
 
+  #define casemod(ch) case ch: if (!editor_try_modify(editor)) { break; }
+
   switch (ev->key) {
-  case TB_KEY_CTRL_B:
-    window_page_up(editor->window);
-    break;
+  casemod(TB_KEY_CTRL_R) editor_redo(editor); return;
+  case TB_KEY_CTRL_B: window_page_up(editor->window); return;
+  case TB_KEY_CTRL_F: window_page_down(editor->window); return;
+  case TB_KEY_CTRL_T: editor_tag_stack_prev(editor); return;
   case TB_KEY_CTRL_C:
     editor_status_msg(editor, "Type :q<Enter> to exit badavi");
-    return;
-  case TB_KEY_CTRL_F:
-    window_page_down(editor->window);
-    break;
-  case TB_KEY_CTRL_R:
-    editor_redo(editor);
     return;
   case TB_KEY_CTRL_RSQ_BRACKET: {
     struct buf *word = motion_word_under_cursor(editor->window);
@@ -83,9 +80,6 @@ void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
     buf_free(word);
     return;
   }
-  case TB_KEY_CTRL_T:
-    editor_tag_stack_prev(editor);
-    return;
   case TB_KEY_CTRL_W: {
     editor_waitkey(editor, ev);
     struct window *next = NULL;
@@ -146,19 +140,11 @@ void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
     }
     break;
   }
-  case 'i':
-    editor_push_insert_mode(editor, 0);
-    break;
-  case 'v':
-    editor_push_visual_mode(editor, VISUAL_MODE_CHARACTERWISE);
-    break;
-  case 'V':
-    editor_push_visual_mode(editor, VISUAL_MODE_LINEWISE);
-    break;
-  case ':':
-    editor_push_cmdline_mode(editor, ':');
-    break;
-  case 'p': {
+  casemod('i') editor_push_insert_mode(editor, 0); break;
+  case 'v': editor_push_visual_mode(editor, VISUAL_MODE_CHARACTERWISE); break;
+  case 'V': editor_push_visual_mode(editor, VISUAL_MODE_LINEWISE); break;
+  case ':': editor_push_cmdline_mode(editor, ':'); break;
+  casemod('p') {
     struct editor_register *r = editor_get_register(editor, editor->register_);
     char *text = r->read(r);
     size_t where = gb_getchar(gb, cursor) == '\n' ? cursor : cursor + 1;
@@ -168,12 +154,12 @@ void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
     free(text);
     break;
   }
-  case 'u': editor_undo(editor); break;
-  case 'a': editor_send_keys(editor, "li"); break;
-  case 'I': editor_send_keys(editor, "0i"); break;
-  case 'A': editor_send_keys(editor, "$i"); break;
-  case 'o': editor_send_keys(editor, "A<cr>"); break;
-  case 'O':
+  casemod('u') editor_undo(editor); break;
+  casemod('a') editor_send_keys(editor, "li"); break;
+  casemod('I') editor_send_keys(editor, "0i"); break;
+  casemod('A') editor_send_keys(editor, "$i"); break;
+  casemod('o') editor_send_keys(editor, "A<cr>"); break;
+  casemod('O')
     if (cursor < gb->lines->buf[0]) {
       editor_send_keys(editor, "0i<cr><esc>0\"zy^k\"zpi");
     } else {
@@ -183,9 +169,7 @@ void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
   case 'x': editor_send_keys(editor, "dl"); break;
   case 'D': editor_send_keys(editor, "d$"); break;
   case 'C': editor_send_keys(editor, "c$"); break;
-  case 'J':
-    editor_join_lines(editor);
-    break;
+  casemod('J') editor_join_lines(editor); break;
   default: {
     struct motion *motion = motion_get(editor, ev);
     if (motion) {

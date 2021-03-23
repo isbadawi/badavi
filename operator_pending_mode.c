@@ -27,6 +27,10 @@ static void yank_op(struct editor *editor, struct region *region) {
 }
 
 static void delete_op(struct editor *editor, struct region *region) {
+  if (!editor_try_modify(editor)) {
+    return;
+  }
+
   yank_op(editor, region);
   if (region->end == gb_size(editor->window->buffer->text)) {
     region->end--;
@@ -38,6 +42,10 @@ static void delete_op(struct editor *editor, struct region *region) {
 }
 
 static void change_op(struct editor *editor, struct region *region) {
+  if (!editor_try_modify(editor)) {
+    return;
+  }
+
   delete_op(editor, region);
   editor_push_insert_mode(editor, 0);
 }

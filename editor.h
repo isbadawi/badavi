@@ -114,6 +114,7 @@ void editor_undo(struct editor *editor);
 void editor_redo(struct editor *editor);
 
 void editor_source(struct editor *editor, char *path);
+bool editor_try_modify(struct editor *editor);
 
 struct editor_command {
   const char *name;

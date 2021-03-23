@@ -464,6 +464,14 @@ void editor_redo(struct editor *editor) {
   window_set_cursor(editor->window, cursor_pos);
 }
 
+bool editor_try_modify(struct editor *editor) {
+  if (!editor->window->buffer->opt.modifiable) {
+    editor_status_err(editor, "Cannot make changes, 'modifiable' is off");
+    return false;
+  }
+  return true;
+}
+
 #define MODE(name) \
   void editor_push_##name##_mode(struct editor *editor, uint64_t arg) { \
     struct name##_mode *mode = &editor->modes.name; \

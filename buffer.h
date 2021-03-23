@@ -43,8 +43,6 @@ struct buffer {
   char name[BUFFER_NAME_MAXLEN];
   // The text proper.
   struct gapbuf *text;
-  // True if this buffer has unsaved changes.
-  bool dirty;
 
   // Undo and redo stacks.
   // The elements are lists of actions.

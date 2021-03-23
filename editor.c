@@ -183,7 +183,7 @@ void editor_pop_mode(struct editor *editor) {
   }
 }
 
-void editor_save_buffer(struct editor *editor, char *path) {
+bool editor_save_buffer(struct editor *editor, char *path) {
   struct buffer *buffer = editor->window->buffer;
   char *name;
   bool rc;
@@ -200,13 +200,14 @@ void editor_save_buffer(struct editor *editor, char *path) {
   } else {
     editor_status_err(editor, "No file name");
   }
+  return rc;
 }
 
 EDITOR_COMMAND(qall, qa) {
   if (!force) {
     struct buffer *b;
     TAILQ_FOREACH(b, &editor->buffers, pointers) {
-      if (b->dirty) {
+      if (b->opt.modified) {
         editor_status_err(editor,
             "No write since last change for buffer \"%s\"",
             *b->name ? b->name : "[No Name]");
@@ -224,7 +225,7 @@ EDITOR_COMMAND(quit, q) {
   }
   assert(editor->window->parent);
 
-  if (!force && editor->window->buffer->dirty) {
+  if (!force && editor->window->buffer->opt.modified) {
     editor_status_err(editor,
         "No write since last change (add ! to override)");
     return;
@@ -239,8 +240,25 @@ EDITOR_COMMAND(quit, q) {
 }
 
 EDITOR_COMMAND(wq, wq) {
-  editor_save_buffer(editor, NULL);
-  editor_command_quit(editor, arg, false);
+  if (!force && editor->window->buffer->opt.readonly) {
+    editor_status_err(editor, "'readonly' option is set (add ! to override)");
+    return;
+  }
+
+  editor->window->buffer->opt.readonly = false;
+  if (editor_save_buffer(editor, NULL)) {
+    editor_command_quit(editor, arg, false);
+  }
+}
+
+EDITOR_COMMAND(write, w) {
+  if (!force && editor->window->buffer->opt.readonly) {
+    editor_status_err(editor, "'readonly' option is set (add ! to override)");
+    return;
+  }
+
+  editor->window->buffer->opt.readonly = false;
+  editor_save_buffer(editor, arg);
 }
 
 EDITOR_COMMAND(edit, e) {

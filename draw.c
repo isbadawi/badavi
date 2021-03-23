@@ -202,9 +202,10 @@ static void window_draw_plate(struct window *window) {
   }
 
   char plate[256];
-  snprintf(plate, sizeof(plate), "%s%s",
+  snprintf(plate, sizeof(plate), "%s %s%s",
       *window->buffer->name ? window->buffer->name : "[No Name]",
-      window->buffer->dirty ? " [+]" : "");
+      window->buffer->opt.modified ? "[+]" : "",
+      window->buffer->opt.readonly ? "[RO]" : "");
 
   size_t platelen = strlen(plate);
   for (size_t x = 0; x < window_w(window); ++x) {

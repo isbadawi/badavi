@@ -30,7 +30,7 @@ static void delete_text(size_t pos, size_t len) {
 void test_buffer__empty(void) {
   buffer = buffer_create(NULL);
   cl_assert_equal_s(buffer->name, "");
-  cl_assert(!buffer->dirty);
+  cl_assert(!buffer->opt.modified);
   assert_contents("\n");
 }
 
@@ -43,7 +43,7 @@ void test_buffer__insert_delete(void) {
   delete_text(1, 3);
   assert_contents("ho, world\n");
 
-  cl_assert(buffer->dirty);
+  cl_assert(buffer->opt.modified);
 }
 
 void test_buffer__undo_redo(void) {

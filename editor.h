@@ -92,7 +92,7 @@ void editor_open(struct editor *editor, char *path);
 void editor_push_mode(struct editor *editor, struct editing_mode *mode);
 void editor_pop_mode(struct editor *editor);
 
-void editor_save_buffer(struct editor *editor, char *path);
+bool editor_save_buffer(struct editor *editor, char *path);
 void editor_execute_command(struct editor *editor, char *command);
 void editor_draw(struct editor *editor);
 

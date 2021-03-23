@@ -9,7 +9,9 @@ typedef char* string;
   OPTION(smartindent, bool, false) \
   OPTION(shiftwidth, int, 8) \
   OPTION(cinwords, string, "if,else,while,do,for,switch") \
+  OPTION(modified, bool, false) \
   OPTION(modifiable, bool, true) \
+  OPTION(readonly, bool, false) \
 
 #define WINDOW_OPTIONS \
   OPTION(numberwidth, int, 4) \

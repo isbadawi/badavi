@@ -14,7 +14,7 @@ static struct buffer *buffer_of(char *path, struct gapbuf *gb) {
 
   buffer->text = gb;
   strcpy(buffer->name, path ? path : "");
-  buffer->dirty = false;
+  buffer->opt.modified = false;
 
   TAILQ_INIT(&buffer->undo_stack);
   TAILQ_INIT(&buffer->redo_stack);
@@ -58,7 +58,7 @@ bool buffer_saveas(struct buffer *buffer, char *path) {
   }
 
   gb_save(buffer->text, fp);
-  buffer->dirty = false;
+  buffer->opt.modified = false;
   fclose(fp);
   return true;
 }
@@ -98,7 +98,7 @@ void buffer_do_insert(struct buffer *buffer, struct buf *buf, size_t pos) {
     TAILQ_INSERT_HEAD(&group->actions, action, pointers);
   }
   gb_putstring(buffer->text, buf->buf, buf->len, pos);
-  buffer->dirty = true;
+  buffer->opt.modified = true;
 
   buffer_update_marks_after_insert(buffer, pos, buf->len);
 }
@@ -113,7 +113,7 @@ void buffer_do_delete(struct buffer *buffer, size_t n, size_t pos) {
     TAILQ_INSERT_HEAD(&group->actions, action, pointers);
   }
   gb_del(buffer->text, n, pos + n);
-  buffer->dirty = true;
+  buffer->opt.modified = true;
 
   buffer_update_marks_after_delete(buffer, pos, n);
 }

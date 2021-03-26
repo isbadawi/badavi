@@ -49,6 +49,7 @@ TEST_PROG := $(PROG)_test
 TEST_SRCS := $(wildcard tests/*.c)
 TEST_OBJS := $(TEST_SRCS:.c=.o)
 TEST_OBJS := $(addprefix $(BUILD_DIR)/,$(TEST_OBJS))
+TEST_DEPS := $(TEST_OBJS:.o=.d)
 TEST_OBJS += $(filter-out $(BUILD_DIR)/main.o,$(OBJS))
 TEST_OBJS += $(BUILD_DIR)/tests/clar.o
 TEST_CFLAGS := $(COMMON_CFLAGS) -Wno-missing-prototypes \
@@ -112,7 +113,7 @@ $(LIBCLIPBOARD): $(LIBCLIPBOARD_INSTALL_DIR)
 # different than 3.82 and later, where the most specific one (i.e. the one with
 # the shortest stem) is chosen.
 $(BUILD_DIR)/tests/%.o: tests/%.c $(THIRD_PARTY_HEADERS) | $$(@D)/.
-	$(CC) $(TEST_CFLAGS) -c -o $@ $<
+	$(CC) -MMD -MP $(TEST_CFLAGS) -c -o $@ $<
 
 $(BUILD_DIR)/tests/clar.o: \
 	$(CLAR_DIR)/clar.c $(BUILD_DIR)/tests/clar.suite | $$(@D)/.
@@ -129,6 +130,7 @@ $(BUILD_DIR)/%.pp: %.c $(THIRD_PARTY_HEADERS) | $$(@D)/.
 	$(CC) -E -o $@ -c $< $(CFLAGS)
 
 -include $(DEPS)
+-include $(TEST_DEPS)
 
 $(BUILD_DIR)/$(PROG): $(OBJS) $(THIRD_PARTY_LIBRARIES) | $$(@D)/.
 	$(CC) -o $@ $(COVERAGE_CFLAGS) $^ $(LDFLAGS)

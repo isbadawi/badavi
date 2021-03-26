@@ -77,8 +77,11 @@ char *abspath(const char *path) {
   }
 
   char *result = xmalloc(strlen(buf) + 1);
-  result[0] = '/';
-  result[1] = '\0';
+  strcpy(result, "/");
+
+  if (!strcmp(path, "/")) {
+    return result;
+  }
 
   char *p = result;
   char *prevslash = result;
@@ -105,6 +108,7 @@ char *abspath(const char *path) {
     *p = '\0';
   } while ((component = strtok(NULL, "/")));
 
+  p[1] = '\0';
   return result;
 }
 

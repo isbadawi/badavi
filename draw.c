@@ -335,6 +335,9 @@ static void window_draw_leaf(struct window *window, struct editor *editor) {
       size_t col = x + window->left;
       size_t pos = gb_linecol_to_pos(gb, line, col);
       char c = gb_getchar(gb, pos);
+      if (c == '\r') {
+        continue;
+      }
       if (c == '\t') {
         ++tabs;
         for (int i = 0; i < tabstop; ++i) {

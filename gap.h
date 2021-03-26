@@ -3,6 +3,8 @@
 #include <stddef.h>
 #include <stdio.h>
 
+struct buf;
+
 // A "gap buffer" or "split buffer". It's a big buffer that internally
 // is separated into two buffers with a gap in the middle -- this allows
 // edits at the gap to be efficient.
@@ -26,7 +28,10 @@ struct gapbuf {
 // Create an empty buffer.
 struct gapbuf *gb_create(void);
 // Read fp into memory and create a buffer from the contents.
-struct gapbuf *gb_load(FILE *fp);
+struct gapbuf *gb_fromfile(char *path);
+// Create a buffer from the provided string.
+struct gapbuf *gb_fromstring(struct buf *buf);
+
 // Frees the given buffer.
 void gb_free(struct gapbuf *gb);
 

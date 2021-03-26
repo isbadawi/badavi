@@ -41,6 +41,8 @@ struct buffer {
   char *path;
   // The text proper.
   struct gapbuf *text;
+  // Whether this is a directory buffer.
+  bool directory;
 
   // Undo and redo stacks.
   // The elements are lists of actions.

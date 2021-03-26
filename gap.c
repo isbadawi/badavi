@@ -24,12 +24,8 @@ struct gapbuf *gb_create(void) {
   return gb;
 }
 
-struct gapbuf *gb_load(FILE *fp) {
+static struct gapbuf *gb_load(FILE *fp, size_t filesize) {
   struct gapbuf *gb = xmalloc(sizeof(*gb));
-
-  struct stat info;
-  fstat(fileno(fp), &info);
-  size_t filesize = (size_t) info.st_size;
   size_t bufsize = filesize + GAPSIZE;
 
   gb->bufstart = xmalloc(bufsize + 1);
@@ -38,6 +34,7 @@ struct gapbuf *gb_load(FILE *fp) {
   gb->bufend = gb->bufstart + bufsize;
 
   fread(gb->gapend, 1, filesize, fp);
+  fclose(fp);
 
   if (gb->bufend[-1] != '\n') {
     gb->bufend[0] = '\n';
@@ -56,6 +53,25 @@ struct gapbuf *gb_load(FILE *fp) {
   }
 
   return gb;
+}
+
+struct gapbuf *gb_fromfile(char *path) {
+  FILE *fp = fopen(path, "r");
+  if (!fp) {
+    return NULL;
+  }
+
+  struct stat info;
+  fstat(fileno(fp), &info);
+  size_t filesize = (size_t) info.st_size;
+  return gb_load(fp, filesize);
+}
+
+struct gapbuf *gb_fromstring(struct buf *buf) {
+  FILE *fp = fmemopen(buf->buf, buf->len, "r");
+  size_t len = buf->len;
+  free(buf);
+  return gb_load(fp, len);
 }
 
 void gb_free(struct gapbuf *gb) {

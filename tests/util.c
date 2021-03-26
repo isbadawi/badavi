@@ -5,6 +5,7 @@ void test_util__abspath(void) {
   cl_assert_equal_s(abspath("/a//b"), "/a/b");
   cl_assert_equal_s(abspath("/a/./b"), "/a/b");
   cl_assert_equal_s(abspath("/a//./b"), "/a/b");
+  cl_assert_equal_s(abspath("/"), "/");
   cl_assert_equal_s(abspath("/.."), "/");
   cl_assert_equal_s(abspath("/../a"), "/a");
   cl_assert_equal_s(abspath("/.././..//../.././"), "/");
@@ -13,6 +14,7 @@ void test_util__abspath(void) {
   cl_assert_equal_s(abspath("/a/b/c/d/../../e"), "/a/b/e");
   cl_assert_equal_s(abspath("/a/b/c/d/../../e/../.."), "/a");
   cl_assert_equal_s(abspath("/a/./b/c//d/.././../e/../../f"), "/a/f");
+  cl_assert_equal_s(abspath("/a/.."), "/");
 }
 
 void test_util__relpath(void) {

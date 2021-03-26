@@ -101,6 +101,11 @@ void buffer_inherit_editor_options(
   option_set_##type(&buffer->opt.name, editor->opt.name);
   BUFFER_OPTIONS
 #undef OPTION
+
+  if (buffer->directory) {
+    buffer->opt.readonly = true;
+    buffer->opt.modifiable = false;
+  }
 }
 
 void window_inherit_parent_options(struct window *window) {

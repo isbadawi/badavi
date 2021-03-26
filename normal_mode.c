@@ -4,7 +4,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
+#include <libgen.h>
+#include <limits.h>
 #include <termbox.h>
 
 #include "attrs.h"
@@ -13,6 +16,7 @@
 #include "editor.h"
 #include "gap.h"
 #include "motion.h"
+#include "search.h"
 #include "tags.h"
 #include "util.h"
 #include "window.h"
@@ -80,6 +84,19 @@ void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
     buf_free(word);
     return;
   }
+  case TB_KEY_ENTER: {
+    struct buffer *buffer = editor->window->buffer;
+    if (!buffer->directory) {
+      return;
+    }
+    size_t cursor = window_cursor(editor->window);
+    struct buf *line = gb_getline(buffer->text, cursor);
+    struct buf *path = buf_from_cstr(buffer->path);
+    buf_append(path, "/");
+    buf_append(path, line->buf);
+    editor_open(editor, path->buf);
+    return;
+  }
   case TB_KEY_CTRL_W: {
     editor_waitkey(editor, ev);
     struct window *next = NULL;
@@ -132,6 +149,27 @@ void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
   switch (ev->ch) {
   case 0:
     break;
+  case '-': {
+    char *path = editor->window->buffer->path;
+    if (path && !strcmp(path, "/")) {
+      break;
+    }
+
+    if (!path) {
+      editor_open(editor, ".");
+      break;
+    }
+
+    bool dir = editor->window->buffer->directory;
+
+    char buf[PATH_MAX];
+    snprintf(buf, sizeof(buf), "%s/..", path);
+    editor_open(editor, buf);
+
+    snprintf(buf, sizeof(buf), "^%s%s$", basename(path), dir ? "/" : "");
+    editor_jump_to_match(editor, buf, 0, SEARCH_FORWARDS);
+    break;
+  }
   case '"': {
     editor_waitkey(editor, ev);
     char name = (char) tolower((int) ev->ch);

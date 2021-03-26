@@ -5,13 +5,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+
 #include "buf.h"
 #include "gap.h"
 #include "util.h"
 
-static struct buffer *buffer_of(char *path, struct gapbuf *gb) {
+static struct buffer *buffer_of(char *path, struct gapbuf *gb, bool dir) {
   struct buffer *buffer = xmalloc(sizeof(*buffer));
 
+  buffer->directory = dir;
   buffer->text = gb;
   buffer->path = path ? xstrdup(path) : NULL;
   buffer->opt.modified = false;
@@ -25,19 +30,64 @@ static struct buffer *buffer_of(char *path, struct gapbuf *gb) {
 }
 
 struct buffer *buffer_create(char *path) {
-  return buffer_of(path, gb_create());
+  return buffer_of(path, gb_create(), false);
 }
 
-struct buffer *buffer_open(char *path) {
-  FILE *fp = fopen(path, "r");
-  if (!fp) {
+static struct buf *listdir(char *path) {
+  struct dirent **namelist;
+  int n;
+
+  n = scandir(path, &namelist, NULL, alphasort);
+  if (n < 0) {
     return NULL;
   }
 
-  struct gapbuf *gb = gb_load(fp);
-  fclose(fp);
+  struct buf *buf = buf_create(100);
+  for (int i = 0; i < n; ++i) {
+    struct dirent *entry = namelist[i];
+    if (!strcmp(entry->d_name, ".") ||
+        !strcmp(entry->d_name, "..")) {
+      free(entry);
+      continue;
+    }
 
-  return buffer_of(path, gb);
+    buf_append(buf, entry->d_name);
+    if (entry->d_type == DT_DIR) {
+      buf_append(buf, "/");
+    }
+    buf_append(buf, "\n");
+    free(entry);
+  }
+
+  if (n == 2) {
+    buf_append(buf, "\n");
+  }
+
+  return buf;
+}
+
+struct buffer *buffer_open(char *path) {
+  struct gapbuf *gb;
+  bool directory = false;
+  struct stat info;
+
+  stat(path, &info);
+  directory = S_ISDIR(info.st_mode);
+
+  if (directory) {
+    struct buf *listing = listdir(path);
+    if (!listing) {
+      return NULL;
+    }
+    gb = gb_fromstring(listing);
+  } else {
+    gb = gb_fromfile(path);
+    if (!gb) {
+      return NULL;
+    }
+  }
+
+  return buffer_of(path, gb, directory);
 }
 
 bool buffer_write(struct buffer *buffer) {

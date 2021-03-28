@@ -24,7 +24,9 @@ void visual_mode_entered(struct editor *editor) {
     editor->window->visual_mode_selection = &mode->selection;
     visual_mode_selection_update(editor);
   }
-  editor_status_msg(editor, "-- VISUAL --");
+  if (editor->opt.showmode) {
+    editor_status_msg(editor, "-- VISUAL --");
+  }
 }
 
 void visual_mode_exited(struct editor *editor) {

@@ -12,7 +12,9 @@
 #include "window.h"
 
 void insert_mode_entered(struct editor *editor) {
-  editor_status_msg(editor, "-- INSERT --");
+  if (editor->opt.showmode) {
+    editor_status_msg(editor, "-- INSERT --");
+  }
   buffer_start_action_group(editor->window->buffer);
 }
 

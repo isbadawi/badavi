@@ -28,6 +28,7 @@ typedef char* string;
   OPTION(ignorecase, bool, false) \
   OPTION(incsearch, bool, false) \
   OPTION(ruler, bool, false) \
+  OPTION(showmode, bool, true) \
   OPTION(sidescroll, int, 0) \
   OPTION(smartcase, bool, false) \
   OPTION(splitbelow, bool, false) \

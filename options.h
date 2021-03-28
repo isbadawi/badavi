@@ -6,32 +6,32 @@ typedef char* string;
 
 #define BUFFER_OPTIONS \
   OPTION(autoindent, bool, false) \
-  OPTION(smartindent, bool, false) \
-  OPTION(shiftwidth, int, 8) \
-  OPTION(tabstop, int, 8) \
-  OPTION(expandtab, bool, false) \
   OPTION(cinwords, string, "if,else,while,do,for,switch") \
-  OPTION(modified, bool, false) \
+  OPTION(expandtab, bool, false) \
   OPTION(modifiable, bool, true) \
+  OPTION(modified, bool, false) \
   OPTION(readonly, bool, false) \
+  OPTION(shiftwidth, int, 8) \
+  OPTION(smartindent, bool, false) \
+  OPTION(tabstop, int, 8) \
 
 #define WINDOW_OPTIONS \
-  OPTION(numberwidth, int, 4) \
-  OPTION(number, bool, false) \
-  OPTION(relativenumber, bool, false) \
   OPTION(cursorline, bool, false) \
+  OPTION(number, bool, false) \
+  OPTION(numberwidth, int, 4) \
+  OPTION(relativenumber, bool, false) \
 
 #define EDITOR_OPTIONS \
-  OPTION(history, int, 50) \
-  OPTION(sidescroll, int, 0) \
-  OPTION(ignorecase, bool, false) \
-  OPTION(smartcase, bool, false) \
-  OPTION(splitright, bool, false) \
-  OPTION(splitbelow, bool, false) \
   OPTION(equalalways, bool, true) \
+  OPTION(history, int, 50) \
   OPTION(hlsearch, bool, false) \
+  OPTION(ignorecase, bool, false) \
   OPTION(incsearch, bool, false) \
   OPTION(ruler, bool, false) \
+  OPTION(sidescroll, int, 0) \
+  OPTION(smartcase, bool, false) \
+  OPTION(splitbelow, bool, false) \
+  OPTION(splitright, bool, false) \
 
 struct editor;
 struct window;

@@ -231,6 +231,7 @@ void window_resize(struct window *window, int dw, int dh) {
   if (!window->parent) {
     return;
   }
+  assert((dw && !dh) || (!dw && dh));
 
   size_t *point = &window->parent->split.point;
 

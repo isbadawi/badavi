@@ -51,8 +51,7 @@ static void tags_load(struct tags *tags) {
   size_t nlines = 0;
   size_t n = 0;
   char *line = NULL;
-  ssize_t len = 0;
-  while ((len = getline(&line, &n, fp)) != -1) {
+  while (getline(&line, &n, fp) != -1) {
     if (*line != '!') {
       nlines++;
     }
@@ -66,6 +65,7 @@ static void tags_load(struct tags *tags) {
   tags->len = nlines;
 
   size_t i = 0;
+  ssize_t len = 0;
   while ((len = getline(&line, &n, fp)) != -1) {
     line[len - 1] = '\0';
     if (*line == '!') {

@@ -366,6 +366,7 @@ static int editor_poll_event(struct editor *editor, struct tb_event *ev) {
   struct editor_event *top = TAILQ_FIRST(&editor->synthetic_events);
   if (top) {
     TAILQ_REMOVE(&editor->synthetic_events, top, pointers);
+    memset(ev, 0, sizeof(*ev));
     ev->type = top->type;
     ev->key = top->key;
     ev->ch = top->ch;

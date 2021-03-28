@@ -100,7 +100,17 @@ static struct tb_cell *window_cell(struct window *window, size_t x, size_t y) {
 static struct tb_cell *window_cell_for_pos(struct window *window, size_t pos) {
   size_t line, col;
   gb_pos_to_linecol(window->buffer->text, pos, &line, &col);
-  col += window_numberwidth(window);
+  int tabstop = window->buffer->opt.tabstop;
+  size_t tabs = 0;
+  for (size_t i = 0; i < col; ++i) {
+    if (gb_getchar(window->buffer->text, pos - (i + 1)) == '\t') {
+      ++tabs;
+    }
+  }
+  col += window_numberwidth(window) + tabs * (tabstop - 1);
+  if (gb_getchar(window->buffer->text, pos) == '\t') {
+    col += tabstop - 1;
+  }
 
   if (window->top <= line && line < window->top + window_h(window) &&
       window->left <= col && col < window->left + window_w(window)) {
@@ -305,6 +315,7 @@ static void window_draw_leaf(struct window *window) {
 
   size_t rows = min(gb->lines->len - window->top, h);
   size_t numberwidth = window_numberwidth(window);
+  int tabstop = window->buffer->opt.tabstop;
 
   for (size_t y = 0; y < rows; ++y) {
     size_t line = y + window->top;
@@ -312,11 +323,20 @@ static void window_draw_leaf(struct window *window) {
 
     size_t cols = (size_t) max(0,
         min((ssize_t) gb->lines->buf[line] - (ssize_t) window->left, (ssize_t) w));
+    size_t tabs = 0;
     for (size_t x = 0; x < cols; ++x) {
+      size_t x_offset = tabs * (tabstop - 1) + numberwidth + x;
       size_t col = x + window->left;
       size_t pos = gb_linecol_to_pos(gb, line, col);
       char c = gb_getchar(gb, pos);
-      window_change_cell(window, numberwidth + x, y, c, COLOR_WHITE, COLOR_DEFAULT);
+      if (c == '\t') {
+        ++tabs;
+        for (int i = 0; i < tabstop; ++i) {
+          window_change_cell(window, x_offset + i, y, ' ', COLOR_WHITE, COLOR_DEFAULT);
+        }
+      } else {
+        window_change_cell(window, x_offset, y, c, COLOR_WHITE, COLOR_DEFAULT);
+      }
     }
   }
   window_draw_visual_mode_selection(window);

@@ -89,10 +89,21 @@ void insert_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
     return;
   case TB_KEY_ENTER: ch = '\n'; break;
   case TB_KEY_SPACE: ch = ' '; break;
+  case TB_KEY_TAB: ch = '\t'; break;
   default: ch = (char) ev->ch; break;
   }
 
-  buffer_do_insert(buffer, buf_from_char(ch), cursor);
+  struct buf *insertion;
+  if (ch == '\t' && buffer->opt.expandtab) {
+    insertion = buf_create(buffer->opt.shiftwidth);
+    for (int i = 0; i < buffer->opt.shiftwidth; ++i) {
+      buf_append(insertion, " ");
+    }
+  } else {
+    insertion = buf_from_char(ch);
+  }
+
+  buffer_do_insert(buffer, insertion, cursor);
   if (ch == '\n') {
     // TODO(ibadawi): If we add indent then leave insert mode, remove it
     insert_indent(buffer, cursor);

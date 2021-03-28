@@ -8,6 +8,8 @@ typedef char* string;
   OPTION(autoindent, bool, false) \
   OPTION(smartindent, bool, false) \
   OPTION(shiftwidth, int, 8) \
+  OPTION(tabstop, int, 8) \
+  OPTION(expandtab, bool, false) \
   OPTION(cinwords, string, "if,else,while,do,for,switch") \
   OPTION(modified, bool, false) \
   OPTION(modifiable, bool, true) \

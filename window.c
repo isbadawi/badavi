@@ -17,6 +17,7 @@ struct window *window_create(struct buffer *buffer, size_t w, size_t h) {
 
   window->split_type = WINDOW_LEAF;
   window->parent = NULL;
+  window->pwd = NULL;
 
   window->buffer = NULL;
   window->cursor = xmalloc(sizeof(*window->cursor));
@@ -196,6 +197,12 @@ struct window *window_split(struct window *window,
 
   sibling->parent = window;
   window_inherit_parent_options(sibling);
+
+  if (window->pwd) {
+    copy->pwd = window->pwd;
+    sibling->pwd = xstrdup(window->pwd);
+    window->pwd = NULL;
+  }
 
   switch (direction) {
   case WINDOW_SPLIT_LEFT:
@@ -408,6 +415,9 @@ static void window_free(struct window *window) {
       TAILQ_REMOVE(&window->buffer->marks, window->cursor, pointers);
       free(window->cursor);
     }
+    if (window->pwd) {
+      free(window->pwd);
+    }
   }
   window_free_options(window);
   free(window);
@@ -486,8 +496,8 @@ void window_page_down(struct window *window) {
 }
 
 EDITOR_COMMAND(split, sp) {
-  editor->window = window_split(editor->window,
-      editor->opt.splitbelow ? WINDOW_SPLIT_BELOW : WINDOW_SPLIT_ABOVE);
+  editor_set_window(editor, window_split(editor->window,
+      editor->opt.splitbelow ? WINDOW_SPLIT_BELOW : WINDOW_SPLIT_ABOVE));
 
   if (editor->opt.equalalways) {
     window_equalize(editor->window, WINDOW_SPLIT_HORIZONTAL);
@@ -499,8 +509,8 @@ EDITOR_COMMAND(split, sp) {
 }
 
 EDITOR_COMMAND(vsplit, vsp) {
-  editor->window = window_split(editor->window,
-      editor->opt.splitright ? WINDOW_SPLIT_RIGHT : WINDOW_SPLIT_LEFT);
+  editor_set_window(editor, window_split(editor->window,
+      editor->opt.splitright ? WINDOW_SPLIT_RIGHT : WINDOW_SPLIT_LEFT));
 
   if (editor->opt.equalalways) {
     window_equalize(editor->window, WINDOW_SPLIT_VERTICAL);
@@ -509,4 +519,17 @@ EDITOR_COMMAND(vsplit, vsp) {
   if (arg) {
     editor_open(editor, arg);
   }
+}
+
+void window_clear_working_directories(struct window *window) {
+  if (window->split_type == WINDOW_LEAF) {
+    if (window->pwd) {
+      free(window->pwd);
+      window->pwd = NULL;
+    }
+    return;
+  }
+
+  window_clear_working_directories(window->split.first);
+  window_clear_working_directories(window->split.second);
 }

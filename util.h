@@ -37,6 +37,12 @@ void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *s);
 bool strtoi(char *s, int *result);
 
+// Returns absolute path, with unnecessary //, ./ or ../ removed.
+// Like realpath(3), but doesn't resolve symlinks.
+char *abspath(const char *path);
+const char *relpath(const char *path, const char *start);
+const char *homedir(void);
+
 struct region {
   size_t start;
   size_t end;

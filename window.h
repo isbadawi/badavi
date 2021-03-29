@@ -32,6 +32,9 @@ struct window {
       size_t top;
       size_t left;
 
+      // Window-local working directory if set (otherwise NULL).
+      char *pwd;
+
       // The offset of the cursor.
       struct mark *cursor;
 
@@ -93,3 +96,5 @@ void window_get_ruler(struct window *window, char *buf, size_t buflen);
 
 void window_page_up(struct window *window);
 void window_page_down(struct window *window);
+
+void window_clear_working_directories(struct window *window);

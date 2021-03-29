@@ -205,15 +205,21 @@ void window_get_ruler(struct window *window, char *buf, size_t buflen) {
   snprintf(buf, buflen, "%zu,%zu        %3s", line + 1, col + 1, relpos);
 }
 
-static void window_draw_plate(struct window *window) {
+static void window_draw_plate(struct window *window, struct editor *editor) {
   size_t w = window_w(window);
   if (window_right(window)) {
     --w;
   }
 
+  const char *path = window->buffer->path;
+  if (path) {
+    path = editor_relpath(editor, path);
+  } else {
+    path = "[No Name]";
+  }
+
   char plate[256];
-  snprintf(plate, sizeof(plate), "%s %s%s",
-      *window->buffer->name ? window->buffer->name : "[No Name]",
+  snprintf(plate, sizeof(plate), "%s %s%s", path,
       window->buffer->opt.modified ? "[+]" : "",
       window->buffer->opt.readonly ? "[RO]" : "");
 
@@ -305,7 +311,7 @@ static void window_draw_cursorline(struct window *window) {
   }
 }
 
-static void window_draw_leaf(struct window *window) {
+static void window_draw_leaf(struct window *window, struct editor *editor) {
   assert(window->split_type == WINDOW_LEAF);
 
   struct gapbuf *gb = window->buffer->text;
@@ -348,18 +354,18 @@ static void window_draw_leaf(struct window *window) {
   }
 
   if (window_should_draw_plate(window)) {
-    window_draw_plate(window);
+    window_draw_plate(window, editor);
   }
 }
 
-static void window_draw(struct window *window) {
+static void window_draw(struct window *window, struct editor *editor) {
   if (window->split_type == WINDOW_LEAF) {
-    window_draw_leaf(window);
+    window_draw_leaf(window, editor);
     return;
   }
 
-  window_draw(window->split.first);
-  window_draw(window->split.second);
+  window_draw(window->split.first, editor);
+  window_draw(window->split.second, editor);
   if (window->split_type == WINDOW_SPLIT_VERTICAL) {
     struct window *left = window->split.first;
     for (size_t y = 0; y < window_h(left) - 1; ++y) {
@@ -378,7 +384,7 @@ void editor_draw(struct editor *editor) {
 
   window_scroll(editor->window, (size_t) editor->opt.sidescroll);
 
-  window_draw(window_root(editor->window));
+  window_draw(window_root(editor->window), editor);
 
   struct search_match *match = editor->window->incsearch_match;
   if (match) {

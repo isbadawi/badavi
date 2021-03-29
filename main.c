@@ -3,14 +3,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <pwd.h>
-#include <unistd.h>
-
 #include <termbox.h>
+#include <unistd.h>
 
 #include "editor.h"
 #include "tags.h"
 #include "terminal.h"
+#include "util.h"
 #include "window.h"
 
 int main(int argc, char *argv[]) {
@@ -53,9 +52,7 @@ int main(int argc, char *argv[]) {
   editor_init(&editor, (size_t) tb_width(), (size_t) tb_height());
 
   if (!rc) {
-    const char *home = getenv("HOME");
-    home = home ? home : getpwuid(getuid())->pw_dir;
-    snprintf(default_rc, sizeof(default_rc), "%s/.badavimrc", home);
+    snprintf(default_rc, sizeof(default_rc), "%s/.badavimrc", homedir());
     if (!access(default_rc, F_OK)) {
       rc = default_rc;
     }

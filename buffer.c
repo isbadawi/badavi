@@ -13,7 +13,7 @@ static struct buffer *buffer_of(char *path, struct gapbuf *gb) {
   struct buffer *buffer = xmalloc(sizeof(*buffer));
 
   buffer->text = gb;
-  strcpy(buffer->name, path ? path : "");
+  buffer->path = path ? xstrdup(path) : NULL;
   buffer->opt.modified = false;
 
   TAILQ_INIT(&buffer->undo_stack);
@@ -41,20 +41,16 @@ struct buffer *buffer_open(char *path) {
 }
 
 bool buffer_write(struct buffer *buffer) {
-  if (!buffer->name[0]) {
+  if (!buffer->path) {
     return false;
   }
-  return buffer_saveas(buffer, buffer->name);
+  return buffer_saveas(buffer, buffer->path);
 }
 
 bool buffer_saveas(struct buffer *buffer, char *path) {
   FILE *fp = fopen(path, "w");
   if (!fp) {
     return false;
-  }
-
-  if (!buffer->name[0]) {
-    strcpy(buffer->name, path);
   }
 
   gb_save(buffer->text, fp);

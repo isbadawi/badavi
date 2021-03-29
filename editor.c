@@ -7,6 +7,7 @@
 #include <stdarg.h>
 
 #include <errno.h>
+#include <limits.h>
 #include <unistd.h>
 
 #include <libclipboard.h>
@@ -82,6 +83,8 @@ void editor_init(struct editor *editor, size_t width, size_t height) {
   editor->mode = NULL;
   editor_push_normal_mode(editor, 0);
 
+  editor->pwd = NULL;
+
   if (!clipboard) {
     clipboard = clipboard_new(NULL);
   }
@@ -136,10 +139,10 @@ struct editor_register *editor_get_register(struct editor *editor, char name) {
   return NULL;
 }
 
-static struct buffer *editor_get_buffer_by_name(struct editor* editor, char *name) {
+static struct buffer *editor_get_buffer_by_path(struct editor* editor, char *name) {
   struct buffer *b;
   TAILQ_FOREACH(b, &editor->buffers, pointers) {
-    if (!strcmp(b->name, name)) {
+    if (b->path && !strcmp(b->path, name)) {
       return b;
     }
   }
@@ -148,15 +151,17 @@ static struct buffer *editor_get_buffer_by_name(struct editor* editor, char *nam
 
 static void editor_status_buffer_info(struct editor *editor, struct buffer *buffer) {
   editor_status_msg(editor, "\"%s\" %s%zuL, %zuC",
-      buffer->name,
+      editor_relpath(editor, buffer->path),
       buffer->opt.readonly ? "[readonly] " : "",
       gb_nlines(buffer->text),
       gb_size(buffer->text));
 }
 
 void editor_open(struct editor *editor, char *path) {
-  struct buffer *buffer = editor_get_buffer_by_name(editor, path);
+  path = abspath(path);
+  struct buffer *buffer = editor_get_buffer_by_path(editor, path);
   if (buffer) {
+    free(path);
     editor_status_buffer_info(editor, buffer);
     window_set_buffer(editor->window, buffer);
     return;
@@ -171,13 +176,14 @@ void editor_open(struct editor *editor, char *path) {
   } else {
     buffer = buffer_create(path);
     buffer_inherit_editor_options(buffer, editor);
+    const char *rel = editor_relpath(editor, path);
     switch (open_errno) {
     case ENOENT:
-      editor_status_msg(editor, "\"%s\" [New File]", path);
+      editor_status_msg(editor, "\"%s\" [New File]", rel);
       break;
     case EACCES:
       buffer->opt.readonly = true;
-      editor_status_msg(editor, "\"%s\" [Permission Denied]", path);
+      editor_status_msg(editor, "\"%s\" [Permission Denied]", rel);
       break;
     default: break;
     }
@@ -208,34 +214,45 @@ void editor_pop_mode(struct editor *editor) {
 
 bool editor_save_buffer(struct editor *editor, char *path) {
   struct buffer *buffer = editor->window->buffer;
-  char *name;
+  if (!path && !buffer->path) {
+    editor_status_err(editor, "No file name");
+    return false;
+  }
+
   bool rc;
+  const char *name;
   if (path) {
     rc = buffer_saveas(buffer, path);
+    if (rc && !buffer->path) {
+      buffer->path = abspath(path);
+    }
     name = path;
   } else {
     rc = buffer_write(buffer);
-    name = buffer->name;
+    name = editor_relpath(editor, buffer->path);
   }
   if (rc) {
     editor_status_msg(editor, "\"%s\" %zuL, %zuC written",
         name, gb_nlines(buffer->text), gb_size(buffer->text));
   } else if (errno) {
     editor_status_err(editor, "%s", strerror(errno));
-  } else {
-    editor_status_err(editor, "No file name");
   }
   return rc;
 }
 
 EDITOR_COMMAND(qall, qa) {
   if (!force) {
-    struct buffer *b;
-    TAILQ_FOREACH(b, &editor->buffers, pointers) {
-      if (b->opt.modified) {
+    struct buffer *buffer;
+    TAILQ_FOREACH(buffer, &editor->buffers, pointers) {
+      if (buffer->opt.modified) {
+        const char *path = buffer->path;
+        if (path) {
+          path = editor_relpath(editor, path);
+        } else {
+          path = "[No Name]";
+        }
         editor_status_err(editor,
-            "No write since last change for buffer \"%s\"",
-            *b->name ? b->name : "[No Name]");
+            "No write since last change for buffer \"%s\"", path);
         return;
       }
     }
@@ -257,7 +274,7 @@ EDITOR_COMMAND(quit, q) {
   }
 
   enum window_split_type split_type = editor->window->parent->split_type;
-  editor->window = window_close(editor->window);
+  editor_set_window(editor, window_close(editor->window));
 
   if (editor->opt.equalalways) {
     window_equalize(editor->window, split_type);
@@ -292,6 +309,81 @@ EDITOR_COMMAND(edit, e) {
   } else {
     editor_status_err(editor, "No file name");
   }
+}
+
+static char cwdbuffer[PATH_MAX] = {0};
+static char *editor_working_directory(struct editor *editor) {
+  if (editor->window->pwd) {
+    return editor->window->pwd;
+  }
+
+  if (editor->pwd) {
+    return editor->pwd;
+  }
+
+  if (!*cwdbuffer) {
+    getcwd(cwdbuffer, sizeof(cwdbuffer));
+  }
+
+  return cwdbuffer;
+}
+
+const char *editor_relpath(struct editor *editor, const char *path) {
+  return relpath(path, editor_working_directory(editor));
+}
+
+EDITOR_COMMAND(pwd, pw) {
+  const char *pwd = editor_working_directory(editor);
+  assert(pwd);
+  editor_status_msg(editor, "%s", pwd);
+}
+
+EDITOR_COMMAND(chdir, cd) {
+  const char *target = arg;
+  if (!target) {
+    target = homedir();
+  }
+  if (editor->pwd) {
+    free(editor->pwd);
+  }
+  editor->pwd = abspath(target);
+  chdir(target);
+  window_clear_working_directories(window_root(editor->window));
+  editor_status_msg(editor, "%s", editor->pwd);
+}
+
+EDITOR_COMMAND(lchdir, lcd) {
+  const char *target = arg;
+  if (!target) {
+    target = homedir();
+  }
+
+  if (!editor->pwd) {
+    char cwd[PATH_MAX];
+    getcwd(cwd, sizeof(cwd));
+    editor->pwd = xstrdup(cwd);
+  }
+
+  if (editor->window->pwd) {
+    free(editor->window->pwd);
+  }
+  editor->window->pwd = abspath(target);
+  chdir(target);
+  editor_status_msg(editor, "%s", editor->pwd);
+}
+
+void editor_set_window(struct editor *editor, struct window *window) {
+  char *pwd = editor_working_directory(editor);
+
+  if (window->pwd) {
+    if (!pwd || strcmp(pwd, window->pwd)) {
+      chdir(window->pwd);
+    }
+  } else if (editor->window->pwd) {
+    assert(editor->pwd);
+    chdir(editor->pwd);
+  }
+  editor->window = window;
 }
 
 void editor_source(struct editor *editor, char *path) {

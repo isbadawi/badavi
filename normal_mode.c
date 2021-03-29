@@ -120,7 +120,7 @@ void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
     }
 
     if (next) {
-      editor->window = next;
+      editor_set_window(editor, next);
     }
 
     return;

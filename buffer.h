@@ -8,8 +8,6 @@
 #include "options.h"
 #include "util.h"
 
-#define BUFFER_NAME_MAXLEN 255
-
 struct buf;
 
 struct mark {
@@ -39,8 +37,8 @@ TAILQ_HEAD(action_group_list, edit_action_group);
 
 // struct buffer is the in-memory text of a file.
 struct buffer {
-  // The name of the file this buffer was loaded from (possibly empty).
-  char name[BUFFER_NAME_MAXLEN];
+  // The absolute path of the file this buffer was loaded from (possibly NULL).
+  char *path;
   // The text proper.
   struct gapbuf *text;
 

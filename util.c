@@ -7,6 +7,10 @@
 #include <string.h>
 #include <time.h>
 
+#include <limits.h>
+#include <pwd.h>
+#include <unistd.h>
+
 void debug(const char *format, ...) {
   static FILE *debug_fp = NULL;
   if (!debug_fp) {
@@ -60,6 +64,62 @@ bool strtoi(char *s, int *result) {
     return true;
   }
   return false;
+}
+
+char *abspath(const char *path) {
+  char buf[PATH_MAX];
+  if (*path != '/') {
+    getcwd(buf, sizeof(buf));
+    strcat(buf, "/");
+    strcat(buf, path);
+  } else {
+    strcpy(buf, path);
+  }
+
+  char *result = xmalloc(strlen(buf) + 1);
+  result[0] = '/';
+  result[1] = '\0';
+
+  char *p = result;
+  char *prevslash = result;
+  char *component = strtok(buf, "/");
+  do {
+    if (!strcmp(component, "") ||
+        !strcmp(component, ".")) {
+      continue;
+    }
+    if (!strcmp(component, "..")) {
+      p = prevslash;
+      prevslash = result;
+      if (p != result) {
+        *p = '\0';
+        prevslash = strrchr(result, '/');
+      }
+      continue;
+    }
+    prevslash = p;
+    *p = '/';
+    size_t len = strlen(component);
+    memcpy(p + 1, component, len);
+    p += len + 1;
+    *p = '\0';
+  } while ((component = strtok(NULL, "/")));
+
+  return result;
+}
+
+const char *relpath(const char *path, const char *start) {
+  size_t startlen = strlen(start);
+  assert(start[startlen - 1] != '/');
+  if (!strncmp(path, start, startlen)) {
+    return path + startlen + 1;
+  }
+  return path;
+}
+
+const char *homedir(void) {
+  const char *home = getenv("HOME");
+  return home ? home : getpwuid(getuid())->pw_dir;
 }
 
 struct region *region_set(struct region *region, size_t start, size_t end) {

@@ -36,6 +36,9 @@ struct editor {
 #undef MODE
   } modes;
 
+  // Global working directory if explicitly set (otherwise NULL).
+  char *pwd;
+
   // What's written to the status bar.
   struct buf* status;
   // Whether the status is an error.
@@ -89,12 +92,16 @@ void editor_init(struct editor *editor, size_t width, size_t height);
 
 void editor_open(struct editor *editor, char *path);
 
+void editor_set_window(struct editor *editor, struct window *window);
+
 void editor_push_mode(struct editor *editor, struct editing_mode *mode);
 void editor_pop_mode(struct editor *editor);
 
 bool editor_save_buffer(struct editor *editor, char *path);
 void editor_execute_command(struct editor *editor, char *command);
 void editor_draw(struct editor *editor);
+
+const char *editor_relpath(struct editor *editor, const char *path);
 
 struct editor_register *editor_get_register(struct editor *editor, char name);
 

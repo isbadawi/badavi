@@ -29,7 +29,7 @@ static void delete_text(size_t pos, size_t len) {
 
 void test_buffer__empty(void) {
   buffer = buffer_create(NULL);
-  cl_assert_equal_s(buffer->name, "");
+  cl_assert_equal_p(buffer->path, NULL);
   cl_assert(!buffer->opt.modified);
   assert_contents("\n");
 }

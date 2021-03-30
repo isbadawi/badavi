@@ -67,7 +67,7 @@ void editor_init(struct editor *editor, size_t width, size_t height) {
   editor->status_silence = false;
   editor->status_cursor = 0;
 
-  editor->highlight_search_matches = true;
+  editor->highlight_search_matches = false;
 
   memset(&editor->modes, 0, sizeof(editor->modes));
 #define MODE(name) do { \

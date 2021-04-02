@@ -43,23 +43,10 @@ void terminal_init(void) {
   terminal_resume();
   atexit(terminal_shutdown);
 
-// On some platforms (e.g. in the Travis linux build environment), the
-// definitions of struct sigaction and related constructs are such that this
-// code triggers some unfortunate warnings when building with clang and
-// -Weverything. This is a bit out of our control, so let's just ignore them.
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
-#pragma clang diagnostic ignored "-Wsign-conversion"
-#endif
   struct sigaction sa;
   sa.sa_handler = terminal_sighandler;
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = SA_RESETHAND;
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-
   sigaction(SIGABRT, &sa, NULL);
   sigaction(SIGINT, &sa, NULL);
   sigaction(SIGQUIT, &sa, NULL);

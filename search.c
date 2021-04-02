@@ -89,7 +89,13 @@ struct search_match *editor_search(struct editor *editor, char *pattern,
   gb_mvgap(gb, 0);
   struct search_result result;
   bool ignore_case = editor_ignore_case(editor, pattern);
+
+  // FIXME(ibadawi): the gap buffer is not null-terminated in general,
+  //                 but regexec expects a null-terminated string.
+  char old = gb->bufend[-1];
+  gb->bufend[-1] = '\0';
   regex_search(gb->gapend, pattern, ignore_case, &result);
+  gb->bufend[-1] = old;
 
   if (!result.ok) {
     editor_status_err(editor, "Bad regex \"%s\": %s", pattern, result.error);

@@ -38,7 +38,8 @@ char *xstrdup(const char *s);
 bool strtoi(char *s, int *result);
 
 // Returns absolute path, with unnecessary //, ./ or ../ removed.
-// Like realpath(3), but doesn't resolve symlinks.
+// Also expands a leading ~ to the home directory.
+// Unlike realpath(3), does not resolve symlinks.
 char *abspath(const char *path);
 const char *relpath(const char *path, const char *start);
 const char *homedir(void);

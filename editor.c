@@ -222,9 +222,10 @@ bool editor_save_buffer(struct editor *editor, char *path) {
   bool rc;
   const char *name;
   if (path) {
+    path = abspath(path);
     rc = buffer_saveas(buffer, path);
     if (rc && !buffer->path) {
-      buffer->path = abspath(path);
+      buffer->path = path;
     }
     name = path;
   } else {

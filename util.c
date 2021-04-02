@@ -68,7 +68,10 @@ bool strtoi(char *s, int *result) {
 
 char *abspath(const char *path) {
   char buf[PATH_MAX];
-  if (*path != '/') {
+  if (*path == '~') {
+    strcpy(buf, homedir());
+    strcat(buf, path + 1);
+  } else if (*path != '/') {
     getcwd(buf, sizeof(buf));
     strcat(buf, "/");
     strcat(buf, path);

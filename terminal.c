@@ -60,8 +60,10 @@ void terminal_init(void) {
 #pragma clang diagnostic pop
 #endif
 
+  sigaction(SIGABRT, &sa, NULL);
   sigaction(SIGINT, &sa, NULL);
   sigaction(SIGQUIT, &sa, NULL);
+  sigaction(SIGSEGV, &sa, NULL);
   sigaction(SIGTERM, &sa, NULL);
 
   // FIXME(ibadawi): Detect if terminal supports 256-color

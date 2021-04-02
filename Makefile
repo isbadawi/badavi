@@ -30,13 +30,19 @@ THIRD_PARTY_LIBRARIES := $(TERMBOX_LIBRARY) $(LIBCLIPBOARD_LIBRARY)
 WARNING_CFLAGS := -Wall -Wextra -Werror
 
 COVERAGE_CFLAGS := $(if $(COVERAGE),-coverage)
+ASAN_CFLAGS := $(if $(ASAN),-fsanitize=address -fsanitize-recover=address)
+LDFLAGS += $(COVERAGE_CFLAGS) $(ASAN_CFLAGS)
 
 # Use C11 for anonymous structs.
 COMMON_CFLAGS := -g -std=c11 -D_GNU_SOURCE \
 	$(addprefix -isystem ,$(dir $(THIRD_PARTY_HEADERS))) \
 	$(WARNING_CFLAGS)
 
-CFLAGS := $(COMMON_CFLAGS) $(COVERAGE_CFLAGS)
+CFLAGS := $(COMMON_CFLAGS) $(COVERAGE_CFLAGS) $(ASAN_CLFAGS)
+
+TEST_CFLAGS := $(COMMON_CFLAGS) -Wno-missing-prototypes \
+	-I. -isystem $(CLAR_DIR) -I$(BUILD_DIR)/tests \
+	-DCLAR_FIXTURE_PATH=\"$(abspath tests/testdata)\"
 
 PROG := badavi
 SRCS := $(wildcard *.c)
@@ -52,9 +58,6 @@ TEST_OBJS := $(addprefix $(BUILD_DIR)/,$(TEST_OBJS))
 TEST_DEPS := $(TEST_OBJS:.o=.d)
 TEST_OBJS += $(filter-out $(BUILD_DIR)/main.o,$(OBJS))
 TEST_OBJS += $(BUILD_DIR)/tests/clar.o
-TEST_CFLAGS := $(COMMON_CFLAGS) -Wno-missing-prototypes \
-	-I. -isystem $(CLAR_DIR) -I$(BUILD_DIR)/tests \
-	-DCLAR_FIXTURE_PATH=\"$(abspath tests/testdata)\"
 
 .PHONY: $(PROG)
 $(PROG): $(BUILD_DIR)/$(PROG)
@@ -74,6 +77,15 @@ coverage:
 	lcov -q -c -d coverage-build -o coverage-build/coverage.run
 	lcov -q -d . -a coverage-build/coverage.base -a coverage-build/coverage.run -o coverage-build/coverage.total
 	genhtml -q --no-branch-coverage -o $@ coverage-build/coverage.total
+
+.PHONY: asan
+asan:
+	$(MAKE) BUILD_DIR=asan-build ASAN=1 $(PROG)
+
+.PHONY: test-asan
+test-asan:
+	$(MAKE) BUILD_DIR=asan-build ASAN=1 $(TEST_PROG)
+	./asan-build/$(TEST_PROG)
 
 # Enable second expansion to access automatic variables in prerequisite lists.
 # In particular, we write $$(@D)/. to refer to the directory of the target.
@@ -133,10 +145,10 @@ $(BUILD_DIR)/%.pp: %.c $(THIRD_PARTY_HEADERS) | $$(@D)/.
 -include $(TEST_DEPS)
 
 $(BUILD_DIR)/$(PROG): $(OBJS) $(THIRD_PARTY_LIBRARIES) | $$(@D)/.
-	$(CC) -o $@ $(COVERAGE_CFLAGS) $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(BUILD_DIR)/$(TEST_PROG): $(TEST_OBJS) $(filter-out $(TERMBOX_LIBRARY),$(THIRD_PARTY_LIBRARIES)) | $$(@D)/.
-	$(CC) -o $@ $(COVERAGE_CFLAGS) $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 tags: $(SRCS) $(HDRS)
 	ctags $^

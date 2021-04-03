@@ -330,10 +330,7 @@ static char *editor_working_directory(struct editor *editor) {
     return editor->pwd;
   }
 
-  if (!*cwdbuffer) {
-    getcwd(cwdbuffer, sizeof(cwdbuffer));
-  }
-
+  getcwd(cwdbuffer, sizeof(cwdbuffer));
   return cwdbuffer;
 }
 
@@ -423,6 +420,21 @@ EDITOR_COMMAND(source, so) {
   editor_source(editor, arg);
 }
 
+static void stdout_write(const char *msg) {
+  if (!getenv("BADAVI_TEST")) {
+    printf("%s", msg);
+  }
+}
+
+static void stdin_getline(void) {
+  if (!getenv("BADAVI_TEST")) {
+    char *line = NULL;
+    size_t n = 0;
+    getline(&line, &n, stdin);
+    free(line);
+  }
+}
+
 void editor_execute_command(struct editor *editor, char *command) {
   if (!*command) {
     return;
@@ -441,18 +453,15 @@ void editor_execute_command(struct editor *editor, char *command) {
 
     terminal_shutdown();
 
-    printf("\n");
-    system(command + 1);
-    printf("\nPress ENTER to continue");
-    fflush(stdout);
+    stdout_write("\n");
 
-    char *line = NULL;
-    size_t n = 0;
-    getline(&line, &n, stdin);
+    system(command + 1);
+
+    stdout_write("\nPress ENTER to continue");
+    stdin_getline();
 
     terminal_resume();
 
-    free(line);
     if (has_subst) {
       free(command);
     }
@@ -569,6 +578,12 @@ void editor_send_keys(struct editor *editor, const char *keys) {
         ev->key = TB_KEY_ARROW_UP;
       } else if (!strcmp("down", key)) {
         ev->key = TB_KEY_ARROW_DOWN;
+      } else if (!strcmp("C-w", key)) {
+        ev->key = TB_KEY_CTRL_W;
+      } else if (!strcmp("C-h", key)) {
+        ev->key = TB_KEY_CTRL_H;
+      } else if (!strcmp("C-l", key)) {
+        ev->key = TB_KEY_CTRL_L;
       } else {
         debug("BUG: editor_send_keys got <%s>\n", key);
         exit(1);

@@ -358,7 +358,7 @@ EDITOR_COMMAND(chdir, cd) {
   editor->pwd = abspath(target);
   chdir(target);
   window_clear_working_directories(window_root(editor->window));
-  editor_status_msg(editor, "%s", editor->pwd);
+  editor_command_pwd(editor, NULL, false);
 }
 
 EDITOR_COMMAND(lchdir, lcd) {
@@ -378,7 +378,7 @@ EDITOR_COMMAND(lchdir, lcd) {
   }
   editor->window->pwd = abspath(target);
   chdir(target);
-  editor_status_msg(editor, "%s", editor->pwd);
+  editor_command_pwd(editor, NULL, false);
 }
 
 void editor_set_window(struct editor *editor, struct window *window) {

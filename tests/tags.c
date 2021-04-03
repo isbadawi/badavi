@@ -14,6 +14,8 @@
 #include "util.h"
 #include "window.h"
 
+#include "asserts.h"
+
 static struct editor *editor = NULL;
 static struct tags *tags = NULL;
 
@@ -62,17 +64,6 @@ void test_tags__deleted(void) {
 #define assert_editor_error(msg) do { \
   cl_assert_equal_i(editor->status_error, true); \
   cl_assert_equal_s(editor->status->buf, msg); \
-} while (0)
-
-// FIXME(ibadawi): Copied from tests/editor.c
-#define assert_cursor_at(expected_line, expected_column) do { \
-  size_t actual_line, actual_column; \
-  gb_pos_to_linecol( \
-      editor->window->buffer->text, \
-      window_cursor(editor->window), \
-      &actual_line, &actual_column); \
-  cl_assert_equal_i(expected_line, actual_line); \
-  cl_assert_equal_i(expected_column, actual_column); \
 } while (0)
 
 void test_tags__editor_tag_stack(void) {

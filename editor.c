@@ -275,7 +275,9 @@ EDITOR_COMMAND(quit, q) {
   }
 
   enum window_split_type split_type = editor->window->parent->split_type;
+  struct window *old_window = editor->window;
   editor_set_window(editor, window_close(editor->window));
+  window_free(old_window);
 
   if (editor->opt.equalalways) {
     window_equalize(editor->window, split_type);

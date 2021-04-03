@@ -58,6 +58,10 @@ struct window {
 };
 
 struct window *window_create(struct buffer *buffer, size_t w, size_t h);
+void window_free(struct window *window);
+
+// Closes the current window and returns a pointer to the "next" window.
+// Caller should use window_free on passed-in window afterwards.
 struct window *window_close(struct window *window);
 
 enum window_split_direction {

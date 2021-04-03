@@ -37,6 +37,7 @@ struct editor {
   } modes;
 
   // Global working directory if explicitly set (otherwise NULL).
+  // This is not necessarily the current working directory of the process.
   char *pwd;
 
   // What's written to the status bar.

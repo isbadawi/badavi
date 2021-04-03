@@ -405,7 +405,7 @@ struct window *window_down(struct window *window) {
   return NULL;
 }
 
-static void window_free(struct window *window) {
+void window_free(struct window *window) {
   if (window->split_type == WINDOW_LEAF) {
     struct tag_jump *j, *tj;
     TAILQ_FOREACH_SAFE(j, &window->tag_stack, pointers, tj) {
@@ -453,7 +453,6 @@ struct window *window_close(struct window *window) {
     }
   }
 
-  window_free(window);
   // free, not window_free, because that would free parent's fields.
   free(sibling);
 

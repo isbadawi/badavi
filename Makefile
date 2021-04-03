@@ -132,8 +132,7 @@ $(BUILD_DIR)/tests/clar.o: \
 	$(CC) $(TEST_CFLAGS) -w -c -o $@ $<
 
 $(BUILD_DIR)/tests/clar.suite: $(TEST_SRCS) | $$(@D)/.
-	$(CLAR_DIR)/generate.py tests
-	mv tests/clar.suite $@
+	$(CLAR_DIR)/generate.py --output=$(@D) tests
 
 $(BUILD_DIR)/%.o: %.c $(THIRD_PARTY_HEADERS) | $$(@D)/.
 	$(CC) -MMD -MP -o $@ -c $< $(CFLAGS)

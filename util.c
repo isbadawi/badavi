@@ -100,6 +100,8 @@ char *abspath(const char *path) {
       if (p != result) {
         *p = '\0';
         prevslash = strrchr(result, '/');
+      } else {
+        p[1] = '\0';
       }
       continue;
     }
@@ -111,7 +113,6 @@ char *abspath(const char *path) {
     *p = '\0';
   } while ((component = strtok(NULL, "/")));
 
-  p[1] = '\0';
   return result;
 }
 

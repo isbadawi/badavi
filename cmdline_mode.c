@@ -69,13 +69,13 @@ static void search_char_cb(struct editor *editor, char *command) {
       mode->prompt == '/' ? SEARCH_FORWARDS : SEARCH_BACKWARDS;
   struct search_match *match =
     editor_search(editor, command, mode->cursor, direction);
+  clear_incsearch_match(editor);
   if (match) {
     editor->window->incsearch_match = match;
     window_set_cursor(editor->window, match->region.start);
   } else {
     free(match);
     window_set_cursor(editor->window, mode->cursor);
-    clear_incsearch_match(editor);
   }
 }
 

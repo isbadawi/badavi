@@ -188,6 +188,8 @@ void editor_open(struct editor *editor, char *path) {
     default: break;
     }
   }
+
+  free(path);
   TAILQ_INSERT_TAIL(&editor->buffers, buffer, pointers);
   window_set_buffer(editor->window, buffer);
 }
@@ -237,6 +239,10 @@ bool editor_save_buffer(struct editor *editor, char *path) {
         name, gb_nlines(buffer->text), gb_size(buffer->text));
   } else if (errno) {
     editor_status_err(editor, "%s", strerror(errno));
+  }
+
+  if (path) {
+    free(path);
   }
   return rc;
 }
@@ -434,6 +440,7 @@ void editor_execute_command(struct editor *editor, char *command) {
   TAILQ_FOREACH(cmd, &editor_commands, pointers) {
     if (!strcmp(name, cmd->name) || !strcmp(name, cmd->shortname)) {
       cmd->action(editor, arg, force);
+      free(copy);
       return;
     }
   }

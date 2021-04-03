@@ -21,3 +21,9 @@ void test_util__relpath(void) {
   cl_assert_equal_s(relpath("/a/b", "/a"), "b");
   cl_assert_equal_s(relpath("/foo.txt", "/a/b"), "/foo.txt");
 }
+
+void test_util__strrep(void) {
+  cl_assert_equal_s(strrep("hello %", "%", "world"), "hello world");
+  cl_assert_equal_s(strrep("foo % % bar", "%", "baz"), "foo baz baz bar");
+  cl_assert_equal_s(strrep("barb barn", "bar", "foo"), "foob foon");
+}

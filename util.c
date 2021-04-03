@@ -11,6 +11,8 @@
 #include <pwd.h>
 #include <unistd.h>
 
+#include "buf.h"
+
 void debug(const char *format, ...) {
   static FILE *debug_fp = NULL;
   if (!debug_fp) {
@@ -64,6 +66,24 @@ bool strtoi(char *s, int *result) {
     return true;
   }
   return false;
+}
+
+char *strrep(char *s, char *from, char *to) {
+  struct buf *buf = buf_create(strlen(s));
+
+  size_t fromlen = strlen(from);
+  for (char *p = s; *p; ++p) {
+    if (!strncmp(p, from, fromlen)) {
+      buf_append(buf, to);
+      p += fromlen - 1;
+    } else {
+      buf_append_char(buf, *p);
+    }
+  }
+
+  char *result = buf->buf;
+  free(buf);
+  return result;
 }
 
 char *abspath(const char *path) {

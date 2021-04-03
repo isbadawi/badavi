@@ -11,7 +11,7 @@
 // happen is if we receive SIGTERM while the editor is in the background.
 static bool terminal_is_shut_down = false;
 
-static void terminal_resume(void) {
+void terminal_resume(void) {
   int err = tb_init();
   if (err) {
     fprintf(stderr, "tb_init() failed with error code %d\n", err);
@@ -20,7 +20,7 @@ static void terminal_resume(void) {
   terminal_is_shut_down = false;
 }
 
-static void terminal_shutdown(void) {
+void terminal_shutdown(void) {
   if (!terminal_is_shut_down) {
     terminal_is_shut_down = true;
     tb_shutdown();

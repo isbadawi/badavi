@@ -37,6 +37,9 @@ void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *s);
 bool strtoi(char *s, int *result);
 
+// Returns a new string where all occurrences of 'from' are replaced with 'to'.
+char *strrep(char *s, char *from, char *to);
+
 // Returns absolute path, with unnecessary //, ./ or ../ removed.
 // Also expands a leading ~ to the home directory.
 // Unlike realpath(3), does not resolve symlinks.

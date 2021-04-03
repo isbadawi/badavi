@@ -81,6 +81,11 @@ void buf_append(struct buf *buf, char *s) {
   buf_insert(buf, s, buf->len);
 }
 
+void buf_append_char(struct buf *buf, char c) {
+  char s[2] = {c, '\0'};
+  buf_append(buf, s);
+}
+
 void buf_delete(struct buf *buf, size_t pos, size_t len) {
   if (pos >= buf->len || pos + len > buf->len) {
     return;

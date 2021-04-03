@@ -427,6 +427,39 @@ void editor_execute_command(struct editor *editor, char *command) {
   if (!*command) {
     return;
   }
+
+  if (*command == '!') {
+    bool has_subst = !!strchr(command + 1, '%');
+    if (!editor->window->buffer->path && has_subst) {
+      editor_status_err(editor, "Empty file name for '%%'");
+      return;
+    }
+
+    if (has_subst) {
+      command = strrep(command, "%", editor->window->buffer->path);
+    }
+
+    terminal_shutdown();
+
+    printf("\n");
+    system(command + 1);
+    printf("\nPress ENTER to continue");
+    fflush(stdout);
+
+    char *line = NULL;
+    size_t n = 0;
+    getline(&line, &n, stdin);
+
+    terminal_resume();
+
+    free(line);
+    if (has_subst) {
+      free(command);
+    }
+
+    return;
+  }
+
   char *copy = xstrdup(command);
   char *name = strtok(command, " ");
   size_t namelen = strlen(name);

@@ -140,7 +140,8 @@ const char *relpath(const char *path, const char *start) {
   size_t startlen = strlen(start);
   assert(start[startlen - 1] != '/');
   if (!strncmp(path, start, startlen)) {
-    return path + startlen + 1;
+    const char *rel = path + startlen;
+    return *rel == '/' ? rel + 1 : rel;
   }
   return path;
 }

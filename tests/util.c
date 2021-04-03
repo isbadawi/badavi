@@ -18,6 +18,7 @@ void test_util__abspath(void) {
 }
 
 void test_util__relpath(void) {
+  cl_assert_equal_s(relpath("/a/b", "/a/b"), "");
   cl_assert_equal_s(relpath("/a/b", "/a"), "b");
   cl_assert_equal_s(relpath("/foo.txt", "/a/b"), "/foo.txt");
 }

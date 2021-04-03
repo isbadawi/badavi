@@ -38,7 +38,7 @@ COMMON_CFLAGS := -g -std=c11 -D_GNU_SOURCE \
 	$(addprefix -isystem ,$(dir $(THIRD_PARTY_HEADERS))) \
 	$(WARNING_CFLAGS)
 
-CFLAGS := $(COMMON_CFLAGS) $(COVERAGE_CFLAGS) $(ASAN_CLFAGS)
+CFLAGS := $(COMMON_CFLAGS) $(COVERAGE_CFLAGS) $(ASAN_CFLAGS)
 
 TEST_CFLAGS := $(COMMON_CFLAGS) -Wno-missing-prototypes \
 	-I. -isystem $(CLAR_DIR) -I$(BUILD_DIR)/tests \

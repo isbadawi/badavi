@@ -420,21 +420,6 @@ EDITOR_COMMAND(source, so) {
   editor_source(editor, arg);
 }
 
-static void stdout_write(const char *msg) {
-  if (!getenv("BADAVI_TEST")) {
-    printf("%s", msg);
-  }
-}
-
-static void stdin_getline(void) {
-  if (!getenv("BADAVI_TEST")) {
-    char *line = NULL;
-    size_t n = 0;
-    getline(&line, &n, stdin);
-    free(line);
-  }
-}
-
 void editor_execute_command(struct editor *editor, char *command) {
   if (!*command) {
     return;
@@ -453,12 +438,17 @@ void editor_execute_command(struct editor *editor, char *command) {
 
     terminal_shutdown();
 
-    stdout_write("\n");
+    printf("\n");
 
     system(command + 1);
 
-    stdout_write("\nPress ENTER to continue");
-    stdin_getline();
+    printf("\nPress ENTER to continue");
+    fflush(stdout);
+
+    char *line = NULL;
+    size_t n = 0;
+    getline(&line, &n, stdin);
+    free(line);
 
     terminal_resume();
 

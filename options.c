@@ -162,6 +162,35 @@ enum option_set_mode {
   OPTION_SET_BOTH
 };
 
+static bool csl_has(char *csl, char *word) {
+  char *p, *words;
+  p = words = xstrdup(csl);
+
+  char *token;
+  while ((token = strsep(&words, ","))) {
+    if (!strcmp(token, word)) {
+      free(p);
+      return true;
+    }
+  }
+  free(p);
+  return false;
+}
+
+static void csl_append(char **csl, char *word) {
+  size_t len = strlen(*csl);
+  size_t wordlen = strlen(word);
+  char *result = xmalloc(len + wordlen + 2);
+  *result = '\0';
+  if (len) {
+    strcat(result, *csl);
+    strcat(result, ",");
+  }
+  strcat(result, word);
+  free(*csl);
+  *csl = result;
+}
+
 static void editor_command_set_impl(
     struct editor *editor, char *arg, enum option_set_mode which) {
   if (!arg) {
@@ -171,7 +200,7 @@ static void editor_command_set_impl(
   }
 
   regex_t regex;
-  regcomp(&regex, "(no)?([a-z]+)(=[0-9a-zA-Z,_]+|!|\\?|&)?", REG_EXTENDED);
+  regcomp(&regex, "(no)?([a-z]+)(\\+?=[0-9a-zA-Z,_]*|!|\\?|&)?", REG_EXTENDED);
 
   regmatch_t groups[4];
   int nomatch = regexec(&regex, arg, 4, groups, 0);
@@ -273,17 +302,22 @@ static void editor_command_set_impl(
       break;
     }
     break;
-  case '=':
+  case '+': {
+    char *rhs = arg + groups[3].rm_so + 2;
     switch (info->type) {
     case OPTION_TYPE_int:
       WRITE(val) {
-        strtoi(arg + groups[3].rm_so + 1, (int*)val);
+        int increment;
+        strtoi(rhs, &increment);
+        *(int*)val += increment;
       }
       break;
     case OPTION_TYPE_string:
       WRITE(val) {
-        free(*(string*)val);
-        option_set_string((string*)val, arg + groups[3].rm_so + 1);
+        if (csl_has(*(string*)val, rhs)) {
+          continue;
+        }
+        csl_append((string*)val, rhs);
       }
       break;
     case OPTION_TYPE_bool:
@@ -291,6 +325,27 @@ static void editor_command_set_impl(
       break;
     }
     break;
+  }
+  case '=': {
+    char *rhs = arg + groups[3].rm_so + 1;
+    switch (info->type) {
+    case OPTION_TYPE_int:
+      WRITE(val) {
+        strtoi(rhs, (int*)val);
+      }
+      break;
+    case OPTION_TYPE_string:
+      WRITE(val) {
+        free(*(string*)val);
+        option_set_string((string*)val, rhs);
+      }
+      break;
+    case OPTION_TYPE_bool:
+      editor_status_err(editor, "Invalid argument: %s", arg);
+      break;
+    }
+    break;
+  }
   }
   return;
 }

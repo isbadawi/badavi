@@ -57,6 +57,22 @@ void test_options__reset_to_default(void) {
   cl_assert_equal_s(type(":set cinwords?<cr>"), "cinwords=if,else,while,do,for,switch");
 }
 
+void test_options__plus_equals(void) {
+  type(":set numberwidth=4<cr>");
+  cl_assert_equal_s(type(":set numberwidth?<cr>"), "numberwidth=4");
+  type(":set numberwidth+=6<cr>");
+  cl_assert_equal_s(type(":set numberwidth?<cr>"), "numberwidth=10");
+
+  type(":set cinwords=<cr>");
+  cl_assert_equal_s(type(":set cinwords?<cr>"), "cinwords=");
+  type(":set cinwords+=foo<cr>");
+  cl_assert_equal_s(type(":set cinwords?<cr>"), "cinwords=foo");
+  type(":set cinwords+=bar<cr>");
+  cl_assert_equal_s(type(":set cinwords?<cr>"), "cinwords=foo,bar");
+  type(":set cinwords+=foo<cr>");
+  cl_assert_equal_s(type(":set cinwords?<cr>"), "cinwords=foo,bar");
+}
+
 void test_options__buffer_local(void) {
   // 'modifiable' by default is on.
   cl_assert_equal_s(type(":set  modifiable?<cr>"), "modifiable");

@@ -115,30 +115,33 @@ void window_inherit_parent_options(struct window *window) {
 #undef OPTION
 }
 
-static void *editor_opt_val(struct editor *editor, struct opt *info, bool global) {
+static void editor_opt_vals(
+    struct editor *editor, struct opt *info, void **global, void **local) {
   switch (info->scope) {
   case OPTION_SCOPE_WINDOW:
 #define OPTION(optname, _, __) \
     if (!strcmp(info->name, #optname)) { \
-      return &editor->window->opt.optname; \
+      *global = *local = &editor->window->opt.optname; \
+      return; \
     }
     WINDOW_OPTIONS
 #undef OPTION
     break;
   case OPTION_SCOPE_BUFFER:
-    if (!global) {
 #define OPTION(optname, _, __) \
       if (!strcmp(info->name, #optname)) { \
-        return &editor->window->buffer->opt.optname; \
+        *global = &editor->opt.optname; \
+        *local = &editor->window->buffer->opt.optname; \
+        return; \
       }
       BUFFER_OPTIONS
 #undef OPTION
-    }
-    ATTR_FALLTHROUGH;
+      break;
   case OPTION_SCOPE_EDITOR:
 #define OPTION(optname, _, __) \
     if (!strcmp(info->name, #optname)) { \
-      return &editor->opt.optname; \
+      *global = *local = &editor->opt.optname; \
+      return; \
     }
     BUFFER_OPTIONS
     EDITOR_OPTIONS
@@ -146,11 +149,16 @@ static void *editor_opt_val(struct editor *editor, struct opt *info, bool global
   }
 
   assert(0);
-  return NULL;
 }
 
-static void editor_command_set_impl(struct editor *editor, char *arg,
-                                    bool global) {
+enum option_set_mode {
+  OPTION_SET_LOCAL,
+  OPTION_SET_GLOBAL,
+  OPTION_SET_BOTH
+};
+
+static void editor_command_set_impl(
+    struct editor *editor, char *arg, enum option_set_mode which) {
   if (!arg) {
     // TODO(isbadawi): show current values of all options...
     editor_status_err(editor, "Argument required");
@@ -181,21 +189,33 @@ static void editor_command_set_impl(struct editor *editor, char *arg,
     return;
   }
 
-  void *val = editor_opt_val(editor, info, global);
-  bool *boolval = (bool*)val;
-  int *intval = (int*)val;
-  char **stringval = (char**)val;
+  void *global, *local;
+  editor_opt_vals(editor, info, &global, &local);
+  assert(global == local || info->scope == OPTION_SCOPE_BUFFER);
+
+  void *read = which == OPTION_SET_GLOBAL ? global : local;
+  void *writes[2 + 1] = {0};
+
+  writes[0] = read;
+
+  if (info->scope == OPTION_SCOPE_BUFFER && which == OPTION_SET_BOTH) {
+    writes[1] = writes[0] == global ? local : global;
+  }
+
+  #define WRITE(val) for (void **_ = writes, *val = *_; val; ++_, val = *_)
 
   if (groups[3].rm_so == -1) {
     switch (info->type) {
     case OPTION_TYPE_int:
-      editor_status_msg(editor, "%s=%d", opt, *intval);
+      editor_status_msg(editor, "%s=%d", opt, *(int*)read);
       break;
     case OPTION_TYPE_string:
-      editor_status_msg(editor, "%s=%s", opt, *stringval);
+      editor_status_msg(editor, "%s=%s", opt, *(string*)read);
       break;
     case OPTION_TYPE_bool:
-      *boolval = groups[1].rm_so == -1;
+      WRITE(val) {
+        *(bool*)val = groups[1].rm_so == -1;
+      }
       break;
     }
     return;
@@ -205,7 +225,9 @@ static void editor_command_set_impl(struct editor *editor, char *arg,
   case '!':
     switch (info->type) {
     case OPTION_TYPE_bool:
-      *boolval = !*boolval;
+      WRITE(val) {
+        *(bool*)val = !*(bool*)val;
+      }
       break;
     case OPTION_TYPE_int:
     case OPTION_TYPE_string:
@@ -216,24 +238,28 @@ static void editor_command_set_impl(struct editor *editor, char *arg,
   case '?':
     switch (info->type) {
     case OPTION_TYPE_int:
-      editor_status_msg(editor, "%s=%d", opt, *intval);
+      editor_status_msg(editor, "%s=%d", opt, *(int*)read);
       break;
     case OPTION_TYPE_string:
-      editor_status_msg(editor, "%s=%s", opt, *stringval);
+      editor_status_msg(editor, "%s=%s", opt, *(string*)read);
       break;
     case OPTION_TYPE_bool:
-      editor_status_msg(editor, "%s%s", *boolval ? "" : "no", opt);
+      editor_status_msg(editor, "%s%s", *(bool*)read ? "" : "no", opt);
       break;
     }
     break;
   case '=':
     switch (info->type) {
     case OPTION_TYPE_int:
-      strtoi(arg + groups[3].rm_so + 1, intval);
+      WRITE(val) {
+        strtoi(arg + groups[3].rm_so + 1, (int*)val);
+      }
       break;
     case OPTION_TYPE_string:
-      free(*stringval);
-      option_set_string(stringval, arg + groups[3].rm_so + 1);
+      WRITE(val) {
+        free(*(string*)val);
+        option_set_string((string*)val, arg + groups[3].rm_so + 1);
+      }
       break;
     case OPTION_TYPE_bool:
       editor_status_err(editor, "Invalid argument: %s", arg);
@@ -245,14 +271,13 @@ static void editor_command_set_impl(struct editor *editor, char *arg,
 }
 
 EDITOR_COMMAND(setglobal, setg) {
-  editor_command_set_impl(editor, arg, true);
+  editor_command_set_impl(editor, arg, OPTION_SET_GLOBAL);
 }
 
 EDITOR_COMMAND(setlocal, setl) {
-  editor_command_set_impl(editor, arg, false);
+  editor_command_set_impl(editor, arg, OPTION_SET_LOCAL);
 }
 
 EDITOR_COMMAND(set, set) {
-  editor_command_set_impl(editor, arg, true);
-  editor_command_set_impl(editor, arg, false);
+  editor_command_set_impl(editor, arg, OPTION_SET_BOTH);
 }

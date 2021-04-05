@@ -46,22 +46,27 @@ struct opt {
     OPTION_TYPE_int,
     OPTION_TYPE_string,
   } type;
+  union {
+    int intval;
+    bool boolval;
+    string stringval;
+  } defaultval;
 };
 
 static struct opt opts_meta[] = {
-#define OPTION(name, type, _) \
-  {#name, OPTION_SCOPE_BUFFER, OPTION_TYPE_##type},
+#define OPTION(name, type, defaultval) \
+  {#name, OPTION_SCOPE_BUFFER, OPTION_TYPE_##type, {.type##val = defaultval}},
   BUFFER_OPTIONS
 #undef OPTION
-#define OPTION(name, type, _) \
-  {#name, OPTION_SCOPE_WINDOW, OPTION_TYPE_##type},
+#define OPTION(name, type, defaultval) \
+  {#name, OPTION_SCOPE_WINDOW, OPTION_TYPE_##type, {.type##val = defaultval}},
   WINDOW_OPTIONS
 #undef OPTION
-#define OPTION(name, type, _) \
-  {#name, OPTION_SCOPE_EDITOR, OPTION_TYPE_##type},
+#define OPTION(name, type, defaultval) \
+  {#name, OPTION_SCOPE_EDITOR, OPTION_TYPE_##type, {.type##val = defaultval}},
   EDITOR_OPTIONS
 #undef OPTION
-  {NULL, 0, 0},
+  {NULL, 0, 0, {0}},
 };
 
 static struct opt *option_info(char *name) {
@@ -166,7 +171,7 @@ static void editor_command_set_impl(
   }
 
   regex_t regex;
-  regcomp(&regex, "(no)?([a-z]+)(=[0-9a-zA-Z,_]+|!|\\?)?", REG_EXTENDED);
+  regcomp(&regex, "(no)?([a-z]+)(=[0-9a-zA-Z,_]+|!|\\?|&)?", REG_EXTENDED);
 
   regmatch_t groups[4];
   int nomatch = regexec(&regex, arg, 4, groups, 0);
@@ -245,6 +250,26 @@ static void editor_command_set_impl(
       break;
     case OPTION_TYPE_bool:
       editor_status_msg(editor, "%s%s", *(bool*)read ? "" : "no", opt);
+      break;
+    }
+    break;
+  case '&':
+    switch (info->type) {
+    case OPTION_TYPE_int:
+      WRITE(val) {
+        *(int*)val = info->defaultval.intval;
+      }
+      break;
+    case OPTION_TYPE_string:
+      WRITE(val) {
+        free(*(string*)val);
+        option_set_string((string*)val, info->defaultval.stringval);
+      }
+      break;
+    case OPTION_TYPE_bool:
+      WRITE(val) {
+        *(bool*)val = info->defaultval.boolval;
+      }
       break;
     }
     break;

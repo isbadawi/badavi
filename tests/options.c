@@ -37,6 +37,26 @@ void test_options__option_types(void) {
   cl_assert_equal_s(editor->window->buffer->opt.cinwords, "hello,world");
 }
 
+void test_options__reset_to_default(void) {
+  cl_assert_equal_s(type(":set number?<cr>"), "nonumber");
+  type(":set number<cr>");
+  cl_assert_equal_s(type(":set number?<cr>"), "number");
+  type(":set number&<cr>");
+  cl_assert_equal_s(type(":set number?<cr>"), "nonumber");
+
+  cl_assert_equal_s(type(":set numberwidth?<cr>"), "numberwidth=4");
+  type(":set numberwidth=24<cr>");
+  cl_assert_equal_s(type(":set numberwidth?<cr>"), "numberwidth=24");
+  type(":set numberwidth&<cr>");
+  cl_assert_equal_s(type(":set numberwidth?<cr>"), "numberwidth=4");
+
+  cl_assert_equal_s(type(":set cinwords?<cr>"), "cinwords=if,else,while,do,for,switch");
+  type(":set cinwords=foo,bar<cr>");
+  cl_assert_equal_s(type(":set cinwords?<cr>"), "cinwords=foo,bar");
+  type(":set cinwords&<cr>");
+  cl_assert_equal_s(type(":set cinwords?<cr>"), "cinwords=if,else,while,do,for,switch");
+}
+
 void test_options__buffer_local(void) {
   // 'modifiable' by default is on.
   cl_assert_equal_s(type(":set  modifiable?<cr>"), "modifiable");

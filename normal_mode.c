@@ -208,6 +208,26 @@ void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
   case 'D': editor_send_keys(editor, "d$"); break;
   case 'C': editor_send_keys(editor, "c$"); break;
   casemod('J') editor_join_lines(editor); break;
+  case 'g': {
+    struct tb_event next;
+    editor_waitkey(editor, &next);
+    if (next.ch == 'f') {
+      struct buf *file = motion_filename_under_cursor(editor->window);
+      if (file) {
+        char *path = editor_find_in_path(editor, file->buf);
+        if (!path) {
+          editor_status_err(editor, "Can't find file \"%s\" in path", file->buf);
+        } else {
+          editor_open(editor, path);
+          free(path);
+        }
+        buf_free(file);
+      }
+      break;
+    }
+    editor_push_event(editor, &next);
+    ATTR_FALLTHROUGH;
+  }
   default: {
     struct motion *motion = motion_get(editor, ev);
     if (motion) {

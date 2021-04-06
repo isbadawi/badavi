@@ -449,3 +449,36 @@ struct buf *motion_word_under_cursor(struct window *window) {
   size_t end = is_word_end(ctx) ? ctx.pos : next_word_end(ctx);
   return gb_getstring(window->buffer->text, start, end - start + 1);
 }
+
+static bool isfname(char c) {
+  return isalnum(c) || strchr("_-./", c) != NULL;
+}
+
+static bool is_fname_start(struct motion_context ctx) {
+  struct gapbuf *gb = ctx.window->buffer->text;
+  if (is_line_start(gb, ctx.pos)) {
+    return true;
+  }
+
+  char this = gb_getchar(gb, ctx.pos);
+  char last = gb_getchar(gb, ctx.pos - 1);
+  return isfname(this) && !isfname(last);
+}
+
+static bool is_fname_end(struct motion_context ctx) {
+  struct gapbuf *gb = ctx.window->buffer->text;
+  if (ctx.pos == gb_size(gb) - 1 || is_blank_line(gb, ctx.pos)) {
+    return true;
+  }
+
+  char this = gb_getchar(gb, ctx.pos);
+  char next = gb_getchar(gb, ctx.pos + 1);
+  return isfname(this) && !isfname(next);
+}
+
+struct buf *motion_filename_under_cursor(struct window *window) {
+  struct motion_context ctx = {window_cursor(window), window, NULL};
+  size_t start = is_fname_start(ctx) ? ctx.pos : prev_until(ctx, is_fname_start);
+  size_t end = is_fname_end(ctx) ? ctx.pos : next_until(ctx, is_fname_end);
+  return gb_getstring(window->buffer->text, start, end - start + 1);
+}

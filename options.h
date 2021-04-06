@@ -13,6 +13,7 @@ typedef char* string;
   OPTION(readonly, bool, false) \
   OPTION(shiftwidth, int, 8) \
   OPTION(smartindent, bool, false) \
+  OPTION(suffixesadd, string, "") \
   OPTION(tabstop, int, 8) \
 
 #define WINDOW_OPTIONS \
@@ -27,6 +28,7 @@ typedef char* string;
   OPTION(hlsearch, bool, false) \
   OPTION(ignorecase, bool, false) \
   OPTION(incsearch, bool, false) \
+  OPTION(path, string, ".,/usr/include,,") \
   OPTION(ruler, bool, false) \
   OPTION(showmode, bool, true) \
   OPTION(sidescroll, int, 0) \

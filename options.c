@@ -184,7 +184,9 @@ static void csl_append(char **csl, char *word) {
   *result = '\0';
   if (len) {
     strcat(result, *csl);
-    strcat(result, ",");
+    if ((*csl)[len - 1] != ',') {
+      strcat(result, ",");
+    }
   }
   strcat(result, word);
   free(*csl);

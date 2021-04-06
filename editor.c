@@ -7,6 +7,7 @@
 #include <stdarg.h>
 
 #include <errno.h>
+#include <libgen.h>
 #include <limits.h>
 #include <unistd.h>
 
@@ -338,6 +339,83 @@ const char *editor_relpath(struct editor *editor, const char *path) {
   return relpath(path, editor_working_directory(editor));
 }
 
+static char *editor_find_in_path_verbatim(struct editor *editor, char *file) {
+  char buf[PATH_MAX];
+
+  char *p, *dirs;
+  p = dirs = xstrdup(editor->opt.path);
+
+  char *dir;
+  while ((dir = strsep(&dirs, ","))) {
+    if (!strcmp(dir, "")) {
+      dir = editor_working_directory(editor);
+    } else if (!strcmp(dir , ".")) {
+      char *path = editor->window->buffer->path;
+      if (!path) {
+        continue;
+      }
+      path = xstrdup(path);
+      dir = dirname(path);
+      free(path);
+    }
+    strcpy(buf, dir);
+    strcat(buf, "/");
+    strcat(buf, file);
+
+    if (!access(buf, R_OK)) {
+      char *result = xstrdup(buf);
+      free(p);
+      return result;
+    }
+  }
+  free(p);
+  return NULL;
+}
+
+char *editor_find_in_path(struct editor *editor, char *file) {
+  char *path = editor_find_in_path_verbatim(editor, file);
+  if (path) {
+    return path;
+  }
+  char *suffixesadd = editor->window->buffer->opt.suffixesadd;
+  if (!*suffixesadd) {
+    return NULL;
+  }
+
+  char *p, *suffixes;
+  p = suffixes = xstrdup(suffixesadd);
+
+  char buf[PATH_MAX];
+
+  char *suffix;
+  while ((suffix = strsep(&suffixes, ","))) {
+    strcpy(buf, file);
+    strcat(buf, suffix);
+    char *path = editor_find_in_path_verbatim(editor, buf);
+    if (path) {
+      free(p);
+      return path;
+    }
+  }
+  free(p);
+  return NULL;
+}
+
+EDITOR_COMMAND(find, fin) {
+  if (!arg) {
+    editor_status_err(editor, "No file name");
+    return;
+  }
+
+  char *path = editor_find_in_path(editor, arg);
+  if (path) {
+    editor_open(editor, path);
+    free(path);
+  } else {
+    editor_status_err(editor, "Can't find file \"%s\" in path", arg);
+  }
+}
+
 EDITOR_COMMAND(pwd, pw) {
   const char *pwd = editor_working_directory(editor);
   assert(pwd);
@@ -544,6 +622,15 @@ char editor_getchar(struct editor *editor) {
 
 void editor_handle_key_press(struct editor *editor, struct tb_event *ev) {
   editor->mode->key_pressed(editor, ev);
+}
+
+void editor_push_event(struct editor *editor, struct tb_event *ev) {
+  struct editor_event *event = xmalloc(sizeof(*event));
+  memset(event, 0, sizeof(*event));
+  event->type = ev->type;
+  event->key = ev->key;
+  event->ch = ev->ch;
+  TAILQ_INSERT_HEAD(&editor->synthetic_events, event, pointers);
 }
 
 void editor_send_keys(struct editor *editor, const char *keys) {

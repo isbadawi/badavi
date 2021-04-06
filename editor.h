@@ -116,6 +116,7 @@ void editor_status_msg(struct editor *editor, const char *format, ...);
 ATTR_PRINTFLIKE(2, 3)
 void editor_status_err(struct editor *editor, const char *format, ...);
 
+void editor_push_event(struct editor *editor, struct tb_event *ev);
 void editor_send_keys(struct editor *editor, const char *keys);
 
 void editor_undo(struct editor *editor);
@@ -123,6 +124,8 @@ void editor_redo(struct editor *editor);
 
 void editor_source(struct editor *editor, char *path);
 bool editor_try_modify(struct editor *editor);
+
+char *editor_find_in_path(struct editor *editor, char *file);
 
 struct editor_command {
   const char *name;

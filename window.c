@@ -507,6 +507,22 @@ EDITOR_COMMAND(split, sp) {
   }
 }
 
+EDITOR_COMMAND(splitfind, sfind) {
+  if (!arg) {
+    editor_status_err(editor, "No file name");
+    return;
+  }
+
+  char *path = editor_find_in_path(editor, arg);
+  if (!path) {
+    editor_status_err(editor, "Can't find file \"%s\" in path", arg);
+    return;
+  }
+
+  editor_command_split(editor, path, false);
+  free(path);
+}
+
 EDITOR_COMMAND(vsplit, vsp) {
   editor_set_window(editor, window_split(editor->window,
       editor->opt.splitright ? WINDOW_SPLIT_RIGHT : WINDOW_SPLIT_LEFT));

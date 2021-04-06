@@ -20,6 +20,7 @@ struct window *window_create(struct buffer *buffer, size_t w, size_t h) {
   window->pwd = NULL;
 
   window->buffer = NULL;
+  window->alternate_path = NULL;
   window->cursor = xmalloc(sizeof(*window->cursor));
   window_set_buffer(window, buffer);
   window->visual_mode_selection = NULL;
@@ -290,6 +291,13 @@ void window_resize(struct window *window, int dw, int dh) {
 void window_set_buffer(struct window *window, struct buffer* buffer) {
   if (window->buffer) {
     TAILQ_REMOVE(&window->buffer->marks, window->cursor, pointers);
+
+    if (window->buffer->path) {
+      if (window->alternate_path) {
+        free(window->alternate_path);
+      }
+      window->alternate_path = xstrdup(window->buffer->path);
+    }
   }
 
   window->buffer = buffer;
@@ -417,6 +425,9 @@ void window_free(struct window *window) {
     }
     if (window->pwd) {
       free(window->pwd);
+    }
+    if (window->alternate_path) {
+      free(window->alternate_path);
     }
   }
   window_free_options(window);

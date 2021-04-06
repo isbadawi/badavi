@@ -84,6 +84,13 @@ void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
     buf_free(word);
     return;
   }
+  case TB_KEY_CTRL_6:
+    if (editor->window->alternate_path) {
+      editor_open(editor, editor->window->alternate_path);
+    } else {
+      editor_status_err(editor, "No alternate file");
+    }
+    return;
   case TB_KEY_ENTER: {
     struct buffer *buffer = editor->window->buffer;
     if (!buffer->directory) {

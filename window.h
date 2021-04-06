@@ -28,6 +28,9 @@ struct window {
     struct {
       // The buffer being edited.
       struct buffer *buffer;
+
+      char *alternate_path;
+
       // The coordinates of the top left cell visible on screen.
       size_t top;
       size_t left;

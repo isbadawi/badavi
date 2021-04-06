@@ -92,19 +92,3 @@ void test_os__write_files(void) {
   type(":e .<cr>");
   assert_buffer_contents("bar.txt\ncopy.txt\nfoo.txt\nsubdir/\n");
 }
-
-void test_os__shell_command(void) {
-  // Suppress the "Press ENTER to continue" prompt
-  int fd = dup(fileno(stdout));
-  freopen("/dev/null", "w", stdout);
-  ungetc('\n', stdin);
-
-  type(":!rm bar.txt<cr><cr>");
-
-  // Restore stdout back to what it was
-  dup2(fd, fileno(stdout));
-  close(fd);
-
-  type(":e .<cr>");
-  assert_buffer_contents("foo.txt\nsubdir/\n");
-}

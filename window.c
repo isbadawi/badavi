@@ -293,9 +293,7 @@ void window_set_buffer(struct window *window, struct buffer* buffer) {
     TAILQ_REMOVE(&window->buffer->marks, window->cursor, pointers);
 
     if (window->buffer->path) {
-      if (window->alternate_path) {
-        free(window->alternate_path);
-      }
+      free(window->alternate_path);
       window->alternate_path = xstrdup(window->buffer->path);
     }
   }
@@ -423,12 +421,8 @@ void window_free(struct window *window) {
       TAILQ_REMOVE(&window->buffer->marks, window->cursor, pointers);
       free(window->cursor);
     }
-    if (window->pwd) {
-      free(window->pwd);
-    }
-    if (window->alternate_path) {
-      free(window->alternate_path);
-    }
+    free(window->pwd);
+    free(window->alternate_path);
   }
   window_free_options(window);
   free(window);
@@ -549,10 +543,8 @@ EDITOR_COMMAND(vsplit, vsp) {
 
 void window_clear_working_directories(struct window *window) {
   if (window->split_type == WINDOW_LEAF) {
-    if (window->pwd) {
-      free(window->pwd);
-      window->pwd = NULL;
-    }
+    free(window->pwd);
+    window->pwd = NULL;
     return;
   }
 

@@ -27,10 +27,8 @@ void cmdline_mode_entered(struct editor *editor) {
 
 static void clear_incsearch_match(struct editor *editor) {
   struct search_match **match = &editor->window->incsearch_match;
-  if (*match) {
-    free(*match);
-    *match = NULL;
-  }
+  free(*match);
+  *match = NULL;
 }
 
 void cmdline_mode_exited(struct editor *editor) {

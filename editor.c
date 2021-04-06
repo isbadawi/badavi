@@ -242,9 +242,7 @@ bool editor_save_buffer(struct editor *editor, char *path) {
     editor_status_err(editor, "%s", strerror(errno));
   }
 
-  if (path) {
-    free(path);
-  }
+  free(path);
   return rc;
 }
 
@@ -427,9 +425,7 @@ EDITOR_COMMAND(chdir, cd) {
   if (!target) {
     target = homedir();
   }
-  if (editor->pwd) {
-    free(editor->pwd);
-  }
+  free(editor->pwd);
   editor->pwd = abspath(target);
   chdir(target);
   window_clear_working_directories(window_root(editor->window));
@@ -448,9 +444,7 @@ EDITOR_COMMAND(lchdir, lcd) {
     editor->pwd = xstrdup(cwd);
   }
 
-  if (editor->window->pwd) {
-    free(editor->window->pwd);
-  }
+  free(editor->window->pwd);
   editor->window->pwd = abspath(target);
   chdir(target);
   editor_command_pwd(editor, NULL, false);

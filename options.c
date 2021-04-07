@@ -208,10 +208,15 @@ static void editor_command_set_impl(
   int nomatch = regexec(&regex, arg, 4, groups, 0);
   regfree(&regex);
 
-  if (nomatch) {
-    editor_status_err(editor, "Invalid argument: %s", arg);
-    return;
+#define ENSURE(condition, fmt, ...) \
+  if (!(condition)) { \
+    editor_status_err(editor, fmt, ##__VA_ARGS__); \
+    return; \
   }
+
+#define INVALID(condition) ENSURE(!(condition), "Invalid argument: %s", arg)
+
+  INVALID(nomatch);
 
   char opt[32];
   size_t optlen = (size_t) (groups[2].rm_eo - groups[2].rm_so);
@@ -219,76 +224,107 @@ static void editor_command_set_impl(
   opt[optlen] = '\0';
 
   struct opt *info = option_info(opt);
+  ENSURE(info, "Unknown option: %s", opt);
 
-  if (!info) {
-    editor_status_err(editor, "Unknown option: %s", opt);
-    return;
+  enum {
+    OPTION_ACTION_NONE,
+    OPTION_ACTION_SHOW,
+    OPTION_ACTION_ENABLE,
+    OPTION_ACTION_DISABLE,
+    OPTION_ACTION_TOGGLE,
+    OPTION_ACTION_RESET,
+    OPTION_ACTION_ASSIGN,
+    OPTION_ACTION_ASSIGN_ADD,
+  } action = OPTION_ACTION_NONE;
+  char *rhs = NULL;
+
+  regoff_t rhs_offset = groups[3].rm_so;
+  regoff_t no_offset = groups[1].rm_so;
+  INVALID(no_offset != -1 && info->type != OPTION_TYPE_bool);
+
+  if (rhs_offset == -1) {
+    switch (info->type) {
+    case OPTION_TYPE_int:
+    case OPTION_TYPE_string:
+      action = OPTION_ACTION_SHOW;
+      break;
+    case OPTION_TYPE_bool:
+      if (no_offset == -1) {
+        action = OPTION_ACTION_ENABLE;
+      } else {
+        action = OPTION_ACTION_DISABLE;
+      }
+    }
+  } else {
+    switch (arg[rhs_offset]) {
+    case '!':
+      INVALID(info->type != OPTION_TYPE_bool);
+      action = OPTION_ACTION_TOGGLE;
+      break;
+    case '?': action = OPTION_ACTION_SHOW; break;
+    case '&': action = OPTION_ACTION_RESET; break;
+    case '+':
+      INVALID(info->type == OPTION_TYPE_bool);
+      action = OPTION_ACTION_ASSIGN_ADD;
+      rhs = arg + rhs_offset + 2;
+      break;
+    case '=':
+      INVALID(info->type == OPTION_TYPE_bool);
+      action = OPTION_ACTION_ASSIGN;
+      rhs = arg + rhs_offset + 1;
+      break;
+    }
   }
 
   void *global, *local;
   editor_opt_vals(editor, info, &global, &local);
   assert(global == local || info->scope == OPTION_SCOPE_BUFFER);
 
-  void *read = which == OPTION_SET_GLOBAL ? global : local;
   void *writes[2 + 1] = {0};
-
-  writes[0] = read;
-
   if (info->scope == OPTION_SCOPE_BUFFER && which == OPTION_SET_BOTH) {
-    writes[1] = writes[0] == global ? local : global;
+    writes[0] = global;
+    writes[1] = local;
+  } else {
+    writes[0] = which == OPTION_SET_GLOBAL ? global : local;
   }
-
   #define WRITE(val) for (void **_ = writes, *val = *_; val; ++_, val = *_)
 
-  if (groups[3].rm_so == -1) {
+  switch (action) {
+  case OPTION_ACTION_NONE: assert(0); break;
+  case OPTION_ACTION_SHOW: {
+    void *val = which == OPTION_SET_GLOBAL ? global : local;
     switch (info->type) {
     case OPTION_TYPE_int:
-      editor_status_msg(editor, "%s=%d", opt, *(int*)read);
+      editor_status_msg(editor, "%s=%d", opt, *(int*)val);
       break;
     case OPTION_TYPE_string:
-      editor_status_msg(editor, "%s=%s", opt, *(string*)read);
+      editor_status_msg(editor, "%s=%s", opt, *(string*)val);
       break;
     case OPTION_TYPE_bool:
-      WRITE(val) {
-        *(bool*)val = groups[1].rm_so == -1;
-      }
+      editor_status_msg(editor, "%s%s", *(bool*)val ? "" : "no", opt);
       break;
     }
-    return;
+    break;
   }
-
-  switch (arg[groups[3].rm_so]) {
-  case '!':
-    switch (info->type) {
-    case OPTION_TYPE_bool:
-      WRITE(val) {
-        *(bool*)val = !*(bool*)val;
-      }
-      break;
-    case OPTION_TYPE_int:
-    case OPTION_TYPE_string:
-      editor_status_err(editor, "Invalid argument: %s", arg);
-      break;
-    }
-    break;
-  case '?':
-    switch (info->type) {
-    case OPTION_TYPE_int:
-      editor_status_msg(editor, "%s=%d", opt, *(int*)read);
-      break;
-    case OPTION_TYPE_string:
-      editor_status_msg(editor, "%s=%s", opt, *(string*)read);
-      break;
-    case OPTION_TYPE_bool:
-      editor_status_msg(editor, "%s%s", *(bool*)read ? "" : "no", opt);
-      break;
-    }
-    break;
-  case '&':
+  case OPTION_ACTION_ENABLE:
+    assert(info->type == OPTION_TYPE_bool);
+    WRITE(val) { *(bool*)val = true; } break;
+  case OPTION_ACTION_DISABLE:
+    assert(info->type == OPTION_TYPE_bool);
+    WRITE(val) { *(bool*)val = false; } break;
+  case OPTION_ACTION_TOGGLE:
+    assert(info->type == OPTION_TYPE_bool);
+    WRITE(val) { *(bool*)val = !*(bool*)val; } break;
+  case OPTION_ACTION_RESET:
     switch (info->type) {
     case OPTION_TYPE_int:
       WRITE(val) {
         *(int*)val = info->defaultval.intval;
+      }
+      break;
+    case OPTION_TYPE_bool:
+      WRITE(val) {
+        *(bool*)val = info->defaultval.boolval;
       }
       break;
     case OPTION_TYPE_string:
@@ -297,20 +333,32 @@ static void editor_command_set_impl(
         option_set_string((string*)val, info->defaultval.stringval);
       }
       break;
-    case OPTION_TYPE_bool:
-      WRITE(val) {
-        *(bool*)val = info->defaultval.boolval;
-      }
-      break;
     }
     break;
-  case '+': {
-    char *rhs = arg + groups[3].rm_so + 2;
+  case OPTION_ACTION_ASSIGN:
+    assert(rhs);
     switch (info->type) {
+    case OPTION_TYPE_bool: assert(0); break;
+    case OPTION_TYPE_int:
+      WRITE(val) {
+        ENSURE(strtoi(rhs, (int*)val), "Number required after =: %s", arg);
+      }
+      break;
+    case OPTION_TYPE_string:
+      WRITE(val) {
+        free(*(string*)val);
+        option_set_string((string*)val, rhs);
+      }
+    }
+    break;
+  case OPTION_ACTION_ASSIGN_ADD:
+    assert(rhs);
+    switch (info->type) {
+    case OPTION_TYPE_bool: assert(0); break;
     case OPTION_TYPE_int:
       WRITE(val) {
         int increment;
-        strtoi(rhs, &increment);
+        ENSURE(strtoi(rhs, &increment), "Number required after =: %s", arg);
         *(int*)val += increment;
       }
       break;
@@ -322,34 +370,8 @@ static void editor_command_set_impl(
         csl_append((string*)val, rhs);
       }
       break;
-    case OPTION_TYPE_bool:
-      editor_status_err(editor, "Invalid argument: %s", arg);
-      break;
     }
-    break;
   }
-  case '=': {
-    char *rhs = arg + groups[3].rm_so + 1;
-    switch (info->type) {
-    case OPTION_TYPE_int:
-      WRITE(val) {
-        strtoi(rhs, (int*)val);
-      }
-      break;
-    case OPTION_TYPE_string:
-      WRITE(val) {
-        free(*(string*)val);
-        option_set_string((string*)val, rhs);
-      }
-      break;
-    case OPTION_TYPE_bool:
-      editor_status_err(editor, "Invalid argument: %s", arg);
-      break;
-    }
-    break;
-  }
-  }
-  return;
 }
 
 EDITOR_COMMAND(setglobal, setg) {

@@ -37,6 +37,30 @@ void test_options__option_types(void) {
   cl_assert_equal_s(editor->window->buffer->opt.cinwords, "hello,world");
 }
 
+void test_options__invalid_arguments(void) {
+  cl_assert_equal_s(
+      type(":set doesnotexist<cr>"),
+      "Unknown option: doesnotexist");
+  cl_assert_equal_s(
+      type(":set number=4<cr>"),
+      "Invalid argument: number=4");
+  cl_assert_equal_s(
+      type(":set cinwords!<cr>"),
+      "Invalid argument: cinwords!");
+  cl_assert_equal_s(
+      type(":set autoindent+=8<cr>"),
+      "Invalid argument: autoindent+=8");
+  cl_assert_equal_s(
+      type(":set nonumberwidth=4<cr>"),
+      "Invalid argument: nonumberwidth=4");
+  cl_assert_equal_s(
+      type(":set numberwidth=hello<cr>"),
+      "Number required after =: numberwidth=hello");
+  cl_assert_equal_s(
+      type(":set numberwidth+=hello<cr>"),
+      "Number required after =: numberwidth+=hello");
+}
+
 void test_options__reset_to_default(void) {
   cl_assert_equal_s(type(":set number?<cr>"), "nonumber");
   type(":set number<cr>");

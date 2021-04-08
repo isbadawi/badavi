@@ -179,7 +179,7 @@ static void window_draw_search_matches(struct window *window,
   search_result_free_matches(&result);
 }
 
-void window_get_ruler(struct window *window, char *buf, size_t buflen) {
+static void window_get_ruler(struct window *window, char *buf, size_t buflen) {
   struct gapbuf *gb = window->buffer->text;
   size_t line, col;
   gb_pos_to_linecol(gb, window_cursor(window), &line, &col);
@@ -377,9 +377,7 @@ static void window_draw(struct window *window, struct editor *editor) {
   }
 }
 
-void editor_draw(struct editor *editor) {
-  tb_clear();
-
+static void editor_draw_window(struct editor *editor) {
   // FIXME(ibadawi): It's a bit kludgy to call this here.
   // We want to visual mode selection to be up to date if we're searching inside
   // visual mode with 'incsearch' enabled.
@@ -387,7 +385,8 @@ void editor_draw(struct editor *editor) {
 
   window_scroll(editor->window, (size_t) editor->opt.sidescroll);
 
-  window_draw(window_root(editor->window), editor);
+  struct window *root = window_root(editor->window);
+  window_draw(root, editor);
 
   struct search_match *match = editor->window->incsearch_match;
   if (match) {
@@ -404,8 +403,7 @@ void editor_draw(struct editor *editor) {
     char *pattern = lsp->read(lsp);
     if (*pattern) {
       bool ignore_case = editor_ignore_case(editor, pattern);
-      window_draw_search_matches(
-          window_root(editor->window), pattern, ignore_case);
+      window_draw_search_matches(root, pattern, ignore_case);
     }
     free(pattern);
   }
@@ -413,36 +411,42 @@ void editor_draw(struct editor *editor) {
 
   if (editor->opt.ruler &&
       (editor->window->parent || !editor->status_cursor)) {
-    window_draw_ruler(window_root(editor->window);
+    window_draw_ruler(root);
+  }
+}
+
+static void editor_draw_message(struct editor *editor) {
+  if (!editor->message->len) {
+    return;
   }
 
-  if (editor->message->len) {
-    int msglines = 1 + strcnt(editor->message->buf, '\n');
-    memmove(
-        tb_cell_buffer(),
-        tb_cell_buffer() + (msglines * tb_width()),
-        sizeof(struct tb_cell) * (tb_height() - msglines) * tb_width());
+  int msglines = 1 + strcnt(editor->message->buf, '\n');
+  memmove(
+      tb_cell_buffer(),
+      tb_cell_buffer() + (msglines * tb_width()),
+      sizeof(struct tb_cell) * (tb_height() - msglines) * tb_width());
 
-    int msgstart = (int) editor->height - 1 - msglines;
-    for (int row = msgstart; row < msgstart + msglines; ++row) {
-      for (int col = 0; col < tb_width(); ++col) {
-        tb_change_cell(col, row, ' ', COLOR_DEFAULT, COLOR_DEFAULT);
-      }
-    }
-
-    int col = 0;
-    for (size_t x = 0; x < editor->message->len; ++x) {
-      if (editor->message->buf[x] == '\n') {
-        msgstart++;
-        col = 0;
-        continue;
-      }
-
-      tb_change_cell(col++, msgstart,
-          (uint32_t) editor->message->buf[x], COLOR_WHITE, COLOR_DEFAULT);
+  int msgstart = (int) editor->height - 1 - msglines;
+  for (int row = msgstart; row < msgstart + msglines; ++row) {
+    for (int col = 0; col < tb_width(); ++col) {
+      tb_change_cell(col, row, ' ', COLOR_DEFAULT, COLOR_DEFAULT);
     }
   }
 
+  int col = 0;
+  for (size_t x = 0; x < editor->message->len; ++x) {
+    if (editor->message->buf[x] == '\n') {
+      msgstart++;
+      col = 0;
+      continue;
+    }
+
+    tb_change_cell(col++, msgstart,
+        (uint32_t) editor->message->buf[x], COLOR_WHITE, COLOR_DEFAULT);
+  }
+}
+
+static void editor_draw_status(struct editor *editor) {
   for (size_t x = 0; x < editor->status->len; ++x) {
     tb_change_cell((int) x, (int) editor->height - 1, (uint32_t) editor->status->buf[x],
         editor->status_error ? COLOR_DEFAULT : COLOR_WHITE,
@@ -454,6 +458,12 @@ void editor_draw(struct editor *editor) {
         (uint32_t) editor->status->buf[editor->status_cursor],
         COLOR_BLACK, COLOR_WHITE);
   }
+}
 
+void editor_draw(struct editor *editor) {
+  tb_clear();
+  editor_draw_window(editor);
+  editor_draw_message(editor);
+  editor_draw_status(editor);
   tb_present();
 }

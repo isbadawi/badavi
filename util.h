@@ -40,6 +40,8 @@ bool strtoi(char *s, int *result);
 // Returns a new string where all occurrences of 'from' are replaced with 'to'.
 char *strrep(char *s, char *from, char *to);
 
+size_t strcnt(char *s, char c);
+
 // Returns absolute path, with unnecessary //, ./ or ../ removed.
 // Also expands a leading ~ to the home directory.
 // Unlike realpath(3), does not resolve symlinks.

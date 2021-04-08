@@ -86,6 +86,16 @@ char *strrep(char *s, char *from, char *to) {
   return result;
 }
 
+size_t strcnt(char *s, char c) {
+  size_t cnt = 0;
+  for (char *p = s; *p; ++p) {
+    if (*p == c) {
+      ++cnt;
+    }
+  }
+  return cnt;
+}
+
 char *abspath(const char *path) {
   char buf[PATH_MAX];
   if (*path == '~') {

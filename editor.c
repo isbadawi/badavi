@@ -63,6 +63,7 @@ void editor_init(struct editor *editor, size_t width, size_t height) {
   editor->width = width;
   editor->height = height;
 
+  editor->message = buf_create(1);
   editor->status = buf_create(editor->width);
   editor->status_error = false;
   editor->status_silence = false;

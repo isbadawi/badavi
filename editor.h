@@ -40,8 +40,10 @@ struct editor {
   // This is not necessarily the current working directory of the process.
   char *pwd;
 
+  // Optional output above the status bar.
+  struct buf *message;
   // What's written to the status bar.
-  struct buf* status;
+  struct buf *status;
   // Whether the status is an error.
   bool status_error;
   // Whether the status should be displayed.

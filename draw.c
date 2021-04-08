@@ -411,6 +411,38 @@ void editor_draw(struct editor *editor) {
   }
   window_draw_cursor(editor->window);
 
+  if (editor->opt.ruler &&
+      (editor->window->parent || !editor->status_cursor)) {
+    window_draw_ruler(window_root(editor->window);
+  }
+
+  if (editor->message->len) {
+    int msglines = 1 + strcnt(editor->message->buf, '\n');
+    memmove(
+        tb_cell_buffer(),
+        tb_cell_buffer() + (msglines * tb_width()),
+        sizeof(struct tb_cell) * (tb_height() - msglines) * tb_width());
+
+    int msgstart = (int) editor->height - 1 - msglines;
+    for (int row = msgstart; row < msgstart + msglines; ++row) {
+      for (int col = 0; col < tb_width(); ++col) {
+        tb_change_cell(col, row, ' ', COLOR_DEFAULT, COLOR_DEFAULT);
+      }
+    }
+
+    int col = 0;
+    for (size_t x = 0; x < editor->message->len; ++x) {
+      if (editor->message->buf[x] == '\n') {
+        msgstart++;
+        col = 0;
+        continue;
+      }
+
+      tb_change_cell(col++, msgstart,
+          (uint32_t) editor->message->buf[x], COLOR_WHITE, COLOR_DEFAULT);
+    }
+  }
+
   for (size_t x = 0; x < editor->status->len; ++x) {
     tb_change_cell((int) x, (int) editor->height - 1, (uint32_t) editor->status->buf[x],
         editor->status_error ? COLOR_DEFAULT : COLOR_WHITE,
@@ -421,11 +453,6 @@ void editor_draw(struct editor *editor) {
     tb_change_cell((int) editor->status_cursor, (int) editor->height - 1,
         (uint32_t) editor->status->buf[editor->status_cursor],
         COLOR_BLACK, COLOR_WHITE);
-  }
-
-  if (editor->opt.ruler &&
-      (editor->window->parent || !editor->status_cursor)) {
-    window_draw_ruler(window_root(editor->window));
   }
 
   tb_present();

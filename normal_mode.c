@@ -59,6 +59,15 @@ void normal_mode_exited(struct editor *editor ATTR_UNUSED) {
 }
 
 void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
+  if (editor->message->len) {
+    if (ev->key == TB_KEY_ENTER) {
+      buf_clear(editor->message);
+      buf_clear(editor->status);
+      editor->status_cursor = 0;
+    }
+    return;
+  }
+
   if (ev->ch != '0' && isdigit((int) ev->ch)) {
     editor->count = 0;
     while (isdigit((int) ev->ch)) {

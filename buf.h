@@ -30,6 +30,8 @@ void buf_append_char(struct buf *buf, char c);
 // automatically growing it if needed.
 ATTR_PRINTFLIKE(2, 3)
 void buf_printf(struct buf *buf, const char *format, ...);
+ATTR_PRINTFLIKE(2, 3)
+void buf_appendf(struct buf *buf, const char *format, ...);
 ATTR_PRINTFLIKE(2, 0)
 void buf_vprintf(struct buf *buf, const char *format, va_list args);
 

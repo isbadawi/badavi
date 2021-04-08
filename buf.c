@@ -107,6 +107,16 @@ void buf_printf(struct buf *buf, const char *format, ...) {
   va_end(args);
 }
 
+void buf_appendf(struct buf *buf, const char *format, ...) {
+  struct buf *suffix = buf_create(1);
+  va_list args;
+  va_start(args, format);
+  buf_vprintf(suffix, format, args);
+  va_end(args);
+  buf_append(buf, suffix->buf);
+  buf_free(suffix);
+}
+
 void buf_vprintf(struct buf *buf, const char *format, va_list args) {
   va_list args_copy;
   va_copy(args_copy, args);

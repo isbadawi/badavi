@@ -34,7 +34,9 @@ static void clear_incsearch_match(struct editor *editor) {
 void cmdline_mode_exited(struct editor *editor) {
   struct cmdline_mode *mode = editor_get_cmdline_mode(editor);
   buf_free(mode->history_prefix);
-  editor->status_cursor = 0;
+  if (!editor->message->len) {
+    editor->status_cursor = 0;
+  }
   editor->status_silence = false;
   clear_incsearch_match(editor);
 }

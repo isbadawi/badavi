@@ -320,6 +320,43 @@ EDITOR_COMMAND(edit, e) {
   }
 }
 
+static bool window_any(
+    struct window *window, bool (*f)(struct window*, void*), void *ctx) {
+  if (window->split_type == WINDOW_LEAF) {
+    return f(window, ctx);
+  }
+  return window_any(window->split.first, f, ctx) ||
+    window_any(window->split.second, f, ctx);
+}
+
+static bool window_buffer_is(struct window* window, void *ctx) {
+  return window->buffer == ctx;
+}
+
+static bool editor_buffer_is_active(struct editor *editor, struct buffer *buffer) {
+  return window_any(window_root(editor->window), window_buffer_is, buffer);
+}
+
+EDITOR_COMMAND(buffers, ls) {
+  int i = 1;
+  buf_clear(editor->message);
+  char *alt = editor->window->alternate_path;
+  struct buffer *buffer;
+  TAILQ_FOREACH(buffer, &editor->buffers, pointers) {
+    char flags[6] = {' ', ' ', ' ', ' ', ' ', '\0'};
+    flags[0] = alt && buffer->path && !strcmp(alt, buffer->path)? '#' : flags[0];
+    flags[0] = buffer == editor->window->buffer ? '%' : flags[0];
+    flags[1] = editor_buffer_is_active(editor, buffer) ? 'a' : 'h';
+    flags[2] = buffer->opt.readonly ? '=' : flags[2];
+    flags[2] = !buffer->opt.modifiable ? '-' : flags[2];
+    flags[3] = buffer->opt.modified ? '+' : flags[3];
+    char *path = buffer->path ? buffer->path : "[No Name]";
+    buf_appendf(editor->message, "\n  %d %s \"%s\"", i++, flags, path);
+  }
+  editor_status_msg(editor, "Press ENTER to continue ");
+  editor->status_cursor = editor->status->len - 1;
+}
+
 static char cwdbuffer[PATH_MAX] = {0};
 static char *editor_working_directory(struct editor *editor) {
   if (editor->window->pwd) {

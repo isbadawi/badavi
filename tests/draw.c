@@ -15,12 +15,12 @@ static void type(const char *keys) {
 static char color(uint32_t color) {
   switch (color) {
     case TB_DEFAULT: return '.';
-    case 16: return 'b';
-    case TB_RED - 1: return 'r';
-    case TB_YELLOW - 1: return 'y';
-    case TB_BLUE - 1: return 'b';
-    case TB_WHITE - 1: return 'w';
-    case 242: return 'g';
+    case TB_BLACK: return 'b';
+    case TB_RED: return 'r';
+    case TB_YELLOW: return 'y';
+    case TB_BLUE: return 'b';
+    case 0x07: return 'w';
+    case TB_DARK_GRAY: return 'g';
     default: return '?';
   }
 }

@@ -16,12 +16,12 @@
 #include "util.h"
 
 #define COLOR_DEFAULT TB_DEFAULT
-#define COLOR_BLACK 16
-#define COLOR_RED (TB_RED - 1)
-#define COLOR_YELLOW (TB_YELLOW - 1)
-#define COLOR_BLUE (TB_BLUE - 1)
-#define COLOR_WHITE (TB_WHITE - 1)
-#define COLOR_GREY 242
+#define COLOR_BLACK TB_BLACK
+#define COLOR_RED TB_RED
+#define COLOR_YELLOW TB_YELLOW
+#define COLOR_BLUE TB_BLUE
+#define COLOR_WHITE 0x07
+#define COLOR_GREY TB_DARK_GRAY
 
 // Number of columns to use for the line number (including the trailing space).
 static size_t window_numberwidth(struct window* window) {
@@ -428,9 +428,7 @@ static void editor_draw_message(struct editor *editor) {
 
   int msgstart = (int) editor->height - 1 - msglines;
   for (int row = msgstart; row < msgstart + msglines; ++row) {
-    for (int col = 0; col < tb_width(); ++col) {
-      tb_change_cell(col, row, ' ', COLOR_DEFAULT, COLOR_DEFAULT);
-    }
+    tb_empty(0, row, COLOR_DEFAULT, tb_width());
   }
 
   int col = 0;
@@ -441,29 +439,29 @@ static void editor_draw_message(struct editor *editor) {
       continue;
     }
 
-    tb_change_cell(col++, msgstart,
-        (uint32_t) editor->message->buf[x], COLOR_WHITE, COLOR_DEFAULT);
+    tb_char(col++, msgstart,
+        COLOR_WHITE, COLOR_DEFAULT,
+        (uint32_t) editor->message->buf[x]);
   }
 }
 
 static void editor_draw_status(struct editor *editor) {
-  for (size_t x = 0; x < editor->status->len; ++x) {
-    tb_change_cell((int) x, (int) editor->height - 1, (uint32_t) editor->status->buf[x],
-        editor->status_error ? COLOR_DEFAULT : COLOR_WHITE,
-        editor->status_error ? COLOR_RED : COLOR_DEFAULT);
-  }
+  tb_string(0, (int) editor->height - 1,
+      editor->status_error ? COLOR_DEFAULT : COLOR_WHITE,
+      editor->status_error ? COLOR_RED : COLOR_DEFAULT,
+      editor->status->buf);
 
   if (editor->status_cursor) {
-    tb_change_cell((int) editor->status_cursor, (int) editor->height - 1,
-        (uint32_t) editor->status->buf[editor->status_cursor],
-        COLOR_BLACK, COLOR_WHITE);
+    tb_char((int) editor->status_cursor, (int) editor->height - 1,
+        COLOR_BLACK, COLOR_WHITE,
+        (uint32_t) editor->status->buf[editor->status_cursor]);
   }
 }
 
 void editor_draw(struct editor *editor) {
-  tb_clear();
+  tb_clear_buffer();
   editor_draw_window(editor);
   editor_draw_message(editor);
   editor_draw_status(editor);
-  tb_present();
+  tb_render();
 }

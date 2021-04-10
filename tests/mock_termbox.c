@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -27,19 +28,33 @@ int tb_height(void) {
   return MOCK_TB_HEIGHT;
 }
 
-void tb_clear(void) {
+void tb_clear_buffer(void) {
   return;
 }
 
-void tb_present(void) {
+void tb_render(void) {
   return;
 }
 
-void tb_change_cell(int x, int y, uint32_t ch, uint16_t fg, uint16_t bg) {
+void tb_char(int x, int y, tb_color fg, tb_color bg, tb_chr ch) {
   struct tb_cell *cell = &cell_buffer[y * MOCK_TB_WIDTH + x];
   cell->ch = ch;
   cell->fg = fg;
   cell->bg = bg;
+}
+
+int tb_string(int x, int y, tb_color fg, tb_color bg, const char * str) {
+  int l;
+  for (l = 0; *str; l++) {
+    tb_char(x++, y, fg, bg, *str++);
+  }
+  return l;
+}
+
+void tb_empty(int x, int y, tb_color bg, int width) {
+  char buf[512];
+  snprintf(buf, sizeof(buf), "%*s", width, "");
+  tb_string(x, y, TB_DEFAULT, bg, buf);
 }
 
 struct tb_cell *tb_cell_buffer(void) {

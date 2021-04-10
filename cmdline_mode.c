@@ -1,6 +1,7 @@
 #include "mode.h"
 
 #include <assert.h>
+#include <ctype.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -112,13 +113,29 @@ void cmdline_mode_key_pressed(struct editor *editor, struct tb_event *ev) {
     window_set_cursor(editor->window, mode->cursor);
     editor_pop_mode(editor);
     return;
-  // FIXME(ibadawi): termbox doesn't support shift + arrow keys.
-  // vim uses <S-Left>, <S-Right> for moving cursor to prev/next WORD.
   case TB_KEY_ARROW_LEFT:
-    editor->status_cursor = max(editor->status_cursor - 1, 1);
+    if (editor->status_cursor == 1) {
+      return;
+    }
+    editor->status_cursor--;
+    if (ev->meta == TB_META_SHIFT) {
+      while (editor->status_cursor > 1 &&
+          !isspace(editor->status->buf[editor->status_cursor - 1])) {
+        editor->status_cursor--;
+      }
+    }
     return;
   case TB_KEY_ARROW_RIGHT:
-    editor->status_cursor = min(editor->status_cursor + 1, editor->status->len);
+    if (editor->status_cursor == editor->status->len) {
+      return;
+    }
+    editor->status_cursor++;
+    if (ev->meta == TB_META_SHIFT) {
+      while (editor->status_cursor < editor->status->len &&
+          !isspace(editor->status->buf[editor->status_cursor])) {
+        editor->status_cursor++;
+      }
+    }
     return;
   case TB_KEY_ARROW_UP:
     if (!mode->history_entry) {
@@ -158,7 +175,7 @@ void cmdline_mode_key_pressed(struct editor *editor, struct tb_event *ev) {
   case TB_KEY_CTRL_E: case TB_KEY_END:
     editor->status_cursor = editor->status->len;
     return;
-  case TB_KEY_BACKSPACE2:
+  case TB_KEY_BACKSPACE:
     buf_delete(editor->status, --editor->status_cursor, 1);
     buf_printf(mode->history_prefix, "%s", editor->status->buf + 1);
     if (editor->status->len == 0) {

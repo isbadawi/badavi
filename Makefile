@@ -99,13 +99,14 @@ $(BUILD_DIR)%/.:
 	mkdir -p $@
 
 $(TERMBOX_INSTALL_DIR): | $$(@D)/. $(TERMBOX_BUILD_DIR)/.
-	(cd $(TERMBOX_DIR) && \
-	  ./waf configure \
-	    --prefix=$(abspath $@) \
-	    --libdir=lib \
-	    --out=$(abspath $(TERMBOX_BUILD_DIR)) && \
-	  ./waf && \
-	  ./waf install)
+	(cd $(TERMBOX_BUILD_DIR) && \
+	  cmake \
+	    -DCMAKE_INSTALL_PREFIX=$(abspath $@) \
+	    -DBUILD_SHARED_LIBS=OFF \
+	    -DBUILD_DEMOS=OFF \
+	    $(abspath $(TERMBOX_DIR)) && \
+	  $(MAKE) && \
+	  $(MAKE) install)
 
 $(TERMBOX): $(TERMBOX_INSTALL_DIR)
 

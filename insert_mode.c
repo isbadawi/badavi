@@ -84,7 +84,7 @@ void insert_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
   case TB_KEY_ESC: case TB_KEY_CTRL_C:
     editor_pop_mode(editor);
     return;
-  case TB_KEY_BACKSPACE2:
+  case TB_KEY_BACKSPACE:
     if (cursor > 0) {
       buffer_do_delete(buffer, 1, cursor - 1);
     }

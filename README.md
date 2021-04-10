@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/isbadawi/badavi/workflows/CI/badge.svg)](https://github.com/isbadawi/badavi/actions)
 
 `badavi` is a vi-like terminal mode text editor, implemented in C and using the
-[`termbox`](https://github.com/nsf/termbox) library to draw to the terminal.
+[`termbox`](https://github.com/tomas/termbox) library to draw to the terminal.
 
 It's meant to be a learning exercise and fun project to hack on rather than a
 serious day-to-day editor, although who knows where it'll end up.

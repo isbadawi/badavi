@@ -680,7 +680,7 @@ void editor_send_keys(struct editor *editor, const char *keys) {
       if (!strcmp("cr", key)) {
         ev->key = TB_KEY_ENTER;
       } else if (!strcmp("bs", key)) {
-        ev->key = TB_KEY_BACKSPACE2;
+        ev->key = TB_KEY_BACKSPACE;
       } else if (!strcmp("esc", key)) {
         ev->key = TB_KEY_ESC;
       } else if (!strcmp("up", key)) {

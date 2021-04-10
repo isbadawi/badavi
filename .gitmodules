@@ -3,7 +3,7 @@
 	url = https://github.com/clar-test/clar
 [submodule "vendor/termbox"]
 	path = vendor/termbox
-	url = https://github.com/nsf/termbox
+	url = https://github.com/tomas/termbox
 [submodule "vendor/libclipboard"]
 	path = vendor/libclipboard
 	url = https://github.com/jtanx/libclipboard

@@ -52,7 +52,4 @@ void terminal_init(void) {
   sigaction(SIGQUIT, &sa, NULL);
   sigaction(SIGSEGV, &sa, NULL);
   sigaction(SIGTERM, &sa, NULL);
-
-  // FIXME(ibadawi): Detect if terminal supports 256-color
-  tb_select_output_mode(TB_OUTPUT_256);
 }

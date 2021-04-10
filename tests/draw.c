@@ -75,8 +75,8 @@ void test_draw__number(void) {
   type(":set number<cr>");
   type("ihello, world!");
   editor_draw(editor);
-  assert_line(0, chars,    "..1.hello, world!");
-  assert_line(0, fgcolors, "..y.wwwwwwwwwwwww");
+  assert_line(0, chars,    "  1.hello, world!");
+  assert_line(0, fgcolors, "yyy.wwwwwwwwwwwww");
   assert_line(0, bgcolors, ".................");
 }
 

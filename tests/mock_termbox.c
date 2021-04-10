@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,6 +50,15 @@ int tb_string(int x, int y, tb_color fg, tb_color bg, const char * str) {
     tb_char(x++, y, fg, bg, *str++);
   }
   return l;
+}
+
+int tb_stringf(int x, int y, tb_color fg, tb_color bg, const char *fmt, ...) {
+  char buf[512];
+  va_list vl;
+  va_start(vl, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, vl);
+  va_end(vl);
+  return tb_string(x, y, fg, bg, buf);
 }
 
 void tb_empty(int x, int y, tb_color bg, int width) {

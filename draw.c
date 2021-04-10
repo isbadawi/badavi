@@ -90,14 +90,8 @@ static void window_scroll(struct window *window, size_t scroll) {
   }
 }
 
-static struct tb_cell *window_cell(struct window *window, size_t x, size_t y) {
-  struct tb_cell *cells = tb_cell_buffer();
-  size_t offset = (window_y(window) + y) * (size_t) tb_width() +
-    window_x(window) + x;
-  return &cells[offset];
-}
-
-static struct tb_cell *window_cell_for_pos(struct window *window, size_t pos) {
+static bool window_pos_to_xy(
+    struct window *window, size_t pos, size_t *x, size_t *y) {
   size_t line, col;
   gb_pos_to_linecol(window->buffer->text, pos, &line, &col);
   int tabstop = window->buffer->opt.tabstop;
@@ -114,25 +108,29 @@ static struct tb_cell *window_cell_for_pos(struct window *window, size_t pos) {
 
   if (window->top <= line && line < window->top + window_h(window) &&
       window->left <= col && col < window->left + window_w(window)) {
-    return window_cell(window, col - window->left, line - window->top);
+    *x = col - window->left;
+    *y = line - window->top;
+    return true;
   }
-
-  return NULL;
+  return false;
 }
 
-static void window_change_cell(struct window *window, size_t x, size_t y, char c,
-                               int fg, int bg) {
-  struct tb_cell *cell = window_cell(window, x, y);
-  cell->ch = (uint32_t) c;
-  cell->fg = (uint16_t) fg;
-  cell->bg = (uint16_t) bg;
+#define W2SX(x) (window_x(window) + x)
+#define W2SY(y) (window_y(window) + y)
+#define W2S(x, y) W2SX(x), W2SY(y)
+#define CELL(x, y) (tb_cell_buffer() + (W2SY(y) * (size_t) tb_width() + W2SX(x)))
+#define CELLFGBG(pos, f, b) { \
+  size_t x, y; \
+  if (window_pos_to_xy(window, pos, &x, &y)) { \
+    struct tb_cell *cell = CELL(x, y); \
+    cell->fg = f; \
+    cell->bg = b; \
+  } \
 }
-
-static void window_draw_cursor(struct window *window) {
-  struct tb_cell *cell = window_cell_for_pos(window, window_cursor(window));
-  assert(cell);
-  cell->fg = COLOR_BLACK;
-  cell->bg = COLOR_WHITE;
+#define REGIONFGBG(region, offset, fg, bg) { \
+  for (size_t pos = offset + (region)->start; pos < offset + (region)->end; ++pos) { \
+    CELLFGBG(pos, fg, bg); \
+  } \
 }
 
 // FIXME(ibadawi): avoid re-searching if e.g. we just moved the cursor
@@ -167,13 +165,7 @@ static void window_draw_search_matches(struct window *window,
 
   struct search_match *match;
   TAILQ_FOREACH(match, &result.matches, pointers) {
-    for (size_t pos = start + match->region.start; pos < start + match->region.end; ++pos) {
-      struct tb_cell *cell = window_cell_for_pos(window, pos);
-      if (cell) {
-        cell->fg = COLOR_BLACK;
-        cell->bg = COLOR_YELLOW;
-      }
-    }
+    REGIONFGBG(&match->region, start, COLOR_BLACK, COLOR_YELLOW);
   }
 
   search_result_free_matches(&result);
@@ -223,11 +215,10 @@ static void window_draw_plate(struct window *window, struct editor *editor) {
       window->buffer->opt.modified ? "[+]" : "",
       window->buffer->opt.readonly ? "[RO]" : "");
 
-  size_t platelen = strlen(plate);
-  for (size_t x = 0; x < window_w(window); ++x) {
-    char c = x < platelen ? plate[x] : ' ';
-    window_change_cell(window, x, window_h(window) - 1, c, COLOR_BLACK, COLOR_WHITE);
-  }
+  size_t x = W2SX(0);
+  size_t y = W2SY(window_h(window) - 1);
+  tb_empty(x, y, COLOR_WHITE, window_w(window));
+  tb_string(x, y, COLOR_BLACK, COLOR_WHITE, plate);
 }
 
 static void window_draw_ruler(struct window *window) {
@@ -249,10 +240,7 @@ static void window_draw_ruler(struct window *window) {
 
   char ruler[32];
   window_get_ruler(window, ruler, sizeof(ruler));
-  size_t rulerlen = strlen(ruler);
-  for (size_t i = 0; i < rulerlen; ++i) {
-    window_change_cell(window, w - (rulerlen - i + 1), h, ruler[i], fg, bg);
-  }
+  tb_string(W2S(w - strlen(ruler) - 1, h), fg, bg, ruler);
 }
 
 static void window_draw_line_number(struct window *window, size_t line) {
@@ -271,28 +259,15 @@ static void window_draw_line_number(struct window *window, size_t line) {
   if (relativenumber && !(number && line == cursorline)) {
     linenumber = (size_t) labs((ssize_t)(line - cursorline));
   }
+  bool left = number && relativenumber && line == cursorline;
 
-  size_t col = window_numberwidth(window) - 2;
-  do {
-    size_t digit = linenumber % 10;
-    window_change_cell(window, col--, line - window->top,
-        (char) digit + '0', COLOR_YELLOW, COLOR_DEFAULT);
-    linenumber = (linenumber - digit) / 10;
-  } while (linenumber > 0);
+  tb_stringf(W2S(0, line - window->top), COLOR_YELLOW, COLOR_DEFAULT,
+      left ? "%-*zu": "%*zu", window_numberwidth(window) - 1, linenumber);
 }
 
 static void window_draw_visual_mode_selection(struct window *window) {
-  if (!window->visual_mode_selection) {
-    return;
-  }
-
-  for (size_t pos = window->visual_mode_selection->start;
-      pos < window->visual_mode_selection->end; ++pos) {
-    struct tb_cell *cell = window_cell_for_pos(window, pos);
-    if (cell) {
-      cell->fg = COLOR_WHITE;
-      cell->bg = COLOR_GREY;
-    }
+  if (window->visual_mode_selection) {
+    REGIONFGBG(window->visual_mode_selection, 0, COLOR_WHITE, COLOR_GREY);
   }
 }
 
@@ -307,7 +282,7 @@ static void window_draw_cursorline(struct window *window) {
   size_t numberwidth = window_numberwidth(window);
   size_t width = window_w(window);
   for (size_t x = numberwidth; x < width; ++x) {
-    window_cell(window, x, line - window->top)->fg |= TB_UNDERLINE;
+    CELL(x, line - window->top)->fg |= TB_UNDERLINE;
   }
 }
 
@@ -340,11 +315,9 @@ static void window_draw_leaf(struct window *window, struct editor *editor) {
       }
       if (c == '\t') {
         ++tabs;
-        for (int i = 0; i < tabstop; ++i) {
-          window_change_cell(window, x_offset + i, y, ' ', COLOR_WHITE, COLOR_DEFAULT);
-        }
+        tb_stringf(W2S(x_offset, y), COLOR_WHITE, COLOR_DEFAULT, "%*s", tabstop, "");
       } else {
-        window_change_cell(window, x_offset, y, c, COLOR_WHITE, COLOR_DEFAULT);
+        tb_char(W2S(x_offset, y), COLOR_WHITE, COLOR_DEFAULT, c);
       }
     }
   }
@@ -353,7 +326,7 @@ static void window_draw_leaf(struct window *window, struct editor *editor) {
 
   size_t nlines = gb_nlines(window->buffer->text);
   for (size_t y = nlines - window->top; y < h; ++y) {
-    window_change_cell(window, 0, y, '~', COLOR_BLUE, COLOR_DEFAULT);
+    tb_char(W2S(0, y), COLOR_BLUE, COLOR_DEFAULT, '~');
   }
 
   if (window_should_draw_plate(window)) {
@@ -372,7 +345,7 @@ static void window_draw(struct window *window, struct editor *editor) {
   if (window->split_type == WINDOW_SPLIT_VERTICAL) {
     struct window *left = window->split.first;
     for (size_t y = 0; y < window_h(left) - 1; ++y) {
-      window_change_cell(left, window_w(left) - 1, y, '|', COLOR_BLACK, COLOR_WHITE);
+      tb_char(W2S(window_w(left) - 1, y), COLOR_BLACK, COLOR_WHITE, '|');
     }
   }
 }
@@ -383,19 +356,15 @@ static void editor_draw_window(struct editor *editor) {
   // visual mode with 'incsearch' enabled.
   visual_mode_selection_update(editor);
 
-  window_scroll(editor->window, (size_t) editor->opt.sidescroll);
+  struct window *window = editor->window;
+  struct window *root = window_root(window);
 
-  struct window *root = window_root(editor->window);
+  window_scroll(window, (size_t) editor->opt.sidescroll);
   window_draw(root, editor);
 
   struct search_match *match = editor->window->incsearch_match;
   if (match) {
-    for (size_t pos = match->region.start; pos < match->region.end; ++pos) {
-      struct tb_cell *cell = window_cell_for_pos(editor->window, pos);
-      assert(cell);
-      cell->fg = COLOR_BLACK;
-      cell->bg = COLOR_WHITE;
-    }
+    REGIONFGBG(&match->region, 0, COLOR_BLACK, COLOR_WHITE);
   }
 
   if (editor->opt.hlsearch && editor->highlight_search_matches) {
@@ -407,7 +376,7 @@ static void editor_draw_window(struct editor *editor) {
     }
     free(pattern);
   }
-  window_draw_cursor(editor->window);
+  CELLFGBG(window_cursor(window), COLOR_BLACK, COLOR_WHITE);
 
   if (editor->opt.ruler &&
       (editor->window->parent || !editor->status_cursor)) {

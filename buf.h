@@ -3,6 +3,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "attrs.h"
 
@@ -16,6 +17,7 @@ struct buf {
 struct buf *buf_create(size_t cap);
 struct buf *buf_from_cstr(char *s);
 struct buf *buf_from_char(char c);
+struct buf *buf_from_utf8(uint32_t c);
 struct buf *buf_copy(struct buf *buf);
 void buf_free(struct buf *buf);
 

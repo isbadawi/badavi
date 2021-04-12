@@ -36,11 +36,13 @@ static bool is_blank_line(struct gapbuf *gb, size_t pos) {
 }
 
 static size_t left(struct motion_context ctx) {
-  return is_line_start(ctx.window->buffer->text, ctx.pos) ? ctx.pos : ctx.pos - 1;
+  struct gapbuf *gb = ctx.window->buffer->text;
+  return is_line_start(gb, ctx.pos) ? ctx.pos : gb_utf8prev(gb, ctx.pos);
 }
 
 static size_t right(struct motion_context ctx) {
-  return is_line_end(ctx.window->buffer->text, ctx.pos) ? ctx.pos : ctx.pos + 1;
+  struct gapbuf *gb = ctx.window->buffer->text;
+  return is_line_end(gb, ctx.pos) ? ctx.pos : gb_utf8next(gb, ctx.pos);
 }
 
 static size_t up(struct motion_context ctx) {
@@ -104,7 +106,9 @@ static size_t last_non_blank(struct motion_context ctx) {
 }
 
 static bool is_word_char(char c) {
-  return isalnum(c) || c == '_';
+  // FIXME(ibadawi): Need a unicode-aware version of isalnum().
+  // As a quick hack to make word motions work, treat non-ascii as letters.
+  return isalnum(c) || c == '_' || tb_utf8_char_length(c) > 1;
 }
 
 static bool is_word_start(struct motion_context ctx) {
@@ -113,7 +117,7 @@ static bool is_word_start(struct motion_context ctx) {
     return true;
   }
   char this = gb_getchar(gb, ctx.pos);
-  char last = gb_getchar(gb, ctx.pos - 1);
+  char last = gb_getchar(gb, gb_utf8prev(gb, ctx.pos));
   return !isspace(this) && (is_word_char(this) + is_word_char(last) == 1);
 }
 
@@ -123,7 +127,7 @@ static bool is_WORD_start(struct motion_context ctx) {
   }
   struct gapbuf *gb = ctx.window->buffer->text;
   char this = gb_getchar(gb, ctx.pos);
-  char last = gb_getchar(gb, ctx.pos - 1);
+  char last = gb_getchar(gb, gb_utf8prev(gb, ctx.pos));
   return !isspace(this) && isspace(last);
 }
 
@@ -133,7 +137,7 @@ static bool is_word_end(struct motion_context ctx) {
     return true;
   }
   char this = gb_getchar(gb, ctx.pos);
-  char next = gb_getchar(gb, ctx.pos + 1);
+  char next = gb_getchar(gb, gb_utf8next(gb, ctx.pos));
   return !isspace(this) && (is_word_char(this) + is_word_char(next) == 1);
 }
 
@@ -143,24 +147,26 @@ static bool is_WORD_end(struct motion_context ctx) {
     return true;
   }
   char this = gb_getchar(gb, ctx.pos);
-  char next = gb_getchar(gb, ctx.pos + 1);
+  char next = gb_getchar(gb, gb_utf8next(gb, ctx.pos));
   return !isspace(this) && isspace(next);
 }
 
 static size_t prev_until(struct motion_context ctx, bool (*pred)(struct motion_context)) {
+  struct gapbuf *gb = ctx.window->buffer->text;
   if (ctx.pos > 0) {
     do {
-      --ctx.pos;
+      ctx.pos = gb_utf8prev(gb, ctx.pos);
     } while (!pred(ctx) && ctx.pos > 0);
   }
   return ctx.pos;
 }
 
 static size_t next_until(struct motion_context ctx, bool (*pred)(struct motion_context)) {
+  struct gapbuf *gb = ctx.window->buffer->text;
   size_t size = gb_size(ctx.window->buffer->text);
   if (ctx.pos < size - 1) {
     do {
-      ++ctx.pos;
+      ctx.pos = gb_utf8next(gb, ctx.pos);
     } while (!pred(ctx) && ctx.pos < size - 1);
   }
   return ctx.pos;

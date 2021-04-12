@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 
 struct buf;
@@ -45,6 +46,18 @@ void gb_save(struct gapbuf *gb, FILE *fp);
 
 // Returns the character at offset pos from the start of the buffer.
 char gb_getchar(struct gapbuf *gb, size_t pos);
+
+// Returns the unicode codepoint at offset pos from the start of the buffer.
+uint32_t gb_utf8(struct gapbuf *gb, size_t pos);
+// Returns the utf8 length of the character at offset pos from the start of the buffer.
+int gb_utf8len(struct gapbuf *gb, size_t pos);
+// Returns the offset of the next utf8 start byte after pos.
+size_t gb_utf8next(struct gapbuf *gb, size_t pos);
+// Returns the offset of the previous utf8 start byte before pos.
+size_t gb_utf8prev(struct gapbuf *gb, size_t pos);
+// Returns the number of the unicode codepoints for the given line.
+size_t gb_utf8len_line(struct gapbuf *gb, size_t line);
+
 // Reads n characters starting at offset pos.
 struct buf *gb_getstring(struct gapbuf *gb, size_t pos, size_t n);
 

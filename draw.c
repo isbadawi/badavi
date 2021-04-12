@@ -303,7 +303,7 @@ static void window_draw_leaf(struct window *window, struct editor *editor) {
     window_draw_line_number(window, line);
 
     size_t cols = (size_t) max(0,
-        min((ssize_t) gb->lines->buf[line] - (ssize_t) window->left, (ssize_t) w));
+        min((ssize_t) gb_utf8len_line(gb, line) - (ssize_t) window->left, (ssize_t) w));
     size_t tabs = 0;
     for (size_t x = 0; x < cols; ++x) {
       size_t x_offset = tabs * (tabstop - 1) + numberwidth + x;
@@ -317,7 +317,7 @@ static void window_draw_leaf(struct window *window, struct editor *editor) {
         ++tabs;
         tb_stringf(W2S(x_offset, y), COLOR_WHITE, COLOR_DEFAULT, "%*s", tabstop, "");
       } else {
-        tb_char(W2S(x_offset, y), COLOR_WHITE, COLOR_DEFAULT, c);
+        tb_char(W2S(x_offset, y), COLOR_WHITE, COLOR_DEFAULT, gb_utf8(gb, pos));
       }
     }
   }

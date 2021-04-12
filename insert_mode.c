@@ -79,20 +79,21 @@ static void insert_indent(struct buffer *buffer, size_t cursor) {
 void insert_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
   struct buffer *buffer = editor->window->buffer;
   size_t cursor = window_cursor(editor->window);
-  char ch;
+  uint32_t ch;
   switch (ev->key) {
   case TB_KEY_ESC: case TB_KEY_CTRL_C:
     editor_pop_mode(editor);
     return;
   case TB_KEY_BACKSPACE:
     if (cursor > 0) {
-      buffer_do_delete(buffer, 1, cursor - 1);
+      size_t prev = gb_utf8prev(buffer->text, cursor);
+      buffer_do_delete(buffer, gb_utf8len(buffer->text, prev), prev);
     }
     return;
   case TB_KEY_ENTER: ch = '\n'; break;
   case TB_KEY_SPACE: ch = ' '; break;
   case TB_KEY_TAB: ch = '\t'; break;
-  default: ch = (char) ev->ch; break;
+  default: ch = ev->ch; break;
   }
 
   struct buf *insertion;
@@ -102,7 +103,7 @@ void insert_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
       buf_append(insertion, " ");
     }
   } else {
-    insertion = buf_from_char(ch);
+    insertion = buf_from_utf8(ch);
   }
 
   buffer_do_insert(buffer, insertion, cursor);

@@ -5,6 +5,8 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#include <termbox.h>
+
 #include "buf.h"
 #include "util.h"
 
@@ -101,6 +103,22 @@ static size_t gb_index(struct gapbuf *gb, size_t pos) {
 
 char gb_getchar(struct gapbuf *gb, size_t pos) {
   return gb->bufstart[gb_index(gb, pos)];
+}
+
+int gb_utf8len(struct gapbuf *gb, size_t pos) {
+  return tb_utf8_char_length(gb_getchar(gb, pos));
+}
+
+uint32_t gb_utf8(struct gapbuf *gb, size_t pos) {
+  char buf[8];
+  int clen = gb_utf8len(gb, pos);
+  for (int i = 0; i < clen; ++i) {
+    buf[i] = gb_getchar(gb, pos + i);
+  }
+  uint32_t ch;
+  int ulen = tb_utf8_char_to_unicode(&ch, buf);
+  assert(clen == ulen);
+  return ch;
 }
 
 struct buf *gb_getstring(struct gapbuf *gb, size_t pos, size_t n) {
@@ -255,13 +273,14 @@ void gb_pos_to_linecol(struct gapbuf *gb, size_t pos, size_t *line, size_t *colu
   for (size_t i = 0; i < gb->lines->len; ++i) {
     size_t len = gb->lines->buf[i];
     *line = i;
-    *column = pos - offset;
     if (offset <= pos && pos <= offset + len) {
-      return;
+      break;
     }
     offset += len + 1;
   }
-  *column = pos - offset;
+  for (size_t i = offset; i != pos; i = gb_utf8next(gb, i)) {
+    (*column)++;
+  }
 }
 
 size_t gb_linecol_to_pos(struct gapbuf *gb, size_t line, size_t column) {
@@ -269,5 +288,33 @@ size_t gb_linecol_to_pos(struct gapbuf *gb, size_t line, size_t column) {
   for (size_t i = 0; i < line; ++i) {
     offset += gb->lines->buf[i] + 1;
   }
-  return offset + column;
+  for (size_t i = 0; i < column; ++i) {
+    offset += gb_utf8len(gb, offset);
+  }
+  return offset;
+}
+
+size_t gb_utf8len_line(struct gapbuf *gb, size_t line) {
+  size_t pos = gb_linecol_to_pos(gb, line, 0);
+  size_t len = 0;
+  while (gb_getchar(gb, pos) != '\n') {
+    pos += gb_utf8len(gb, pos);
+    len++;
+  }
+  return len;
+}
+
+size_t gb_utf8next(struct gapbuf *gb, size_t pos) {
+  return pos + gb_utf8len(gb, pos);
+}
+
+static bool isutf8start(char c) {
+  return (c & 0xc0) != 0x80;
+}
+
+size_t gb_utf8prev(struct gapbuf *gb, size_t pos) {
+  do {
+    pos--;
+  } while (!isutf8start(gb_getchar(gb, pos)));
+  return pos;
 }

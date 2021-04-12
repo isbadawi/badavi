@@ -5,6 +5,8 @@
 #include <string.h>
 #include <stdarg.h>
 
+#include <termbox.h>
+
 #include "util.h"
 
 void buf_grow(struct buf *buf, size_t cap) {
@@ -32,6 +34,13 @@ struct buf *buf_from_cstr(char *s) {
 
 struct buf *buf_from_char(char c) {
   char s[2] = {c, '\0'};
+  return buf_from_cstr(s);
+}
+
+struct buf *buf_from_utf8(uint32_t ch) {
+  char s[8];
+  int len = tb_utf8_unicode_to_char(s, ch);
+  s[len] = '\0';
   return buf_from_cstr(s);
 }
 

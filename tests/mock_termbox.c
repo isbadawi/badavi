@@ -80,3 +80,16 @@ int tb_poll_event(struct tb_event *event ATTR_UNUSED) {
   return 0;
 }
 
+int tb_utf8_char_length(char c ATTR_UNUSED) {
+  return 1;
+}
+
+int tb_utf8_char_to_unicode(uint32_t *out, const char *c) {
+  *out = (uint32_t) *c;
+  return 1;
+}
+
+int tb_utf8_unicode_to_char(char *out, uint32_t c) {
+  *out = (char) c;
+  return 1;
+}

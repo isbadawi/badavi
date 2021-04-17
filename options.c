@@ -78,6 +78,32 @@ static struct opt *option_info(char *name) {
   return NULL;
 }
 
+static int pstrcmp(const void *a, const void *b) {
+  return strcmp(*(char * const *)a, *(char * const *)b);
+}
+
+char **options_get_sorted(int *len) {
+  int num_options = 0;
+#define OPTION(_, __, ___) num_options++;
+  BUFFER_OPTIONS
+  WINDOW_OPTIONS
+  EDITOR_OPTIONS
+#undef OPTION
+
+  char **options = xmalloc(sizeof(*options) * num_options);
+  int i = 0;
+#define OPTION(name, _, __) options[i++] = #name;
+  BUFFER_OPTIONS
+  WINDOW_OPTIONS
+  EDITOR_OPTIONS
+#undef OPTION
+
+  qsort(options, num_options, sizeof(*options), pstrcmp);
+
+  *len = num_options;
+  return options;
+}
+
 void editor_init_options(struct editor *editor) {
 #define OPTION(name, type, defaultval) \
   option_set_##type(&editor->opt.name, defaultval);
@@ -374,14 +400,14 @@ static void editor_command_set_impl(
   }
 }
 
-EDITOR_COMMAND(setglobal, setg) {
+EDITOR_COMMAND_WITH_COMPLETION(setglobal, setg, COMPLETION_OPTIONS) {
   editor_command_set_impl(editor, arg, OPTION_SET_GLOBAL);
 }
 
-EDITOR_COMMAND(setlocal, setl) {
+EDITOR_COMMAND_WITH_COMPLETION(setlocal, setl, COMPLETION_OPTIONS) {
   editor_command_set_impl(editor, arg, OPTION_SET_LOCAL);
 }
 
-EDITOR_COMMAND(set, set) {
+EDITOR_COMMAND_WITH_COMPLETION(set, set, COMPLETION_OPTIONS) {
   editor_command_set_impl(editor, arg, OPTION_SET_BOTH);
 }

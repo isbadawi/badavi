@@ -178,7 +178,7 @@ void editor_tag_stack_next(struct editor *editor) {
   editor->window->tag = next;
 }
 
-EDITOR_COMMAND(tag, tag) {
+EDITOR_COMMAND_WITH_COMPLETION(tag, tag, COMPLETION_TAGS) {
   if (!arg) {
     editor_tag_stack_next(editor);
   } else {

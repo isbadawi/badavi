@@ -63,6 +63,7 @@ static struct buf *listdir(char *path) {
     buf_append(buf, "\n");
   }
 
+  free(namelist);
   return buf;
 }
 

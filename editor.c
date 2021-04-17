@@ -26,6 +26,7 @@
 
 TAILQ_HEAD(editor_command_list, editor_command) editor_commands;
 bool commands_init_done = false;
+int num_commands = 0;
 
 void register_editor_command(struct editor_command *command) {
   if (!commands_init_done) {
@@ -33,6 +34,27 @@ void register_editor_command(struct editor_command *command) {
     commands_init_done = true;
   }
   TAILQ_INSERT_TAIL(&editor_commands, command, pointers);
+  ++num_commands;
+}
+
+static int pstrcmp(const void *a, const void *b) {
+  return strcmp(*(char * const *)a, *(char * const *)b);
+}
+
+char **commands_get_sorted(int *len) {
+  assert(commands_init_done);
+  char **commands = xmalloc(sizeof(*commands) * num_commands);
+  int i = 0;
+
+  struct editor_command *command;
+  TAILQ_FOREACH(command, &editor_commands, pointers) {
+    commands[i++] = (char*) command->name;
+  }
+
+  qsort(commands, num_commands, sizeof(*commands), pstrcmp);
+  *len = num_commands;
+
+  return commands;
 }
 
 static clipboard_c *clipboard = NULL;
@@ -302,7 +324,7 @@ EDITOR_COMMAND(wq, wq) {
   }
 }
 
-EDITOR_COMMAND(write, w) {
+EDITOR_COMMAND_WITH_COMPLETION(write, w, COMPLETION_PATHS) {
   if (!force && editor->window->buffer->opt.readonly) {
     editor_status_err(editor, "'readonly' option is set (add ! to override)");
     return;
@@ -312,7 +334,7 @@ EDITOR_COMMAND(write, w) {
   editor_save_buffer(editor, arg);
 }
 
-EDITOR_COMMAND(edit, e) {
+EDITOR_COMMAND_WITH_COMPLETION(edit, e, COMPLETION_PATHS) {
   if (arg) {
     editor_open(editor, arg);
   } else {
@@ -530,6 +552,41 @@ EDITOR_COMMAND(source, so) {
   editor_source(editor, arg);
 }
 
+struct editor_command *command_parse(
+    char *command, char **arg, bool *force) {
+  if (!*command) {
+    return NULL;
+  }
+
+  char *copy = xstrdup(command);
+  char *name = strtok(copy, " ");
+  size_t namelen = strlen(name);
+  if (force) {
+    *force = false;
+  }
+  if (name[namelen - 1] == '!') {
+    if (force) {
+      *force = true;
+    }
+    name[namelen - 1] = '\0';
+  }
+  if (arg) {
+    *arg = strchr(command, ' ');
+    if (*arg) {
+      (*arg)++;
+    }
+  }
+  struct editor_command *cmd;
+  TAILQ_FOREACH(cmd, &editor_commands, pointers) {
+    if (!strcmp(name, cmd->name) || !strcmp(name, cmd->shortname)) {
+      free(copy);
+      return cmd;
+    }
+  }
+  free(copy);
+  return NULL;
+}
+
 void editor_execute_command(struct editor *editor, char *command) {
   if (!*command) {
     return;
@@ -569,25 +626,15 @@ void editor_execute_command(struct editor *editor, char *command) {
     return;
   }
 
-  char *copy = xstrdup(command);
-  char *name = strtok(command, " ");
-  size_t namelen = strlen(name);
   bool force = false;
-  if (name[namelen - 1] == '!') {
-    force = true;
-    name[namelen - 1] = '\0';
-  }
-  char *arg = strtok(NULL, " ");
-  struct editor_command *cmd;
-  TAILQ_FOREACH(cmd, &editor_commands, pointers) {
-    if (!strcmp(name, cmd->name) || !strcmp(name, cmd->shortname)) {
-      cmd->action(editor, arg, force);
-      free(copy);
-      return;
-    }
+  char *arg = NULL;
+  struct editor_command *cmd = command_parse(command, &arg, &force);
+  if (cmd) {
+    cmd->action(editor, arg, force);
+    return;
   }
 
-  int line = atoi(name);
+  int line = atoi(command);
   char buf[32];
   if (line > 0) {
     snprintf(buf, 32, "%dG", line);
@@ -596,9 +643,8 @@ void editor_execute_command(struct editor *editor, char *command) {
     snprintf(buf, 32, "%dk", line);
     editor_send_keys(editor, buf);
   } else {
-    editor_status_err(editor, "Not an editor command: %s", copy);
+    editor_status_err(editor, "Not an editor command: %s", command);
   }
-  free(copy);
 }
 
 static void editor_suspend(struct editor *editor) {

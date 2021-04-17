@@ -499,7 +499,7 @@ void window_page_down(struct window *window) {
       window->buffer->text, window->top, 0));
 }
 
-EDITOR_COMMAND(split, sp) {
+EDITOR_COMMAND_WITH_COMPLETION(split, sp, COMPLETION_PATHS) {
   editor_set_window(editor, window_split(editor->window,
       editor->opt.splitbelow ? WINDOW_SPLIT_BELOW : WINDOW_SPLIT_ABOVE));
 
@@ -528,7 +528,7 @@ EDITOR_COMMAND(splitfind, sfind) {
   free(path);
 }
 
-EDITOR_COMMAND(vsplit, vsp) {
+EDITOR_COMMAND_WITH_COMPLETION(vsplit, vsp, COMPLETION_PATHS) {
   editor_set_window(editor, window_split(editor->window,
       editor->opt.splitright ? WINDOW_SPLIT_RIGHT : WINDOW_SPLIT_LEFT));
 

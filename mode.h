@@ -60,6 +60,16 @@ struct cmdline_mode {
   size_t cursor;
   struct history_entry *history_entry;
   struct buf *history_prefix;
+
+  struct history_entry *completion;
+  struct history *completions;
+  enum completion_kind {
+    COMPLETION_NONE,
+    COMPLETION_CMDS,
+    COMPLETION_OPTIONS,
+    COMPLETION_TAGS,
+    COMPLETION_PATHS,
+  } completion_kind;
   char prompt;
 };
 

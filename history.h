@@ -22,6 +22,7 @@ struct history {
 };
 
 void history_init(struct history *history, int *limit);
+void history_deinit(struct history *history);
 void history_add_item(struct history *history, char *item);
 
 typedef bool (history_predicate) (struct buf*, char*);

@@ -5,13 +5,17 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
+#include <dirent.h>
+#include <limits.h>
 #include <termbox.h>
 
 #include "buf.h"
 #include "editor.h"
 #include "history.h"
 #include "search.h"
+#include "tags.h"
 #include "util.h"
 #include "window.h"
 
@@ -22,6 +26,10 @@ void cmdline_mode_entered(struct editor *editor) {
   mode->cursor = window_cursor(editor->window);
   mode->history_entry = NULL;
   mode->history_prefix = buf_from_cstr("");
+
+  mode->completions = NULL;
+  mode->completion = NULL;
+
   editor->status_cursor = 1;
   editor->status_silence = true;
 }
@@ -40,6 +48,13 @@ void cmdline_mode_exited(struct editor *editor) {
   }
   editor->status_silence = false;
   clear_incsearch_match(editor);
+
+  mode->completion = NULL;
+  if (mode->completions) {
+    history_deinit(mode->completions);
+    free(mode->completions);
+    mode->completions = NULL;
+  }
 }
 
 static void search_done_cb(struct editor *editor, char *command) {
@@ -86,6 +101,65 @@ static void command_done_cb(struct editor *editor, char *command) {
   editor_execute_command(editor, command);
 }
 
+static void editor_load_completions(struct editor *editor,
+    enum completion_kind kind, struct history *history) {
+  switch (kind) {
+  case COMPLETION_NONE: assert(0); break;
+  case COMPLETION_CMDS: {
+    int len;
+    char **completions = commands_get_sorted(&len);
+    for (int i = len - 1; i >= 0; --i) {
+      history_add_item(history, completions[i]);
+    }
+    free(completions);
+    break;
+  }
+  case COMPLETION_OPTIONS: {
+    int len;
+    char **options = options_get_sorted(&len);
+    for (int i = len - 1; i >= 0; --i) {
+      history_add_item(history, options[i]);
+    }
+    free(options);
+    break;
+  }
+  case COMPLETION_TAGS:
+    for (size_t i = 0; i < editor->tags->len; ++i) {
+      size_t j = editor->tags->len - 1 - i;
+      history_add_item(history, editor->tags->tags[j].name);
+    }
+    break;
+  case COMPLETION_PATHS: {
+    // TODO(ibadawi): completion for subdirectories
+    char buf[PATH_MAX];
+    struct dirent **namelist;
+    int n;
+
+    n = scandir(".", &namelist, NULL, alphasort);
+    if (n <= 0) {
+      break;
+    }
+
+    for (int i = n - 1; i >= 0; --i) {
+      struct dirent *entry = namelist[i];
+      if (*entry->d_name == '.') {
+        free(entry);
+        continue;
+      }
+
+      strcpy(buf, entry->d_name);
+      if (entry->d_type == DT_DIR) {
+        strcat(buf, "/");
+      }
+      history_add_item(history, buf);
+      free(entry);
+    }
+    free(namelist);
+    break;
+  }
+  }
+}
+
 void cmdline_mode_key_pressed(struct editor *editor, struct tb_event *ev) {
   char ch;
   struct cmdline_mode *mode = editor_get_cmdline_mode(editor);
@@ -108,6 +182,60 @@ void cmdline_mode_key_pressed(struct editor *editor, struct tb_event *ev) {
   }
 
   switch (ev->key) {
+  case TB_KEY_TAB: {
+    if (mode->prompt != ':') {
+      return;
+    }
+
+    char *command = mode->history_prefix->buf;
+    enum completion_kind kind = COMPLETION_NONE;
+    char *arg = NULL;
+    struct editor_command *cmd = command_parse(command, &arg, NULL);
+    size_t skip = 0;
+    if (cmd && arg && cmd->completion_kind != COMPLETION_NONE) {
+      kind = cmd->completion_kind;
+      skip = arg - command;
+    } else if (!strchr(command, ' ')) {
+      kind = COMPLETION_CMDS;
+    }
+
+    if (kind == COMPLETION_NONE) {
+      return;
+    }
+
+    if (mode->completions && mode->completion_kind != kind) {
+      history_deinit(mode->completions);
+      free(mode->completions);
+      mode->completions = NULL;
+      mode->completion = NULL;
+    }
+    mode->completion_kind = kind;
+
+    if (!mode->completions) {
+      mode->completions = xmalloc(sizeof(*mode->completions));
+      history_init(mode->completions, NULL);
+      editor_load_completions(editor, kind, mode->completions);
+    }
+
+    if (mode->completion) {
+      mode->completion = history_next(mode->completion,
+          buf_startswith, command + skip);
+    }
+    if (!mode->completion) {
+      mode->completion = history_first(mode->completions,
+          buf_startswith, command + skip);
+    }
+
+    if (mode->completion) {
+      char c = command[skip];
+      command[skip] = '\0';
+      buf_printf(editor->status, "%c%s%s",
+          mode->prompt, command, mode->completion->buf->buf);
+      command[skip] = c;
+      editor->status_cursor = editor->status->len;
+    }
+    return;
+  }
   case TB_KEY_ESC: case TB_KEY_CTRL_C:
     buf_clear(editor->status);
     window_set_cursor(editor->window, mode->cursor);

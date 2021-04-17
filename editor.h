@@ -101,7 +101,6 @@ void editor_push_mode(struct editor *editor, struct editing_mode *mode);
 void editor_pop_mode(struct editor *editor);
 
 bool editor_save_buffer(struct editor *editor, char *path);
-void editor_execute_command(struct editor *editor, char *command);
 void editor_draw(struct editor *editor);
 
 const char *editor_relpath(struct editor *editor, const char *path);
@@ -132,16 +131,21 @@ char *editor_find_in_path(struct editor *editor, char *file);
 struct editor_command {
   const char *name;
   const char *shortname;
+  enum completion_kind completion_kind;
   void (*action)(struct editor*, char*, bool);
 
   TAILQ_ENTRY(editor_command) pointers;
 };
 void register_editor_command(struct editor_command *command);
+struct editor_command *command_parse(char *command, char **arg, bool *force);
+char **commands_get_sorted(int *len);
 
-#define EDITOR_COMMAND(name, shortname) \
+void editor_execute_command(struct editor *editor, char *command);
+
+#define EDITOR_COMMAND_WITH_COMPLETION(name, shortname, completion) \
   static void editor_command_##name(struct editor*, char*, bool); \
   struct editor_command command_##name = { \
-      #name, #shortname, editor_command_##name, {0}}; \
+      #name, #shortname, completion, editor_command_##name, {0}}; \
   __attribute__((constructor)) \
   static void _constructor_##name(void) { \
     register_editor_command(&command_##name); \
@@ -150,3 +154,6 @@ void register_editor_command(struct editor_command *command);
       struct editor *editor ATTR_UNUSED, \
       char *arg ATTR_UNUSED, \
       bool force ATTR_UNUSED)
+
+#define EDITOR_COMMAND(name, shortname) \
+  EDITOR_COMMAND_WITH_COMPLETION(name, shortname, COMPLETION_NONE)

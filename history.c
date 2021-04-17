@@ -11,6 +11,14 @@ void history_init(struct history *history, int *limit) {
   history->limit = limit;
 }
 
+void history_deinit(struct history *history) {
+  struct history_entry *entry, *te;
+  TAILQ_FOREACH_SAFE(entry, &history->entries, pointers, te) {
+    buf_free(entry->buf);
+    free(entry);
+  }
+}
+
 struct history_entry *history_first(
     struct history *history, history_predicate p, char* arg) {
   struct history_entry *entry = TAILQ_FIRST(&history->entries);
@@ -43,7 +51,7 @@ struct history_entry *history_prev(
 }
 
 static void history_truncate_to_limit(struct history *history) {
-  while (history->len > *history->limit) {
+  while (history->limit && history->len > *history->limit) {
     struct history_entry *last = TAILQ_LAST(&history->entries, history_list);
     TAILQ_REMOVE(&history->entries, last, pointers);
     buf_free(last->buf);

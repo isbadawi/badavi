@@ -269,17 +269,16 @@ bool editor_save_buffer(struct editor *editor, char *path) {
   return rc;
 }
 
+const char *editor_buffer_name(struct editor *editor, struct buffer *buffer) {
+  return buffer->path ? editor_relpath(editor, buffer->path) : "[No Name]";
+}
+
 EDITOR_COMMAND(qall, qa) {
   if (!force) {
     struct buffer *buffer;
     TAILQ_FOREACH(buffer, &editor->buffers, pointers) {
       if (buffer->opt.modified) {
-        const char *path = buffer->path;
-        if (path) {
-          path = editor_relpath(editor, path);
-        } else {
-          path = "[No Name]";
-        }
+        const char *path = editor_buffer_name(editor, buffer);
         editor_status_err(editor,
             "No write since last change for buffer \"%s\"", path);
         return;
@@ -372,7 +371,7 @@ EDITOR_COMMAND(buffers, ls) {
     flags[2] = buffer->opt.readonly ? '=' : flags[2];
     flags[2] = !buffer->opt.modifiable ? '-' : flags[2];
     flags[3] = buffer->opt.modified ? '+' : flags[3];
-    char *path = buffer->path ? buffer->path : "[No Name]";
+    const char *path = editor_buffer_name(editor, buffer);
     buf_appendf(editor->message, "\n  %d %s \"%s\"", i++, flags, path);
   }
   editor_status_msg(editor, "Press ENTER to continue ");

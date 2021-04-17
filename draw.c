@@ -203,12 +203,7 @@ static void window_draw_plate(struct window *window, struct editor *editor) {
     --w;
   }
 
-  const char *path = window->buffer->path;
-  if (path) {
-    path = editor_relpath(editor, path);
-  } else {
-    path = "[No Name]";
-  }
+  const char *path = editor_buffer_name(editor, window->buffer);
 
   char plate[256];
   snprintf(plate, sizeof(plate), "%s %s%s", path,

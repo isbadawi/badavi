@@ -7,7 +7,9 @@
 #include <sys/stat.h>
 
 #include "buf.h"
+#include "buffer.h"
 #include "editor.h"
+#include "gap.h"
 #include "search.h"
 #include "util.h"
 #include "window.h"
@@ -184,4 +186,31 @@ EDITOR_COMMAND_WITH_COMPLETION(tag, tag, COMPLETION_TAGS) {
   } else {
     editor_jump_to_tag(editor, arg);
   }
+}
+
+EDITOR_COMMAND(tags, tags) {
+  buf_clear(editor->message);
+  buf_appendf(editor->message, "  # TO tag         FROM line  in file/text");
+  int i = 1;
+  // TODO(ibadawi): tag match list
+  int match = 1;
+  struct tag_jump *jump;
+  bool active = editor->window->tag == NULL;
+  TAILQ_FOREACH(jump, &editor->window->tag_stack, pointers) {
+    buf_appendf(editor->message, "\n%c ", active ? '>': ' ');
+    active = editor->window->tag == jump;
+
+    size_t line, col;
+    gb_pos_to_linecol(jump->buffer->text, jump->cursor, &line, &col);
+    struct buf *text = gb_getline(jump->buffer->text, jump->cursor);
+    buf_strip_whitespace(text);
+    buf_appendf(editor->message, "%d %-2d %-11s %9zu  %s",
+        i++, match, jump->tag->name, line + 1, text->buf);
+    buf_free(text);
+  }
+  if (active) {
+    buf_append(editor->message, "\n> ");
+  }
+  editor_status_msg(editor, "Press ENTER to continue ");
+  editor->status_cursor = editor->status->len - 1;
 }

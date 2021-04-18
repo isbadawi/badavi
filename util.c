@@ -166,7 +166,3 @@ struct region *region_set(struct region *region, size_t start, size_t end) {
   region->end = max(start, end);
   return region;
 }
-
-struct region *region_create(size_t start, size_t end) {
-  return region_set(xmalloc(sizeof(struct region)), start, end);
-}

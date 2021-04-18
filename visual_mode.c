@@ -73,12 +73,9 @@ void visual_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
     }
     op_func *op = op_find((char) ev->ch);
     if (op) {
-      struct region *selection = region_create(
-          editor->window->visual_mode_selection->start,
-          editor->window->visual_mode_selection->end);
+      struct region *selection = editor->window->visual_mode_selection;
       editor_pop_mode(editor);
       op(editor, selection);
-      free(selection);
     }
   }
   }

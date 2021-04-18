@@ -54,6 +54,4 @@ struct region {
   size_t end;
 };
 
-struct region *region_create(size_t start, size_t end);
 struct region *region_set(struct region *region, size_t start, size_t end);
-

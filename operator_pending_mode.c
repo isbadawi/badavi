@@ -99,23 +99,24 @@ void operator_pending_mode_key_pressed(
 
   struct gapbuf *gb = editor->window->buffer->text;
 
-  struct region *region = region_create(
-      window_cursor(editor->window), motion_apply(motion, editor));
+  struct region region;
+  region_set(&region,
+      window_cursor(editor->window),
+      motion_apply(motion, editor));
 
-  ssize_t last = gb_lastindexof(gb, '\n', region->start - 1);
-  size_t next = gb_indexof(gb, '\n', region->end);
+  ssize_t last = gb_lastindexof(gb, '\n', region.start - 1);
+  size_t next = gb_indexof(gb, '\n', region.end);
   if (motion->linewise) {
-    region->start = (size_t)(last + 1);
-    region->end = min(gb_size(gb), next + 1);
-  } else if (region->start == region->end) {
+    region.start = (size_t)(last + 1);
+    region.end = min(gb_size(gb), next + 1);
+  } else if (region.start == region.end) {
     editor_pop_mode(editor);
     return;
   } else if (!motion->exclusive) {
-    region->end = min(region->end + 1, next);
+    region.end = min(region.end + 1, next);
   }
 
   struct operator_pending_mode* mode = editor_get_operator_pending_mode(editor);
   editor_pop_mode(editor);
-  mode->op(editor, region);
-  free(region);
+  mode->op(editor, &region);
 }

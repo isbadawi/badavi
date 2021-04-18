@@ -103,6 +103,9 @@ void editor_pop_mode(struct editor *editor);
 bool editor_save_buffer(struct editor *editor, char *path);
 void editor_draw(struct editor *editor);
 
+void editor_jump_to_line(struct editor *editor, int line);
+void editor_jump_to_end(struct editor *editor);
+
 const char *editor_buffer_name(struct editor *editor, struct buffer *buffer);
 
 const char *editor_relpath(struct editor *editor, const char *path);

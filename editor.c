@@ -586,6 +586,19 @@ struct editor_command *command_parse(
   return NULL;
 }
 
+void editor_jump_to_line(struct editor *editor, int line) {
+  struct gapbuf *gb = editor->window->buffer->text;
+  line = max(line, 0);
+  line = min(line, (int) gb_nlines(gb) - 1);
+
+  window_set_cursor(editor->window, gb_linecol_to_pos(gb, line, 0));
+}
+
+void editor_jump_to_end(struct editor *editor) {
+  struct gapbuf *gb = editor->window->buffer->text;
+  editor_jump_to_line(editor, (int) gb_nlines(gb) - 1);
+}
+
 void editor_execute_command(struct editor *editor, char *command) {
   if (!*command) {
     return;
@@ -633,17 +646,24 @@ void editor_execute_command(struct editor *editor, char *command) {
     return;
   }
 
-  int line = atoi(command);
-  char buf[32];
-  if (line > 0) {
-    snprintf(buf, 32, "%dG", line);
-    editor_send_keys(editor, buf);
-  } else if (line < 0) {
-    snprintf(buf, 32, "%dk", line);
-    editor_send_keys(editor, buf);
-  } else {
-    editor_status_err(editor, "Not an editor command: %s", command);
+  size_t line, col;
+  gb_pos_to_linecol(editor->window->buffer->text,
+      window_cursor(editor->window), &line, &col);
+  int target;
+  if (strtoi(command, &target)) {
+    target = labs(target);
+    if (*command == '+') {
+      target = (int) line + target;
+    } else if (*command == '-') {
+      target = (int) line - target;
+    } else {
+      target--;
+    }
+    editor_jump_to_line(editor, target);
+    return;
   }
+
+  editor_status_err(editor, "Not an editor command: %s", command);
 }
 
 static void editor_suspend(struct editor *editor) {

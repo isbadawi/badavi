@@ -58,6 +58,22 @@ void test_editor__basic_motions(void) {
   type("$b"); assert_cursor_over('d');
 }
 
+void test_editor__jump_to_line(void) {
+  type("ihello<cr>hello<cr>hello<cr>hello<cr>hello<esc>gg");
+  assert_cursor_at(0, 0);
+  type(":2<cr>");
+  assert_cursor_at(1, 0);
+  type(":-1<cr>");
+  assert_cursor_at(0, 0);
+  type(":+3<cr>");
+  assert_cursor_at(3, 0);
+
+  type(":-20<cr>");
+  assert_cursor_at(0, 0);
+  type(":+100<cr>");
+  assert_cursor_at(4, 0);
+}
+
 void test_editor__line_motions(void) {
   type("ione\ntwo\nthree\nfour\nfive<esc>gg0");
   assert_cursor_at(0, 0);

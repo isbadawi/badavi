@@ -16,12 +16,13 @@ int main(int argc, char *argv[]) {
   char *line = NULL;
   char *tag = NULL;
   enum window_split_type split_type = WINDOW_LEAF;
+  bool pathargs[argc];
+  memset(pathargs, 0, sizeof(pathargs));
 
   char *rc = NULL;
   char default_rc[255];
 
-  int i;
-  for (i = 1; i < argc; ++i) {
+  for (int i = 1; i < argc; ++i) {
     char *arg = argv[i];
     if (!strcmp(arg, "-u")) {
       if (i == argc - 1) {
@@ -42,7 +43,7 @@ int main(int argc, char *argv[]) {
     } else if (*arg == '+') {
       line = arg + 1;
     } else {
-      break;
+      pathargs[i] = true;
     }
   }
 
@@ -64,7 +65,13 @@ int main(int argc, char *argv[]) {
 
   if (tag) {
     editor_jump_to_tag(&editor, tag);
-  } else if (i < argc) {
+  } else {
+    int i;
+    for (i = 1; i < argc; ++i) {
+      if (pathargs[i]) {
+        break;
+      }
+    }
     editor_open(&editor, argv[i++]);
 
     if (split_type != WINDOW_LEAF) {
@@ -76,17 +83,24 @@ int main(int argc, char *argv[]) {
         direction = WINDOW_SPLIT_RIGHT;
       }
       for (; i < argc; ++i) {
-        editor.window = window_split(editor.window, direction);
-        editor_open(&editor, argv[i]);
+        if (pathargs[i]) {
+          editor.window = window_split(editor.window, direction);
+          editor_open(&editor, argv[i]);
+        }
       }
       editor.window = window_first_leaf(window_root(editor.window));
       window_equalize(editor.window, split_type);
     }
 
-    if (line && (!*line || atoi(line) > 0)) {
-      char buf[32];
-      snprintf(buf, 32, "%sG", line);
-      editor_send_keys(&editor, buf);
+    if (line) {
+      if (!*line) {
+        editor_jump_to_end(&editor);
+      } else {
+        int linenum;
+        if (strtoi(line, &linenum)) {
+          editor_jump_to_line(&editor, linenum - 1);
+        }
+      }
     }
   }
 

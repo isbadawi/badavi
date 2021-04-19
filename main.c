@@ -69,10 +69,10 @@ int main(int argc, char *argv[]) {
     int i;
     for (i = 1; i < argc; ++i) {
       if (pathargs[i]) {
+        editor_open(&editor, argv[i++]);
         break;
       }
     }
-    editor_open(&editor, argv[i++]);
 
     if (split_type != WINDOW_LEAF) {
       enum window_split_direction direction;

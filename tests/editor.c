@@ -191,3 +191,10 @@ void test_editor__autoindent(void) {
   type("icustom<cr>indented");
   assert_buffer_contents("custom\n  indented\n");
 }
+
+void test_editor__completion(void) {
+  cl_assert_equal_s(type(":sp<tab>"), ":split");
+  cl_assert_equal_s(type("<tab>"), ":splitfind");
+  cl_assert_equal_s(type("<tab>"), ":split");
+  cl_assert_equal_s(type("<bs><bs><bs><bs><bs>vsp<tab>"), ":vsplit");
+}

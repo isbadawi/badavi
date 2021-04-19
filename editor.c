@@ -748,6 +748,8 @@ void editor_send_keys(struct editor *editor, const char *keys) {
         ev->key = TB_KEY_BACKSPACE;
       } else if (!strcmp("esc", key)) {
         ev->key = TB_KEY_ESC;
+      } else if (!strcmp("tab", key)) {
+        ev->key = TB_KEY_TAB;
       } else if (!strcmp("up", key)) {
         ev->key = TB_KEY_ARROW_UP;
       } else if (!strcmp("down", key)) {

@@ -152,3 +152,8 @@ void test_options__window_local(void) {
   type(":q<cr>");
   cl_assert_equal_s(type(":set number?<cr>"), "number");
 }
+
+void test_options__completion(void) {
+  cl_assert_equal_s(type(":set nu<tab>"), ":set number");
+  cl_assert_equal_s(type("<tab>"), ":set numberwidth");
+}

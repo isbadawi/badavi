@@ -92,3 +92,10 @@ void test_os__write_files(void) {
   type(":e .<cr>");
   assert_buffer_contents("bar.txt\ncopy.txt\nfoo.txt\nsubdir/\n");
 }
+
+void test_os__completion(void) {
+  cl_assert_equal_s(type(":edit <tab>"), ":edit bar.txt");
+  cl_assert_equal_s(type("<tab>"), ":edit foo.txt");
+  cl_assert_equal_s(type("<tab>"), ":edit subdir/");
+  cl_assert_equal_s(type("<tab>"), ":edit bar.txt");
+}

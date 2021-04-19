@@ -19,6 +19,11 @@
 static struct editor *editor = NULL;
 static struct tags *tags = NULL;
 
+static char *type(const char *keys) {
+  editor_send_keys(editor, keys);
+  return editor->status->buf;
+}
+
 void test_tags__initialize(void) {
   cl_fixture_sandbox("tags.c");
   cl_fixture_sandbox("tags");
@@ -115,4 +120,14 @@ void test_tags__editor_tag_stack(void) {
   assert_cursor_at(1, 0);
   editor_tag_stack_next(editor);
   assert_editor_error("at top of tag stack");
+}
+
+void test_tags__completion(void) {
+  cl_assert_equal_s(type(":tag "), ":tag ");
+  cl_assert_equal_s(type("<tab>"), ":tag bar");
+  cl_assert_equal_s(type("<tab>"), ":tag baz");
+  cl_assert_equal_s(type("<tab>"), ":tag foo");
+  cl_assert_equal_s(type("<tab>"), ":tag quux");
+  cl_assert_equal_s(type("<tab>"), ":tag bar");
+  cl_assert_equal_s(type("<esc>:tag f<tab>"), ":tag foo");
 }

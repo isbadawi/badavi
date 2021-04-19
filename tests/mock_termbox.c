@@ -30,7 +30,11 @@ int tb_height(void) {
 }
 
 void tb_clear_buffer(void) {
-  return;
+  for (int i = 0; i < MOCK_TB_HEIGHT; ++i) {
+    for (int j = 0; j < MOCK_TB_WIDTH; ++j) {
+      tb_char(j, i, TB_DEFAULT, TB_DEFAULT, '\0');
+    }
+  }
 }
 
 void tb_render(void) {

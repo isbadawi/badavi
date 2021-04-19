@@ -4,6 +4,8 @@
 #include <string.h>
 #include <termbox.h>
 
+#include "buf.h"
+
 static struct editor *editor = NULL;
 static struct tb_cell *cells = NULL;
 char line_buffer[80];
@@ -30,7 +32,7 @@ static char fgcolors(struct tb_cell *cell) { return color(cell->fg); }
 static char bgcolors(struct tb_cell *cell) { return color(cell->bg); }
 
 #define assert_line(number, func, expected) do { \
-  struct tb_cell *line = &cells[tb_width() * number]; \
+  struct tb_cell *line = &cells[tb_width() * (number)]; \
   size_t len = strlen(expected); \
   size_t i; \
   for (i = 0; i < len; ++i) { \
@@ -88,4 +90,37 @@ void test_draw__hlsearch(void) {
   assert_line(0, chars,    "hello, word world!");
   assert_line(0, fgcolors, "wwwwwwwbbbwwbbbwww");
   assert_line(0, bgcolors, ".......wyy..yyy...");
+}
+
+void test_draw__message(void) {
+  type("i1<cr>2<cr>3<cr>4<esc>gg");
+  editor_draw(editor);
+  assert_line(0, chars, "1");
+  assert_line(1, chars, "2");
+  assert_line(2, chars, "3");
+  assert_line(3, chars, "4");
+  assert_line(4, chars, "~");
+  assert_line(5, chars, "~");
+  assert_line(editor->height - 3, chars, "~.....");
+  assert_line(editor->height - 2, chars, "~.....");
+
+  buf_printf(editor->message, "hello, world!\nsecond line");
+  editor_draw(editor);
+  assert_line(0, chars, "3");
+  assert_line(1, chars, "4");
+  assert_line(2, chars, "~");
+  assert_line(3, chars, "~");
+  assert_line(editor->height - 3, chars, "hello, world!");
+  assert_line(editor->height - 2, chars, "second line");
+
+  buf_clear(editor->message);
+  editor_draw(editor);
+  assert_line(0, chars, "1");
+  assert_line(1, chars, "2");
+  assert_line(2, chars, "3");
+  assert_line(3, chars, "4");
+  assert_line(4, chars, "~");
+  assert_line(5, chars, "~");
+  assert_line(editor->height - 3, chars, "~.....");
+  assert_line(editor->height - 2, chars, "~.....");
 }

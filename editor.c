@@ -736,6 +736,7 @@ void editor_send_keys(struct editor *editor, const char *keys) {
     struct editor_event *ev = xmalloc(sizeof(*ev));
     ev->type = TB_EVENT_KEY;
     ev->key = 0;
+    ev->ch = 0;
     switch (*k) {
     case '<': {
       char key[10];

@@ -23,6 +23,8 @@ jobs:
       run: make CC=${{ matrix.compiler }}
     - name: make test
       run: make test CC=${{ matrix.compiler }}
+    - name: make test-asan
+      run: make test-asan CC=${{ matrix.compiler }}
 
   coverage:
     runs-on: ubuntu-latest

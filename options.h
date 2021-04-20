@@ -42,7 +42,9 @@ struct buffer;
 
 void editor_init_options(struct editor *editor);
 void window_init_options(struct window *window);
+void editor_free_options(struct editor *editor);
 void window_free_options(struct window *window);
+void buffer_free_options(struct buffer *buffer);
 void buffer_inherit_editor_options(struct buffer *buffer, struct editor *editor);
 void window_inherit_parent_options(struct window *window);
 

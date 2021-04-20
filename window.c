@@ -423,6 +423,9 @@ void window_free(struct window *window) {
     }
     free(window->pwd);
     free(window->alternate_path);
+  } else {
+    window_free(window->split.first);
+    window_free(window->split.second);
   }
   window_free_options(window);
   free(window);

@@ -81,7 +81,31 @@ static void register_clipboard_write(struct editor_register *reg, char *text) {
   assert(rc);
 }
 
-void editor_init(struct editor *editor, size_t width, size_t height) {
+void editor_free(struct editor *editor) {
+  buf_free(editor->message);
+  buf_free(editor->status);
+  free(editor->pwd);
+  for (int i = 0; i < EDITOR_NUM_REGISTERS; ++i) {
+    if (editor->registers[i].buf) {
+      buf_free(editor->registers[i].buf);
+    }
+  }
+  tags_clear(editor->tags);
+  free(editor->tags);
+  window_free(window_root(editor->window));
+  struct buffer *b, *tb;
+  TAILQ_FOREACH_SAFE(b, &editor->buffers, pointers, tb) {
+    buffer_free(b);
+  }
+  editor_free_options(editor);
+  history_deinit(&editor->command_history);
+  history_deinit(&editor->search_history);
+  free(editor);
+}
+
+struct editor *editor_create(size_t width, size_t height) {
+  struct editor *editor = xmalloc(sizeof(*editor));
+
   editor->width = width;
   editor->height = height;
 
@@ -152,6 +176,8 @@ void editor_init(struct editor *editor, size_t width, size_t height) {
 
   history_init(&editor->command_history, &editor->opt.history);
   history_init(&editor->search_history, &editor->opt.history);
+
+  return editor;
 }
 
 struct editor_register *editor_get_register(struct editor *editor, char name) {

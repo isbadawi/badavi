@@ -22,10 +22,13 @@ static char *type(const char *keys) {
 
 void test_editor__initialize(void) {
   tb_init();
-  editor = xmalloc(sizeof(*editor));
-  editor_init(editor, tb_width(), tb_height());
+  editor = editor_create(tb_width(), tb_height());
   assert_buffer_contents("\n");
   assert_cursor_at(0, 0);
+}
+
+void test_editor__cleanup(void) {
+  editor_free(editor);
 }
 
 void test_editor__basic_editing(void) {
@@ -142,6 +145,7 @@ void test_editor__command_history_traversal(void) {
   cl_assert_equal_s(type("<down>"), ":set norelativenumber");
   cl_assert_equal_s(type("<down>"), ":");
   cl_assert_equal_s(type("<down>"), ":");
+  type("<esc>");
 }
 
 void test_editor__command_history_filter_prefix(void) {
@@ -158,6 +162,7 @@ void test_editor__command_history_filter_prefix(void) {
   cl_assert_equal_s(type("<up>"), ":set norelativenumber");
   cl_assert_equal_s(type("<down>"), ":set nomodifiable");
   cl_assert_equal_s(type("<down>"), ":set no");
+  type("<esc>");
 }
 
 void test_editor__command_history_duplicates_move_to_front(void) {
@@ -172,6 +177,7 @@ void test_editor__command_history_duplicates_move_to_front(void) {
   cl_assert_equal_s(type("<up>"), ":vsplit");
   cl_assert_equal_s(type("<up>"), ":nohlsearch");
   cl_assert_equal_s(type("<up>"), ":nohlsearch");
+  type("<esc>");
 }
 
 void test_editor__autoindent(void) {
@@ -197,4 +203,5 @@ void test_editor__completion(void) {
   cl_assert_equal_s(type("<tab>"), ":splitfind");
   cl_assert_equal_s(type("<tab>"), ":split");
   cl_assert_equal_s(type("<bs><bs><bs><bs><bs>vsp<tab>"), ":vsplit");
+  type("<esc>");
 }

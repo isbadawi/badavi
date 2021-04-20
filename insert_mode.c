@@ -63,8 +63,8 @@ static void insert_indent(struct buffer *buffer, size_t cursor) {
       } while ((word = strtok(NULL, ",")));
 
       free(words);
-      buf_free(line);
     }
+    buf_free(line);
 
     if (shift) {
       for (int i = 0; i < buffer->opt.shiftwidth; ++i) {

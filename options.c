@@ -126,6 +126,21 @@ void window_free_options(struct window *window) {
 #undef OPTION
 }
 
+void editor_free_options(struct editor *editor) {
+#define OPTION(name, type, _) \
+  option_free_##type(editor->opt.name);
+  EDITOR_OPTIONS
+  BUFFER_OPTIONS
+#undef OPTION
+}
+
+void buffer_free_options(struct buffer *buffer) {
+#define OPTION(name, type, _) \
+  option_free_##type(buffer->opt.name);
+  BUFFER_OPTIONS
+#undef OPTION
+}
+
 void buffer_inherit_editor_options(
     struct buffer *buffer, struct editor *editor) {
 #define OPTION(name, type, _) \

@@ -45,8 +45,11 @@ static char bgcolors(struct tb_cell *cell) { return color(cell->bg); }
 void test_draw__initialize(void) {
   tb_init();
   cells = tb_cell_buffer();
-  editor = xmalloc(sizeof(*editor));
-  editor_init(editor, tb_width(), tb_height());
+  editor = editor_create(tb_width(), tb_height());
+}
+
+void test_draw__cleanup(void) {
+  editor_free(editor);
 }
 
 void test_draw__simple_text(void) {

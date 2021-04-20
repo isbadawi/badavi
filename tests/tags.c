@@ -28,15 +28,13 @@ void test_tags__initialize(void) {
   cl_fixture_sandbox("tags.c");
   cl_fixture_sandbox("tags");
   tb_init();
-  editor = xmalloc(sizeof(*editor));
-  editor_init(editor, tb_width(), tb_height());
+  editor = editor_create(tb_width(), tb_height());
   tags = editor->tags;
   cl_assert(tags && tags->len > 0);
 }
 
 void test_tags__cleanup(void) {
-  tags_clear(tags);
-  tags = NULL;
+  editor_free(editor);
   cl_fixture_cleanup("tags");
 }
 
@@ -130,4 +128,5 @@ void test_tags__completion(void) {
   cl_assert_equal_s(type("<tab>"), ":tag quux");
   cl_assert_equal_s(type("<tab>"), ":tag bar");
   cl_assert_equal_s(type("<esc>:tag f<tab>"), ":tag foo");
+  type("<esc>");
 }

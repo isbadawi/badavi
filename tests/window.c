@@ -10,9 +10,20 @@
   cl_assert_equal_i(window_y(window), y); \
 } while (0)
 
-void test_window__create(void) {
-  struct window *window = window_create(buffer_create(NULL), 80, 16);
+struct buffer *buffer = NULL;
+struct window *window = NULL;
 
+void test_window__initialize(void) {
+  buffer = buffer_create(NULL);
+  window = window_create(buffer, 80, 16);
+}
+
+void test_window__cleanup(void) {
+  window_free(window);
+  buffer_free(buffer);
+}
+
+void test_window__create(void) {
   cl_assert(!window->parent);
   cl_assert_equal_i(window->split_type, WINDOW_LEAF);
   assert_window_whxy(window, 80, 16, 0, 0);
@@ -24,8 +35,6 @@ void test_window__create(void) {
 }
 
 void test_window__vsplit(void) {
-  struct window *window = window_create(buffer_create(NULL), 80, 16);
-
   struct window *left = window_split(window, WINDOW_SPLIT_LEFT);
   cl_assert_equal_p(left, window->split.first);
   struct window *right = window->split.second;
@@ -45,8 +54,6 @@ void test_window__vsplit(void) {
 }
 
 void test_window__split(void) {
-  struct window *window = window_create(buffer_create(NULL), 80, 16);
-
   struct window *up = window_split(window, WINDOW_SPLIT_ABOVE);
   cl_assert_equal_p(up, window->split.first);
   struct window *down = window->split.second;
@@ -66,14 +73,14 @@ void test_window__split(void) {
 }
 
 void test_window__close(void) {
-  struct window *window = window_create(buffer_create(NULL), 80, 16);
-
   window_split(window, WINDOW_SPLIT_ABOVE);
 
+  struct window *old_window = window->split.second;
   struct window *next = window_close(window->split.second);
   cl_assert(!next->parent);
   cl_assert_equal_i(next->split_type, WINDOW_LEAF);
   assert_window_whxy(next, 80, 16, 0, 0);
+  window_free(old_window);
 }
 
 void test_window__resize(void) {
@@ -83,11 +90,10 @@ void test_window__resize(void) {
   // |---| C |
   // | B |   |
   // |___|___|
-  struct window *root = window_create(buffer_create(NULL), 80, 16);
-  struct window *left = window_split(root, WINDOW_SPLIT_LEFT);
+  struct window *left = window_split(window, WINDOW_SPLIT_LEFT);
   struct window *A = window_split(left, WINDOW_SPLIT_ABOVE);
   struct window *B = left->split.second;
-  struct window *C = root->split.second;
+  struct window *C = window->split.second;
 
   cl_assert_equal_p(B, window_down(A));
   cl_assert_equal_p(A, window_up(B));
@@ -118,12 +124,12 @@ void test_window__resize(void) {
   assert_window_whxy(B, 20, 13, 0, 3);
   assert_window_whxy(C, 60, 16, 20, 0);
 
-  window_equalize(root, WINDOW_SPLIT_HORIZONTAL);
+  window_equalize(window, WINDOW_SPLIT_HORIZONTAL);
   assert_window_whxy(A, 20, 8, 0, 0);
   assert_window_whxy(B, 20, 8, 0, 8);
   assert_window_whxy(C, 60, 16, 20, 0);
 
-  window_equalize(root, WINDOW_SPLIT_VERTICAL);
+  window_equalize(window, WINDOW_SPLIT_VERTICAL);
   assert_window_whxy(A, 40, 8, 0, 0);
   assert_window_whxy(B, 40, 8, 0, 8);
   assert_window_whxy(C, 40, 16, 40, 0);

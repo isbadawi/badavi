@@ -91,7 +91,8 @@ struct editor {
   } opt;
 };
 
-void editor_init(struct editor *editor, size_t width, size_t height);
+struct editor *editor_create(size_t width, size_t height);
+void editor_free(struct editor *editor);
 
 void editor_open(struct editor *editor, char *path);
 

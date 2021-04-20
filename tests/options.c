@@ -18,8 +18,11 @@ static char *type(const char *keys) {
 
 void test_options__initialize(void) {
   tb_init();
-  editor = xmalloc(sizeof(*editor));
-  editor_init(editor, tb_width(), tb_height());
+  editor = editor_create(tb_width(), tb_height());
+}
+
+void test_options__cleanup(void) {
+  editor_free(editor);
 }
 
 void test_options__option_types(void) {
@@ -156,4 +159,5 @@ void test_options__window_local(void) {
 void test_options__completion(void) {
   cl_assert_equal_s(type(":set nu<tab>"), ":set number");
   cl_assert_equal_s(type("<tab>"), ":set numberwidth");
+  type("<esc>");
 }

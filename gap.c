@@ -72,7 +72,6 @@ struct gapbuf *gb_fromfile(char *path) {
 struct gapbuf *gb_fromstring(struct buf *buf) {
   FILE *fp = fmemopen(buf->buf, buf->len, "r");
   size_t len = buf->len;
-  free(buf);
   return gb_load(fp, len);
 }
 

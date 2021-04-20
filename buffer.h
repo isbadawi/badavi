@@ -69,6 +69,9 @@ struct buffer *buffer_open(char *path);
 // Returns an empty buffer (i.e. with a single empty line).
 struct buffer *buffer_create(char *path);
 
+// Free the given buffer.
+void buffer_free(struct buffer *buffer);
+
 // Writes the contents of the given buffer to buffer->name.
 // Returns false if this buffer has no name.
 bool buffer_write(struct buffer *buffer);

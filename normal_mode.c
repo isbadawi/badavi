@@ -111,6 +111,8 @@ void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
     buf_append(path, "/");
     buf_append(path, line->buf);
     editor_open(editor, path->buf);
+    buf_free(line);
+    buf_free(path);
     return;
   }
   case TB_KEY_CTRL_W: {

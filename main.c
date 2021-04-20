@@ -49,8 +49,8 @@ int main(int argc, char *argv[]) {
 
   terminal_init();
 
-  struct editor editor;
-  editor_init(&editor, (size_t) tb_width(), (size_t) tb_height());
+  struct editor *editor = editor_create(
+      (size_t) tb_width(), (size_t) tb_height());
 
   if (!rc) {
     snprintf(default_rc, sizeof(default_rc), "%s/.badavimrc", homedir());
@@ -60,16 +60,16 @@ int main(int argc, char *argv[]) {
   }
 
   if (rc && strcmp(rc, "NONE") != 0) {
-    editor_source(&editor, rc);
+    editor_source(editor, rc);
   }
 
   if (tag) {
-    editor_jump_to_tag(&editor, tag);
+    editor_jump_to_tag(editor, tag);
   } else {
     int i;
     for (i = 1; i < argc; ++i) {
       if (pathargs[i]) {
-        editor_open(&editor, argv[i++]);
+        editor_open(editor, argv[i++]);
         break;
       }
     }
@@ -84,32 +84,32 @@ int main(int argc, char *argv[]) {
       }
       for (; i < argc; ++i) {
         if (pathargs[i]) {
-          editor.window = window_split(editor.window, direction);
-          editor_open(&editor, argv[i]);
+          editor->window = window_split(editor->window, direction);
+          editor_open(editor, argv[i]);
         }
       }
-      editor.window = window_first_leaf(window_root(editor.window));
-      window_equalize(editor.window, split_type);
+      editor->window = window_first_leaf(window_root(editor->window));
+      window_equalize(editor->window, split_type);
     }
 
     if (line) {
       if (!*line) {
-        editor_jump_to_end(&editor);
+        editor_jump_to_end(editor);
       } else {
         int linenum;
         if (strtoi(line, &linenum)) {
-          editor_jump_to_line(&editor, linenum - 1);
+          editor_jump_to_line(editor, linenum - 1);
         }
       }
     }
   }
 
-  editor_draw(&editor);
+  editor_draw(editor);
 
   struct tb_event ev;
-  while (editor_waitkey(&editor, &ev)) {
-    editor_handle_key_press(&editor, &ev);
-    editor_draw(&editor);
+  while (editor_waitkey(editor, &ev)) {
+    editor_handle_key_press(editor, &ev);
+    editor_draw(editor);
   }
 
   return 0;

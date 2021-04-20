@@ -20,16 +20,21 @@ static void delete_text(size_t pos, size_t len) {
   buffer_do_delete(buffer, len, pos);
 }
 
-void test_buffer__empty(void) {
+void test_buffer__initialize(void) {
   buffer = buffer_create(NULL);
+}
+
+void test_buffer__cleanup(void) {
+  buffer_free(buffer);
+}
+
+void test_buffer__empty(void) {
   cl_assert_equal_p(buffer->path, NULL);
   cl_assert(!buffer->opt.modified);
   assert_contents("\n");
 }
 
 void test_buffer__insert_delete(void) {
-  buffer = buffer_create(NULL);
-
   insert_text(0, "hello, world");
   assert_contents("hello, world\n");
 
@@ -40,7 +45,6 @@ void test_buffer__insert_delete(void) {
 }
 
 void test_buffer__undo_redo(void) {
-  buffer = buffer_create(NULL);
   size_t cursor_pos;
 
   assert_contents("\n");
@@ -79,7 +83,6 @@ void test_buffer__undo_redo(void) {
 }
 
 void test_buffer__undo_group(void) {
-  buffer = buffer_create(NULL);
   buffer_start_action_group(buffer);
   size_t cursor_pos;
 
@@ -100,7 +103,6 @@ void test_buffer__undo_group(void) {
 }
 
 void test_buffer__marks(void) {
-  buffer = buffer_create(NULL);
   struct mark mark;
   region_set(&mark.region, 0, 1);
   TAILQ_INSERT_TAIL(&buffer->marks, &mark, pointers);

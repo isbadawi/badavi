@@ -42,11 +42,11 @@ void test_os__initialize(void) {
       "echo 'foo bar' > bar.txt && "
       "mkdir -p subdir && echo 'magic' > subdir/baz.txt");
 
-  editor = xmalloc(sizeof(*editor));
-  editor_init(editor, tb_width(), tb_height());
+  editor = editor_create(tb_width(), tb_height());
 }
 
 void test_os__cleanup(void) {
+  editor_free(editor);
   chdir(oldcwd);
 }
 
@@ -98,4 +98,5 @@ void test_os__completion(void) {
   cl_assert_equal_s(type("<tab>"), ":edit foo.txt");
   cl_assert_equal_s(type("<tab>"), ":edit subdir/");
   cl_assert_equal_s(type("<tab>"), ":edit bar.txt");
+  type("<esc>");
 }

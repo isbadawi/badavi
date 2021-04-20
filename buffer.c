@@ -19,7 +19,7 @@ static struct buffer *buffer_of(char *path, struct gapbuf *gb, bool dir) {
   buffer->directory = dir;
   buffer->text = gb;
   buffer->path = path ? xstrdup(path) : NULL;
-  buffer->opt.modified = false;
+  memset(&buffer->opt, 0, sizeof(buffer->opt));
 
   TAILQ_INIT(&buffer->undo_stack);
   TAILQ_INIT(&buffer->redo_stack);
@@ -31,6 +31,28 @@ static struct buffer *buffer_of(char *path, struct gapbuf *gb, bool dir) {
 
 struct buffer *buffer_create(char *path) {
   return buffer_of(path, gb_create(), false);
+}
+
+static void action_list_clear(struct action_group_list *list) {
+  struct edit_action_group *group, *tg;
+  TAILQ_FOREACH_SAFE(group, list, pointers, tg) {
+    struct edit_action *action, *ta;
+    TAILQ_FOREACH_SAFE(action, &group->actions, pointers, ta) {
+      buf_free(action->buf);
+      free(action);
+    }
+    TAILQ_REMOVE(list, group, pointers);
+    free(group);
+  }
+}
+
+void buffer_free(struct buffer *buffer) {
+  free(buffer->path);
+  gb_free(buffer->text);
+  action_list_clear(&buffer->undo_stack);
+  action_list_clear(&buffer->redo_stack);
+  buffer_free_options(buffer);
+  free(buffer);
 }
 
 static struct buf *listdir(char *path) {
@@ -81,6 +103,7 @@ struct buffer *buffer_open(char *path) {
       return NULL;
     }
     gb = gb_fromstring(listing);
+    buf_free(listing);
   } else {
     gb = gb_fromfile(path);
     if (!gb) {
@@ -136,27 +159,31 @@ static void buffer_update_marks_after_delete(
 }
 
 void buffer_do_insert(struct buffer *buffer, struct buf *buf, size_t pos) {
-  struct edit_action *action = xmalloc(sizeof(*action));
-  action->type = EDIT_ACTION_INSERT;
-  action->pos = pos;
-  action->buf = buf;
   struct edit_action_group *group = TAILQ_FIRST(&buffer->undo_stack);
   if (group) {
+    struct edit_action *action = xmalloc(sizeof(*action));
+    action->type = EDIT_ACTION_INSERT;
+    action->pos = pos;
+    action->buf = buf;
     TAILQ_INSERT_HEAD(&group->actions, action, pointers);
   }
   gb_putstring(buffer->text, buf->buf, buf->len, pos);
   buffer->opt.modified = true;
 
   buffer_update_marks_after_insert(buffer, pos, buf->len);
+
+  if (!group) {
+    buf_free(buf);
+  }
 }
 
 void buffer_do_delete(struct buffer *buffer, size_t n, size_t pos) {
-  struct edit_action *action = xmalloc(sizeof(*action));
-  action->type = EDIT_ACTION_DELETE;
-  action->pos = pos;
-  action->buf = gb_getstring(buffer->text, pos, n);
   struct edit_action_group *group = TAILQ_FIRST(&buffer->undo_stack);
   if (group) {
+    struct edit_action *action = xmalloc(sizeof(*action));
+    action->type = EDIT_ACTION_DELETE;
+    action->pos = pos;
+    action->buf = gb_getstring(buffer->text, pos, n);
     TAILQ_INSERT_HEAD(&group->actions, action, pointers);
   }
   gb_del(buffer->text, n, pos + n);
@@ -222,18 +249,9 @@ bool buffer_redo(struct buffer* buffer, size_t *cursor_pos) {
 }
 
 void buffer_start_action_group(struct buffer *buffer) {
-  struct edit_action_group *group, *tg;
-  TAILQ_FOREACH_SAFE(group, &buffer->redo_stack, pointers, tg) {
-    struct edit_action *action, *ta;
-    TAILQ_FOREACH_SAFE(action, &group->actions, pointers, ta) {
-      buf_free(action->buf);
-      free(action);
-    }
-    TAILQ_REMOVE(&buffer->redo_stack, group, pointers);
-    free(group);
-  }
+  action_list_clear(&buffer->redo_stack);
 
-  group = xmalloc(sizeof(*group));
+  struct edit_action_group *group = xmalloc(sizeof(*group));
   TAILQ_INIT(&group->actions);
 
   TAILQ_INSERT_HEAD(&buffer->undo_stack, group, pointers);

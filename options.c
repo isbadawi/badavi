@@ -9,30 +9,13 @@
 #include "editor.h"
 #include "window.h"
 
-static inline void option_set_int(int *p, int v) {
-  *p = v;
-}
+static inline void option_set_int(int *p, int v) { *p = v; }
+static inline void option_set_bool(bool *p, bool v) { *p = v; }
+static inline void option_set_string(string *p, string v) { *p = xstrdup(v); }
 
-static inline void option_set_bool(bool *p, bool v) {
-  *p = v;
-}
-
-static inline void option_set_string(string *p, string v) {
-  *p = xstrdup(v);
-}
-
-static inline void option_free_int(int i ATTR_UNUSED) {
-  return;
-}
-
-static inline void option_free_bool(bool b ATTR_UNUSED) {
-  return;
-}
-
-ATTR_UNUSED
-static inline void option_free_string(string s) {
-  free(s);
-}
+static inline void option_free_int(int i ATTR_UNUSED) { return; }
+static inline void option_free_bool(bool b ATTR_UNUSED) { return; }
+static inline void option_free_string(string s) { free(s); }
 
 struct opt {
   char *name;
@@ -69,10 +52,13 @@ static struct opt opts_meta[] = {
   {NULL, 0, 0, {0}},
 };
 
+#define FOREACH_OPTION(varname) \
+  for (struct opt *varname = opts_meta; varname->name; ++varname)
+
 static struct opt *option_info(char *name) {
-  for (int i = 0; opts_meta[i].name; ++i) {
-    if (!strcmp(opts_meta[i].name, name)) {
-      return &opts_meta[i];
+  FOREACH_OPTION(opt) {
+    if (!strcmp(opt->name, name)) {
+      return opt;
     }
   }
   return NULL;
@@ -84,19 +70,15 @@ static int pstrcmp(const void *a, const void *b) {
 
 char **options_get_sorted(int *len) {
   int num_options = 0;
-#define OPTION(_, __, ___) num_options++;
-  BUFFER_OPTIONS
-  WINDOW_OPTIONS
-  EDITOR_OPTIONS
-#undef OPTION
+  FOREACH_OPTION(opt) {
+    ++num_options;
+  }
 
   char **options = xmalloc(sizeof(*options) * num_options);
   int i = 0;
-#define OPTION(name, _, __) options[i++] = #name;
-  BUFFER_OPTIONS
-  WINDOW_OPTIONS
-  EDITOR_OPTIONS
-#undef OPTION
+  FOREACH_OPTION(opt) {
+    options[i++] = opt->name;
+  }
 
   qsort(options, num_options, sizeof(*options), pstrcmp);
 

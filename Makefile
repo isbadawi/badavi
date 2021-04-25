@@ -98,12 +98,27 @@ $(BUILD_DIR)/.:
 $(BUILD_DIR)%/.:
 	mkdir -p $@
 
+# For testing, dynamically link termbox so we can interpose our mock functions.
+TEST_THIRD_PARTY_LIBRARIES := $(filter-out $(TERMBOX_LIBRARY),$(THIRD_PARTY_LIBRARIES))
+TEST_LDFLAGS := \
+	$(LDFLAGS) \
+	-L$(TERMBOX_INSTALL_DIR)/lib \
+	-Wl,-rpath -Wl,$(TERMBOX_INSTALL_DIR)/lib \
+	-ltermbox
+
+ifeq ($(OS),Darwin)
+# This tells cmake to use @rpath in libtermbox.dylib's install name
+TERMBOX_EXTRA_FLAGS += -DCMAKE_POLICY_DEFAULT_CMP0042=NEW
+# This makes symbol interposition work (library references can be resolved by the program)
+TERMBOX_EXTRA_FLAGS += -DCMAKE_SHARED_LINKER_FLAGS=-Wl,-flat_namespace
+endif
+
 $(TERMBOX_INSTALL_DIR): | $$(@D)/. $(TERMBOX_BUILD_DIR)/.
 	(cd $(TERMBOX_BUILD_DIR) && \
 	  cmake \
 	    -DCMAKE_INSTALL_PREFIX=$(abspath $@) \
-	    -DBUILD_SHARED_LIBS=OFF \
 	    -DBUILD_DEMOS=OFF \
+	    $(TERMBOX_EXTRA_FLAGS) \
 	    $(abspath $(TERMBOX_DIR)) && \
 	  $(MAKE) && \
 	  $(MAKE) install)
@@ -147,8 +162,8 @@ $(BUILD_DIR)/%.pp: %.c $(THIRD_PARTY_HEADERS) | $$(@D)/.
 $(BUILD_DIR)/$(PROG): $(OBJS) $(THIRD_PARTY_LIBRARIES) | $$(@D)/.
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-$(BUILD_DIR)/$(TEST_PROG): $(TEST_OBJS) $(filter-out $(TERMBOX_LIBRARY),$(THIRD_PARTY_LIBRARIES)) | $$(@D)/.
-	$(CC) -o $@ $^ $(LDFLAGS)
+$(BUILD_DIR)/$(TEST_PROG): $(TEST_OBJS) $(TEST_THIRD_PARTY_LIBRARIES) | $$(@D)/.
+	$(CC) -o $@ $^ $(TEST_LDFLAGS)
 
 tags: $(SRCS) $(HDRS)
 	ctags $^

@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "buf.h"
 #include "buffer.h"
 #include "editor.h"
 #include "window.h"
@@ -216,11 +217,45 @@ static void csl_append(char **csl, char *word) {
   *csl = result;
 }
 
+static char *option_show(struct opt *info, void *val) {
+  static char buf[512];
+  switch (info->type) {
+  case OPTION_TYPE_int:
+    snprintf(buf, sizeof(buf), "%s=%d", info->name, *(int*)val);
+    break;
+  case OPTION_TYPE_string:
+    snprintf(buf, sizeof(buf), "%s=%s", info->name, *(string*)val);
+    break;
+  case OPTION_TYPE_bool:
+    snprintf(buf, sizeof(buf), "%s%s", *(bool*)val ? "" : "no", info->name);
+    break;
+  }
+  return buf;
+}
+
+static bool option_equals_default(struct opt *info, void *val) {
+  switch (info->type) {
+  case OPTION_TYPE_int: return *(int*)val == info->defaultval.intval;
+  case OPTION_TYPE_bool: return *(bool*)val == info->defaultval.boolval;
+  case OPTION_TYPE_string: return !strcmp(*(string*)val, info->defaultval.stringval);
+  }
+  assert(0);
+  return false;
+}
+
 static void editor_command_set_impl(
     struct editor *editor, char *arg, enum option_set_mode which) {
-  if (!arg) {
-    // TODO(isbadawi): show current values of all options...
-    editor_status_err(editor, "Argument required");
+  if (!arg || !strcmp(arg, "all")) {
+    buf_printf(editor->message, "--- Options ---");
+    FOREACH_OPTION(opt) {
+      void *unused, *val;
+      editor_opt_vals(editor, opt, &unused, &val);
+      if (arg || !option_equals_default(opt, val)) {
+        buf_appendf(editor->message, "\n%s", option_show(opt, val));
+      }
+    }
+    editor_status_msg(editor, "Press ENTER to continue ");
+    editor->status_cursor = editor->status->len - 1;
     return;
   }
 
@@ -316,17 +351,7 @@ static void editor_command_set_impl(
   case OPTION_ACTION_NONE: assert(0); break;
   case OPTION_ACTION_SHOW: {
     void *val = which == OPTION_SET_GLOBAL ? global : local;
-    switch (info->type) {
-    case OPTION_TYPE_int:
-      editor_status_msg(editor, "%s=%d", opt, *(int*)val);
-      break;
-    case OPTION_TYPE_string:
-      editor_status_msg(editor, "%s=%s", opt, *(string*)val);
-      break;
-    case OPTION_TYPE_bool:
-      editor_status_msg(editor, "%s%s", *(bool*)val ? "" : "no", opt);
-      break;
-    }
+    editor_status_msg(editor, "%s", option_show(info, val));
     break;
   }
   case OPTION_ACTION_ENABLE:

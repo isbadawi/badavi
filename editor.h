@@ -44,6 +44,16 @@ struct editor {
   struct buf *message;
   // What's written to the status bar.
   struct buf *status;
+
+  struct editor_popup {
+    bool visible;
+    size_t pos;
+    char **lines;
+    int offset;
+    int selected;
+    int len;
+  } popup;
+
   // Whether the status is an error.
   bool status_error;
   // Whether the status should be displayed.

@@ -379,6 +379,56 @@ static void editor_draw_window(struct editor *editor) {
   }
 }
 
+static void editor_draw_popup(struct editor *editor) {
+  struct editor_popup *popup = &editor->popup;
+  if (!popup->visible) {
+    return;
+  }
+
+  struct window *window = editor->window;
+  size_t x, y;
+  bool ok = window_pos_to_xy(window, popup->pos, &x, &y);
+  x--; y++;
+  assert(ok);
+
+  size_t sx = W2SX(x);
+  size_t sy = W2SY(y);
+
+  int height = min(popup->len, (int) (tb_height() - 1 - sy));
+
+  int top = popup->offset;
+  int bot = popup->offset + height;
+  if (popup->selected < top + 4) {
+    popup->offset = max(0, popup->selected - 3);
+  } else if (popup->selected >= bot - 4) {
+    popup->offset = min(popup->len, popup->selected + 4) - height;
+  }
+
+  int offset = popup->offset;
+  for (int i = 0; i < height; ++i) {
+    tb_color fg = i + offset == popup->selected ? TB_DARK_GREY : TB_BLACK;
+    tb_color bg = i + offset == popup->selected ? TB_BLACK : TB_LIGHT_MAGENTA;
+    tb_empty(sx, sy + i, bg, 50);
+    tb_string_with_limit(sx + 1, sy + i, fg, bg, popup->lines[i + offset], 50);
+  }
+
+  if (height < popup->len) {
+    int scrollbar_height = (int)((1.0 * height / popup->len) * height);
+    int scrollbar_y = (int)((1.0 * offset / popup->len) * height);
+    if (offset == popup->len - height) {
+      scrollbar_y = height - scrollbar_height;
+    }
+    for (int i = 0; i < height; ++i) {
+      tb_color color = 248;
+      if (i >= scrollbar_y && i < scrollbar_y + scrollbar_height) {
+        color = TB_WHITE;
+      }
+      tb_empty(sx + 49, sy + i, color, 1);
+    }
+  }
+
+}
+
 static void editor_draw_message(struct editor *editor) {
   if (!editor->message->len) {
     return;
@@ -425,6 +475,7 @@ static void editor_draw_status(struct editor *editor) {
 void editor_draw(struct editor *editor) {
   tb_clear_buffer();
   editor_draw_window(editor);
+  editor_draw_popup(editor);
   editor_draw_message(editor);
   editor_draw_status(editor);
   tb_render();

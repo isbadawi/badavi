@@ -115,6 +115,8 @@ struct editor *editor_create(size_t width, size_t height) {
   editor->status_silence = false;
   editor->status_cursor = 0;
 
+  memset(&editor->popup, 0, sizeof(editor->popup));
+
   editor->highlight_search_matches = false;
 
   memset(&editor->modes, 0, sizeof(editor->modes));

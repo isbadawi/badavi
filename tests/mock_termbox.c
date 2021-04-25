@@ -56,6 +56,15 @@ int tb_string(int x, int y, tb_color fg, tb_color bg, const char * str) {
   return l;
 }
 
+int tb_string_with_limit(int x, int y, tb_color fg, tb_color bg,
+                         const char * str, int limit) {
+  int l;
+  for (l = 0; *str && l < limit; l++) {
+    tb_char(x++, y, fg, bg, *str++);
+  }
+  return l;
+}
+
 int tb_stringf(int x, int y, tb_color fg, tb_color bg, const char *fmt, ...) {
   char buf[512];
   va_list vl;

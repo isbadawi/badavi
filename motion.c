@@ -456,6 +456,14 @@ struct buf *motion_word_under_cursor(struct window *window) {
   return gb_getstring(window->buffer->text, start, end - start + 1);
 }
 
+struct buf *motion_word_before_cursor(struct window *window) {
+  size_t cursor = window_cursor(window);
+  struct motion_context ctx = {cursor, window, NULL};
+  size_t start = is_word_start(ctx) ? ctx.pos : prev_word_start(ctx);
+  size_t end = gb_utf8prev(window->buffer->text, cursor);
+  return gb_getstring(window->buffer->text, start, end - start + 1);
+}
+
 static bool isfname(char c) {
   return isalnum(c) || strchr("_-./", c) != NULL;
 }

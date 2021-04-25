@@ -101,7 +101,7 @@ static void command_done_cb(struct editor *editor, char *command) {
   editor_execute_command(editor, command);
 }
 
-static void editor_load_completions(struct editor *editor,
+void editor_load_completions(struct editor *editor,
     enum completion_kind kind, struct history *history) {
   switch (kind) {
   case COMPLETION_NONE: assert(0); break;

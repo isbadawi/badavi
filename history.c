@@ -28,6 +28,18 @@ struct history_entry *history_first(
   return history_next(entry, p, arg);
 }
 
+struct history_entry *history_last(
+    struct history *history, history_predicate p, char* arg) {
+  struct history_entry *entry;
+  struct history_entry *last = NULL;
+  TAILQ_FOREACH(entry, &history->entries, pointers) {
+    if (p(entry->buf, arg)) {
+      last = entry;
+    }
+  }
+  return last;
+}
+
 struct history_entry *history_next(
     struct history_entry *entry, history_predicate p, char* arg) {
   struct history_entry *next = entry;

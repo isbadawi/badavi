@@ -29,6 +29,8 @@ typedef bool (history_predicate) (struct buf*, char*);
 
 struct history_entry *history_first(
     struct history *history, history_predicate p, char *arg);
+struct history_entry *history_last(
+    struct history *history, history_predicate p, char *arg);
 struct history_entry *history_prev(
     struct history_entry *entry, history_predicate p, char *arg);
 struct history_entry *history_next(

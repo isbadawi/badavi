@@ -39,6 +39,10 @@ struct normal_mode {
 
 struct insert_mode {
   struct editing_mode mode;
+
+  char *completion_prefix;
+  struct history_entry *completion;
+  struct history *completions;
 };
 
 struct visual_mode {
@@ -72,6 +76,9 @@ struct cmdline_mode {
   } completion_kind;
   char prompt;
 };
+
+void editor_load_completions(struct editor *editor,
+    enum completion_kind kind, struct history *history);
 
 typedef void (op_func)(struct editor*, struct region*);
 op_func *op_find(char name);

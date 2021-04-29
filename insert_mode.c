@@ -88,9 +88,7 @@ static void insert_indent(struct buffer *buffer, size_t cursor) {
     buf_free(line);
 
     if (shift) {
-      for (int i = 0; i < buffer->opt.shiftwidth; ++i) {
-        buf_append(indent, " ");
-      }
+      buf_appendf(indent, "%*s", buffer->opt.shiftwidth, "");
     }
   }
 
@@ -266,9 +264,7 @@ void insert_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
   struct buf *insertion;
   if (ch == '\t' && buffer->opt.expandtab) {
     insertion = buf_create(buffer->opt.shiftwidth);
-    for (int i = 0; i < buffer->opt.shiftwidth; ++i) {
-      buf_append(insertion, " ");
-    }
+    buf_printf(insertion, "%*s", buffer->opt.shiftwidth, "");
   } else {
     insertion = buf_from_utf8(ch);
   }

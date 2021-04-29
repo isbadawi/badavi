@@ -14,7 +14,6 @@
 #include <libclipboard.h>
 #include <termbox.h>
 
-#include "attrs.h"
 #include "buf.h"
 #include "buffer.h"
 #include "gap.h"

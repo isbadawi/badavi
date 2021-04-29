@@ -11,7 +11,6 @@
 #include "buffer.h"
 #include "editor.h"
 #include "gap.h"
-#include "mode.h"
 #include "search.h"
 #include "util.h"
 

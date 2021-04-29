@@ -7,7 +7,6 @@
 
 #include <regex.h>
 
-#include "buf.h"
 #include "buffer.h"
 #include "editor.h"
 #include "gap.h"

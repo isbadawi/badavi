@@ -51,11 +51,11 @@ static struct opt opts_meta[] = {
   {#name, OPTION_SCOPE_EDITOR, OPTION_TYPE_##type, {.type##val = defaultval}},
   EDITOR_OPTIONS
 #undef OPTION
-  {NULL, 0, 0, {0}},
 };
+static int num_options = sizeof(opts_meta) / sizeof(opts_meta[0]);
 
 #define FOREACH_OPTION(varname) \
-  for (struct opt *varname = opts_meta; varname->name; ++varname)
+  for (struct opt *varname = opts_meta; varname < opts_meta + num_options; ++varname)
 
 static struct opt *option_info(char *name) {
   FOREACH_OPTION(opt) {
@@ -71,11 +71,6 @@ static int pstrcmp(const void *a, const void *b) {
 }
 
 char **options_get_sorted(int *len) {
-  int num_options = 0;
-  FOREACH_OPTION(opt) {
-    ++num_options;
-  }
-
   char **options = xmalloc(sizeof(*options) * num_options);
   int i = 0;
   FOREACH_OPTION(opt) {

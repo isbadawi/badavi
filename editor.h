@@ -160,7 +160,7 @@ void editor_execute_command(struct editor *editor, char *command);
 
 #define EDITOR_COMMAND_WITH_COMPLETION(name, shortname, completion) \
   static void editor_command_##name(struct editor*, char*, bool); \
-  struct editor_command command_##name = { \
+  static struct editor_command command_##name = { \
       #name, #shortname, completion, editor_command_##name, {0}}; \
   __attribute__((constructor)) \
   static void _constructor_##name(void) { \

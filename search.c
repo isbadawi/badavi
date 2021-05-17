@@ -78,7 +78,7 @@ struct search_match *editor_search(struct editor *editor, char *pattern,
     if (!*pattern) {
       editor_status_err(editor, "No previous regular expression");
       free(pattern);
-      return false;
+      return NULL;
     }
     free_pattern = true;
   }

@@ -180,7 +180,7 @@ static void gb_growgap(struct gapbuf *gb, size_t n) {
 
   size_t newsize = (size_t) (leftsize + rightsize) + newgapsize;
 
-  gb->bufstart = realloc(gb->bufstart, newsize);
+  gb->bufstart = xrealloc(gb->bufstart, newsize);
   gb->gapstart = gb->bufstart + leftsize;
   gb->gapend = gb->gapstart + newgapsize;
   assert(rightsize >= 0);

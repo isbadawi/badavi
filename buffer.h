@@ -6,6 +6,7 @@
 #include <sys/queue.h>
 
 #include "options.h"
+#include "syntax.h"
 #include "util.h"
 
 struct buf;

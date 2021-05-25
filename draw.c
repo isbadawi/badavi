@@ -280,6 +280,23 @@ static void window_draw_cursorline(struct window *window) {
   }
 }
 
+// TODO(ibadawi): support different colorschemes.
+// These hardcoded colors are from wombat256.
+static tb_color token_color(enum syntax_token_kind token) {
+  switch (token) {
+  case SYNTAX_TOKEN_COMMENT: return 246;
+  case SYNTAX_TOKEN_IDENTIFIER: return TB_DEFAULT;
+  case SYNTAX_TOKEN_LITERAL_CHAR: return 194;
+  case SYNTAX_TOKEN_LITERAL_NUMBER: return 173;
+  case SYNTAX_TOKEN_LITERAL_STRING: return 113;
+  case SYNTAX_TOKEN_PREPROC: return 173;
+  case SYNTAX_TOKEN_PUNCTUATION: return TB_DEFAULT;
+  case SYNTAX_TOKEN_STATEMENT: return 111;
+  case SYNTAX_TOKEN_TYPE: return 192;
+  default: assert(0); return -1;
+  }
+}
+
 static void window_draw_leaf(struct window *window, struct editor *editor) {
   assert(window->split_type == WINDOW_LEAF);
 
@@ -292,6 +309,10 @@ static void window_draw_leaf(struct window *window, struct editor *editor) {
   size_t numberwidth = window_numberwidth(window);
   int tabstop = window->buffer->opt.tabstop;
 
+  struct syntax syntax;
+  struct syntax_token token = {SYNTAX_TOKEN_NONE, 0, 0};
+  bool highlight = syntax_init(&syntax, window->buffer);
+
   for (size_t y = 0; y < rows; ++y) {
     size_t line = y + window->top;
     window_draw_line_number(window, line);
@@ -303,15 +324,27 @@ static void window_draw_leaf(struct window *window, struct editor *editor) {
       size_t x_offset = tabs * (tabstop - 1) + numberwidth + x;
       size_t col = x + window->left;
       size_t pos = gb_linecol_to_pos(gb, line, col);
+
+      tb_color fg = COLOR_WHITE;
+      tb_color bg = COLOR_DEFAULT;
+
+      if (highlight) {
+        if (token.kind == SYNTAX_TOKEN_NONE ||
+            !(token.pos <= pos && pos < token.pos + token.len)) {
+          syntax_token_at(&syntax, &token, pos);
+        }
+        fg = token_color(token.kind);
+      }
+
       char c = gb_getchar(gb, pos);
       if (c == '\r') {
         continue;
       }
       if (c == '\t') {
         ++tabs;
-        tb_stringf(W2S(x_offset, y), COLOR_WHITE, COLOR_DEFAULT, "%*s", tabstop, "");
+        tb_stringf(W2S(x_offset, y), fg, bg, "%*s", tabstop, "");
       } else {
-        tb_char(W2S(x_offset, y), COLOR_WHITE, COLOR_DEFAULT, gb_utf8(gb, pos));
+        tb_char(W2S(x_offset, y), fg, bg, gb_utf8(gb, pos));
       }
     }
   }

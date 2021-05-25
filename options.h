@@ -8,6 +8,7 @@ typedef char* string;
   OPTION(autoindent, bool, false) \
   OPTION(cinwords, string, "if,else,while,do,for,switch") \
   OPTION(expandtab, bool, false) \
+  OPTION(filetype, string, "") \
   OPTION(modifiable, bool, true) \
   OPTION(modified, bool, false) \
   OPTION(readonly, bool, false) \

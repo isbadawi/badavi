@@ -131,6 +131,14 @@ void buffer_inherit_editor_options(
     buffer->opt.readonly = true;
     buffer->opt.modifiable = false;
   }
+
+  if (buffer->path) {
+    char *filetype = syntax_detect_filetype(buffer->path);
+    if (*filetype) {
+      free(buffer->opt.filetype);
+      buffer->opt.filetype = xstrdup(filetype);
+    }
+  }
 }
 
 void window_inherit_parent_options(struct window *window) {

@@ -20,8 +20,12 @@ char *c_types[] = {
 };
 
 char *c_preproc[] = {
-  "#include", "#define", "#ifdef", "#else", "#error", "#pragma",
-  "NULL", "true", "false"
+  "#include", "#define", "#undef", "#pragma",
+  "#ifdef", "#ifndef", "#if", "#else", "#error", "#endif",
+};
+
+char *c_consts[] = {
+  "true", "false", "NULL",
 };
 
 char *c_stmts[] = {
@@ -66,6 +70,14 @@ static size_t gb_findstring(struct gapbuf *gb, size_t from, char *s) {
   return from + i;
 }
 
+static bool is_escaped(struct gapbuf *gb, size_t pos) {
+  int backslashes = 0;
+  while (gb_getchar(gb, --pos) == '\\') {
+    ++backslashes;
+  }
+  return backslashes % 2 == 1;
+}
+
 static void c_next_token(struct syntax *syntax, struct syntax_token *token) {
   struct gapbuf *gb = syntax->buffer->text;
   size_t size = gb_size(gb);
@@ -80,11 +92,19 @@ static void c_next_token(struct syntax *syntax, struct syntax_token *token) {
     return;
 
   if (isspace(ch)) {
+    if (ch == '\n' && gb_getchar(gb, syntax->pos - 1) != '\\') {
+      syntax->state = STATE_INIT;
+    }
     RETURN_TOKEN(IDENTIFIER, 1);
   }
 
   if (isdigit(ch)) {
     RETURN_TOKEN(LITERAL_NUMBER, 1);
+  }
+
+  len = gb_startswith_any_at(gb, syntax->pos, c_consts, ARRAY_SIZE(c_consts));
+  if (len) {
+    RETURN_TOKEN(LITERAL_NUMBER, len);
   }
 
   len = gb_startswith_any_at(gb, syntax->pos, c_types, ARRAY_SIZE(c_types));
@@ -99,7 +119,7 @@ static void c_next_token(struct syntax *syntax, struct syntax_token *token) {
 
   len = gb_startswith_any_at(gb, syntax->pos, c_preproc, ARRAY_SIZE(c_preproc));
   if (len) {
-    // TODO(ibadawi): State machine to highlight preprocessor differently
+    syntax->state = STATE_PREPROC;
     RETURN_TOKEN(PREPROC, len);
   }
 
@@ -116,15 +136,22 @@ static void c_next_token(struct syntax *syntax, struct syntax_token *token) {
     RETURN_TOKEN(COMMENT, end - syntax->pos);
   }
 
-  // FIXME(ibadawi): Handle escaped backslashes
   if (ch == '"') {
     size_t start = syntax->pos + 1;
     size_t end;
     do {
       end = gb_indexof(gb, '"', start);
       start = end + 1;
-    } while (end < size && gb_getchar(gb, end - 1) == '\\');
+    } while (end < size && is_escaped(gb, end));
     RETURN_TOKEN(LITERAL_STRING, end - syntax->pos + 1);
+  }
+
+  if (syntax->state == STATE_PREPROC && ch == '<') {
+    size_t end = gb_indexof(gb, '>', syntax->pos + 1);
+    size_t newline = gb_indexof(gb, '\n', syntax->pos + 1);
+    if (end < newline) {
+      RETURN_TOKEN(LITERAL_STRING, end - syntax->pos + 1);
+    }
   }
 
   if (ch == '\'') {
@@ -133,18 +160,25 @@ static void c_next_token(struct syntax *syntax, struct syntax_token *token) {
     do {
       end = gb_indexof(gb, '\'', start);
       start = end + 1;
-    } while (end < size && gb_getchar(gb, end - 1) == '\\');
+    } while (end < size && is_escaped(gb, end));
     RETURN_TOKEN(LITERAL_CHAR, end - syntax->pos + 1);
   }
 
   if (ispunct(ch)) {
-    RETURN_TOKEN(PUNCTUATION, 1);
+    if (syntax->state == STATE_PREPROC) {
+      RETURN_TOKEN(PREPROC, 1);
+    } else {
+      RETURN_TOKEN(PUNCTUATION, 1);
+    }
   }
 
   size_t end = syntax->pos + 1;
   while (is_word_char(gb_getchar(gb, end++))) {}
-  RETURN_TOKEN(IDENTIFIER, end - syntax->pos - 1);
-#undef RETURN_TOKEN
+  if (syntax->state == STATE_PREPROC) {
+    RETURN_TOKEN(PREPROC, end - syntax->pos - 1);
+  } else {
+    RETURN_TOKEN(IDENTIFIER, end - syntax->pos - 1);
+  }
 }
 
 static void c_token_at(struct syntax *syntax, struct syntax_token *token, size_t pos) {
@@ -193,6 +227,7 @@ bool syntax_init(struct syntax *syntax, struct buffer *buffer) {
   if (!syntax->tokenizer) {
     return false;
   }
+  syntax->state = STATE_INIT;
   syntax->pos = 0;
   return true;
 }

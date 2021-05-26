@@ -26,6 +26,10 @@ struct syntax {
   struct buffer *buffer;
   tokenizer_func tokenizer;
   size_t pos;
+  enum syntax_state {
+    STATE_INIT,
+    STATE_PREPROC
+  } state;
 };
 
 char *syntax_detect_filetype(char *path);

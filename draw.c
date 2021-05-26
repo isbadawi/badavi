@@ -420,8 +420,8 @@ static void editor_draw_popup(struct editor *editor) {
   struct window *window = editor->window;
   size_t x, y;
   bool ok = window_pos_to_xy(window, popup->pos, &x, &y);
-  x--; y++;
   assert(ok);
+  x--; y++;
 
   size_t sx = W2SX(x);
   size_t sy = W2SY(y);

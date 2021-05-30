@@ -37,7 +37,7 @@ void search_result_free_matches(struct search_result *result);
 
 bool editor_ignore_case(struct editor *editor, char *pattern);
 
-void regex_search(char *str, char *pattern, bool ignore_case,
+void regex_search(char *str, size_t len, char *pattern, bool ignore_case,
                   struct search_result *result);
 
 size_t match_or_default(struct search_match *match, size_t def);

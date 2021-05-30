@@ -30,7 +30,8 @@ bool editor_ignore_case(struct editor *editor, char *pattern) {
   return true;
 }
 
-void regex_search(char *str, char *pattern, bool ignore_case, struct search_result *result) {
+void regex_search(char *str, size_t len, char *pattern, bool ignore_case,
+                  struct search_result *result) {
   int flags = PCRE2_MULTILINE;
   if (ignore_case) {
     flags |= PCRE2_CASELESS;
@@ -68,7 +69,7 @@ void regex_search(char *str, char *pattern, bool ignore_case, struct search_resu
 
     rc = pcre2_match(
         regex,
-        (unsigned char*)str, PCRE2_ZERO_TERMINATED,
+        (unsigned char*)str, len,
         start, flags, match, NULL);
 
     if (rc > 0) {
@@ -104,12 +105,7 @@ struct search_match *editor_search(struct editor *editor, char *pattern,
   struct search_result result;
   bool ignore_case = editor_ignore_case(editor, pattern);
 
-  // FIXME(ibadawi): the gap buffer is not null-terminated in general,
-  //                 but regexec expects a null-terminated string.
-  char old = gb->bufend[-1];
-  gb->bufend[-1] = '\0';
-  regex_search(gb->gapend, pattern, ignore_case, &result);
-  gb->bufend[-1] = old;
+  regex_search(gb->gapend, gb_size(gb), pattern, ignore_case, &result);
 
   if (!result.ok) {
     editor_status_err(editor, "Bad regex \"%s\": %s", pattern, result.error);

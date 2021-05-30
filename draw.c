@@ -156,7 +156,7 @@ static void window_draw_search_matches(struct window *window,
   struct buf *text = gb_getstring(gb, start, end - start);
 
   struct search_result result;
-  regex_search(text->buf, pattern, ignore_case, &result);
+  regex_search(text->buf, text->len, pattern, ignore_case, &result);
   buf_free(text);
   if (!result.ok) {
     return;

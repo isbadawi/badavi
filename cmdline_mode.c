@@ -58,6 +58,7 @@ void cmdline_mode_exited(struct editor *editor) {
 }
 
 static void search_done_cb(struct editor *editor, char *command) {
+  editor->status_silence = false;
   struct cmdline_mode *mode = editor_get_cmdline_mode(editor);
   enum search_direction direction =
       mode->prompt == '/' ? SEARCH_FORWARDS : SEARCH_BACKWARDS;

@@ -1,10 +1,12 @@
 #include "options.h"
 
 #include <assert.h>
-#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 #include "buf.h"
 #include "buffer.h"
@@ -263,30 +265,46 @@ static void editor_command_set_impl(
     return;
   }
 
-  regex_t regex;
-  regcomp(&regex, "(no)?([a-z]+)(\\+?=[0-9a-zA-Z,_]*|!|\\?|&)?", REG_EXTENDED);
+  int errorcode = 0;
+  PCRE2_SIZE erroroffset = 0;
+  pcre2_code *regex = pcre2_compile(
+      (unsigned char*) "(no)?([a-z]+)(\\+?=[0-9a-zA-Z,_]*|!|\\?|&)?",
+      PCRE2_ZERO_TERMINATED,
+      /* options */ 0,
+      &errorcode,
+      &erroroffset,
+      NULL);
+  assert(regex);
 
-  regmatch_t groups[4];
-  int nomatch = regexec(&regex, arg, 4, groups, 0);
-  regfree(&regex);
+  pcre2_match_data *groups = pcre2_match_data_create_from_pattern(regex, NULL);
+  int rc = pcre2_match(regex, (unsigned char*) arg, PCRE2_ZERO_TERMINATED, 0, 0, groups, NULL);
+  pcre2_code_free(regex);
 
 #define ENSURE(condition, fmt, ...) \
   if (!(condition)) { \
+    if (groups) pcre2_match_data_free(groups); \
     editor_status_err(editor, fmt, ##__VA_ARGS__); \
     return; \
   }
 
 #define INVALID(condition) ENSURE(!(condition), "Invalid argument: %s", arg)
 
-  INVALID(nomatch);
+  INVALID(rc < 0);
 
   char opt[32];
-  size_t optlen = (size_t) (groups[2].rm_eo - groups[2].rm_so);
-  strncpy(opt, arg + groups[2].rm_so, optlen);
-  opt[optlen] = '\0';
+  PCRE2_SIZE optlen = sizeof(opt);
+  pcre2_substring_copy_bynumber(groups, 2, (unsigned char*)opt, &optlen);
 
   struct opt *info = option_info(opt);
   ENSURE(info, "Unknown option: %s", opt);
+
+  PCRE2_SIZE *offsets = pcre2_get_ovector_pointer(groups);
+  PCRE2_SIZE rhs_offset = offsets[6];
+  bool negate = offsets[3] != PCRE2_UNSET;
+  pcre2_match_data_free(groups);
+  groups = NULL;
+
+  INVALID(negate && info->type != OPTION_TYPE_bool);
 
   enum {
     OPTION_ACTION_NONE,
@@ -300,18 +318,14 @@ static void editor_command_set_impl(
   } action = OPTION_ACTION_NONE;
   char *rhs = NULL;
 
-  regoff_t rhs_offset = groups[3].rm_so;
-  regoff_t no_offset = groups[1].rm_so;
-  INVALID(no_offset != -1 && info->type != OPTION_TYPE_bool);
-
-  if (rhs_offset == -1) {
+  if (rhs_offset == PCRE2_UNSET) {
     switch (info->type) {
     case OPTION_TYPE_int:
     case OPTION_TYPE_string:
       action = OPTION_ACTION_SHOW;
       break;
     case OPTION_TYPE_bool:
-      if (no_offset == -1) {
+      if (!negate) {
         action = OPTION_ACTION_ENABLE;
       } else {
         action = OPTION_ACTION_DISABLE;

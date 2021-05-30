@@ -16,6 +16,13 @@ LIBCLIPBOARD_HEADER := $(LIBCLIPBOARD_INSTALL_DIR)/include/libclipboard.h
 LIBCLIPBOARD_LIBRARY := $(LIBCLIPBOARD_INSTALL_DIR)/lib/libclipboard.a
 LIBCLIPBOARD := $(LIBCLIPBOARD_HEADER) $(LIBCLIPBOARD_LIBRARY)
 
+PCRE2_DIR := vendor/pcre2
+PCRE2_INSTALL_DIR := $(BUILD_DIR)/pcre2
+PCRE2_BUILD_DIR := $(PCRE2_INSTALL_DIR)/build
+PCRE2_HEADER := $(PCRE2_INSTALL_DIR)/include/pcre2.h
+PCRE2_LIBRARY := $(PCRE2_INSTALL_DIR)/lib/libpcre2-8.a
+PCRE2 := $(PCRE2_HEADER) $(PCRE2_LIBRARY)
+
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
 LIBCLIPBOARD_LDFLAGS := -framework Cocoa
@@ -24,8 +31,8 @@ LIBCLIPBOARD_LDFLAGS := -lxcb -lpthread
 endif
 LDFLAGS := $(LIBCLIPBOARD_LDFLAGS)
 
-THIRD_PARTY_HEADERS := $(TERMBOX_HEADER) $(LIBCLIPBOARD_HEADER)
-THIRD_PARTY_LIBRARIES := $(TERMBOX_LIBRARY) $(LIBCLIPBOARD_LIBRARY)
+THIRD_PARTY_HEADERS := $(TERMBOX_HEADER) $(LIBCLIPBOARD_HEADER) $(PCRE2_HEADER)
+THIRD_PARTY_LIBRARIES := $(TERMBOX_LIBRARY) $(LIBCLIPBOARD_LIBRARY) $(PCRE2_LIBRARY)
 
 WARNING_CFLAGS := -Wall -Wextra -Werror
 
@@ -120,6 +127,15 @@ $(LIBCLIPBOARD_INSTALL_DIR): | $$(@D)/. $(LIBCLIPBOARD_BUILD_DIR)/.
 
 $(LIBCLIPBOARD): $(LIBCLIPBOARD_INSTALL_DIR)
 
+$(PCRE2_INSTALL_DIR): | $$(@D)/. $(PCRE2_BUILD_DIR)/.
+	(cd $(PCRE2_BUILD_DIR) && \
+	  cmake \
+	    -DCMAKE_INSTALL_PREFIX=$(abspath $@) \
+	    $(abspath $(PCRE2_DIR)) && \
+	  $(MAKE) && \
+	  $(MAKE) install)
+
+$(PCRE2): $(PCRE2_INSTALL_DIR)
 
 # We define the rule for test objects first because in GNU make 3.81, when
 # multiple pattern rules match a target, the first one is chosen. This is

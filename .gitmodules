@@ -7,3 +7,7 @@
 [submodule "vendor/libclipboard"]
 	path = vendor/libclipboard
 	url = https://github.com/jtanx/libclipboard
+[submodule "vendor/pcre2"]
+	path = vendor/pcre2
+	url = https://github.com/BurntSushi/pcre2-mirror.git
+	branch = release/10.32

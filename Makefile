@@ -105,37 +105,19 @@ $(BUILD_DIR)/.:
 $(BUILD_DIR)%/.:
 	mkdir -p $@
 
-$(TERMBOX_INSTALL_DIR): | $$(@D)/. $(TERMBOX_BUILD_DIR)/.
-	(cd $(TERMBOX_BUILD_DIR) && \
-	  cmake \
-	    -DCMAKE_INSTALL_PREFIX=$(abspath $@) \
-	    -DBUILD_SHARED_LIBS=OFF \
-	    -DBUILD_DEMOS=OFF \
-	    $(abspath $(TERMBOX_DIR)) && \
+define cmake_dep
+$$($(1)_INSTALL_DIR): | $$$$(@D)/. $$($(1)_BUILD_DIR)/.
+	(cd $$($(1)_BUILD_DIR) && \
+	  cmake -DCMAKE_INSTALL_PREFIX=$$(abspath $$@) $(2) $$(abspath $$($(1)_DIR)) && \
 	  $(MAKE) && \
 	  $(MAKE) install)
 
-$(TERMBOX): $(TERMBOX_INSTALL_DIR)
+$$($(1)): $$($(1)_INSTALL_DIR)
+endef
 
-$(LIBCLIPBOARD_INSTALL_DIR): | $$(@D)/. $(LIBCLIPBOARD_BUILD_DIR)/.
-	(cd $(LIBCLIPBOARD_BUILD_DIR) && \
-	  cmake \
-	    -DCMAKE_INSTALL_PREFIX=$(abspath $@) \
-	    $(abspath $(LIBCLIPBOARD_DIR)) && \
-	  $(MAKE) && \
-	  $(MAKE) install)
-
-$(LIBCLIPBOARD): $(LIBCLIPBOARD_INSTALL_DIR)
-
-$(PCRE2_INSTALL_DIR): | $$(@D)/. $(PCRE2_BUILD_DIR)/.
-	(cd $(PCRE2_BUILD_DIR) && \
-	  cmake \
-	    -DCMAKE_INSTALL_PREFIX=$(abspath $@) \
-	    $(abspath $(PCRE2_DIR)) && \
-	  $(MAKE) && \
-	  $(MAKE) install)
-
-$(PCRE2): $(PCRE2_INSTALL_DIR)
+$(eval $(call cmake_dep,TERMBOX,-DBUILD_SHARED_LIBS=OFF -DBUILD_DEMOS=OFF))
+$(eval $(call cmake_dep,LIBCLIPBOARD))
+$(eval $(call cmake_dep,PCRE2))
 
 # We define the rule for test objects first because in GNU make 3.81, when
 # multiple pattern rules match a target, the first one is chosen. This is

@@ -5,7 +5,8 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include <regex.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 #include "buffer.h"
 #include "editor.h"
@@ -30,43 +31,57 @@ bool editor_ignore_case(struct editor *editor, char *pattern) {
 }
 
 void regex_search(char *str, char *pattern, bool ignore_case, struct search_result *result) {
-  regex_t regex;
-  int flags = REG_EXTENDED | REG_NEWLINE;
+  int flags = PCRE2_MULTILINE;
   if (ignore_case) {
-    flags |= REG_ICASE;
+    flags |= PCRE2_CASELESS;
   }
-  int err = regcomp(&regex, pattern, flags);
-  if (err) {
+  int errorcode = 0;
+  PCRE2_SIZE erroroffset = 0;
+  pcre2_code *regex = pcre2_compile(
+      (unsigned char*) pattern,
+      PCRE2_ZERO_TERMINATED,
+      flags,
+      &errorcode,
+      &erroroffset,
+      NULL);
+
+  if (!regex) {
     result->ok = false;
-    regerror(err, &regex, result->error, sizeof(result->error));
+    pcre2_get_error_message(errorcode,
+        (unsigned char*)result->error, sizeof(result->error));
     return;
   }
   result->ok = true;
 
   TAILQ_INIT(&result->matches);
+  pcre2_match_data *match = pcre2_match_data_create_from_pattern(regex, NULL);
 
-  int nomatch = 0;
+  int rc = 1;
   size_t start = 0;
-  while (!nomatch) {
-    regmatch_t match;
-    // regexec assumes the string is at the beginning of a line unless told
-    // otherwise. This affects regexes that use ^.
+  while (rc > 0) {
+    // In multiline mode, pcre2 assumes the string is at the beginning of a
+    // line unless told otherwise. This affects patterns that use ^.
     flags = 0;
     if (start > 0 && str[start - 1] != '\n') {
-      flags |= REG_NOTBOL;
+      flags |= PCRE2_NOTBOL;
     }
 
-    nomatch = regexec(&regex, str + start, 1, &match, flags);
-    if (!nomatch) {
+    rc = pcre2_match(
+        regex,
+        (unsigned char*)str, PCRE2_ZERO_TERMINATED,
+        start, flags, match, NULL);
+
+    if (rc > 0) {
+      PCRE2_SIZE *offsets = pcre2_get_ovector_pointer(match);
       struct search_match *smatch = xmalloc(sizeof(*smatch));
-      region_set(&smatch->region,
-                 start + (size_t) match.rm_so,
-                 start + (size_t) match.rm_eo);
+      region_set(&smatch->region, offsets[0], offsets[1]);
       TAILQ_INSERT_TAIL(&result->matches, smatch, pointers);
-      start += max(1, (size_t) match.rm_eo);
+      start += max(1, offsets[1] - start);
     }
   }
-  regfree(&regex);
+
+  pcre2_match_data_free(match);
+  pcre2_code_free(regex);
 }
 
 struct search_match *editor_search(struct editor *editor, char *pattern,

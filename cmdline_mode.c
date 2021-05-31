@@ -34,12 +34,6 @@ void cmdline_mode_entered(struct editor *editor) {
   editor->status_silence = true;
 }
 
-static void clear_incsearch_match(struct editor *editor) {
-  struct search_match **match = &editor->window->incsearch_match;
-  free(*match);
-  *match = NULL;
-}
-
 void cmdline_mode_exited(struct editor *editor) {
   struct cmdline_mode *mode = editor_get_cmdline_mode(editor);
   buf_free(mode->history_prefix);
@@ -47,7 +41,7 @@ void cmdline_mode_exited(struct editor *editor) {
     editor->status_cursor = 0;
   }
   editor->status_silence = false;
-  clear_incsearch_match(editor);
+  editor->window->have_incsearch_match = false;
 
   mode->completion = NULL;
   if (mode->completions) {
@@ -84,14 +78,11 @@ static void search_char_cb(struct editor *editor, char *command) {
   struct cmdline_mode *mode = editor_get_cmdline_mode(editor);
   enum search_direction direction =
       mode->prompt == '/' ? SEARCH_FORWARDS : SEARCH_BACKWARDS;
-  struct search_match *match =
-    editor_search(editor, command, mode->cursor, direction);
-  clear_incsearch_match(editor);
-  if (match) {
-    editor->window->incsearch_match = match;
-    window_set_cursor(editor->window, match->region.start);
+  editor->window->have_incsearch_match = editor_search(
+      editor, command, mode->cursor, direction, &editor->window->incsearch_match);
+  if (editor->window->have_incsearch_match) {
+    window_set_cursor(editor->window, editor->window->incsearch_match.start);
   } else {
-    free(match);
     window_set_cursor(editor->window, mode->cursor);
   }
 }

@@ -3,7 +3,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include <sys/queue.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 #include "util.h"
 
@@ -14,32 +15,28 @@ enum search_direction {
   SEARCH_BACKWARDS
 };
 
-struct search_match {
-  struct region region;
-  TAILQ_ENTRY(search_match) pointers;
+struct search {
+  pcre2_code *regex;
+  pcre2_match_data *groups;
+  unsigned char *str;
+  size_t len;
+  size_t start;
 };
+
+int search_init(struct search *search, char *pattern, bool ignore_case,
+    char *str, size_t len);
+void search_get_error(int error, char *buf, size_t buflen);
+void search_deinit(struct search *search);
+bool search_next_match(struct search *search, struct region *match);
 
 // Search for the given pattern in the currently opened buffer, returning the
 // first match. If pattern is NULL, will instead search for the pattern stored
 // in the last-search-pattern register (/).
-struct search_match *editor_search(struct editor *editor, char *pattern,
-                             size_t start, enum search_direction direction);
-
-struct search_result {
-  bool ok;
-  union {
-    char error[48];
-    TAILQ_HEAD(match_list, search_match) matches;
-  };
-};
-
-void search_result_free_matches(struct search_result *result);
+bool editor_search(
+    struct editor *editor, char *pattern,
+    size_t start, enum search_direction direction, struct region *match);
 
 bool editor_ignore_case(struct editor *editor, char *pattern);
 
-void regex_search(char *str, size_t len, char *pattern, bool ignore_case,
-                  struct search_result *result);
-
-size_t match_or_default(struct search_match *match, size_t def);
 void editor_jump_to_match(struct editor *editor, char *pattern,
                           size_t start, enum search_direction direction);

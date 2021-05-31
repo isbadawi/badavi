@@ -155,19 +155,20 @@ static void window_draw_search_matches(struct window *window,
 
   struct buf *text = gb_getstring(gb, start, end - start);
 
-  struct search_result result;
-  regex_search(text->buf, text->len, pattern, ignore_case, &result);
-  buf_free(text);
-  if (!result.ok) {
+  struct search search;
+  int rc = search_init(&search, pattern, ignore_case, text->buf, text->len);
+  if (rc < 0) {
+    buf_free(text);
     return;
   }
 
-  struct search_match *match;
-  TAILQ_FOREACH(match, &result.matches, pointers) {
-    REGIONFGBG(&match->region, start, COLOR_BLACK, COLOR_YELLOW);
+  struct region match;
+  while (search_next_match(&search, &match)) {
+    REGIONFGBG(&match, start, COLOR_BLACK, COLOR_YELLOW);
   }
 
-  search_result_free_matches(&result);
+  buf_free(text);
+  search_deinit(&search);
 }
 
 static void window_get_ruler(struct window *window, char *buf, size_t buflen) {
@@ -389,19 +390,17 @@ static void editor_draw_window(struct editor *editor) {
   window_scroll(window, (size_t) editor->opt.sidescroll);
   window_draw(root, editor);
 
-  struct search_match *match = editor->window->incsearch_match;
-  if (match) {
-    REGIONFGBG(&match->region, 0, COLOR_BLACK, COLOR_WHITE);
+  if (editor->window->have_incsearch_match) {
+    REGIONFGBG(&editor->window->incsearch_match, 0, COLOR_BLACK, COLOR_WHITE);
   }
 
   if (editor->opt.hlsearch && editor->highlight_search_matches) {
     struct editor_register *lsp = editor_get_register(editor, '/');
-    char *pattern = lsp->read(lsp);
+    char *pattern = lsp->buf->buf;
     if (*pattern) {
       bool ignore_case = editor_ignore_case(editor, pattern);
       window_draw_search_matches(root, pattern, ignore_case);
     }
-    free(pattern);
   }
   CELLFGBG(window_cursor(window), COLOR_BLACK, COLOR_WHITE);
 

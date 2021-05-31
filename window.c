@@ -302,7 +302,7 @@ void window_set_buffer(struct window *window, struct buffer* buffer) {
   window->top = 0;
   window->left = 0;
   region_set(&window->cursor->region, 0, 1);
-  window->incsearch_match = NULL;
+  window->have_incsearch_match = false;
   TAILQ_INSERT_TAIL(&buffer->marks, window->cursor, pointers);
 }
 

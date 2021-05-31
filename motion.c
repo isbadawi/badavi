@@ -298,8 +298,11 @@ static size_t backward_search(struct motion_context ctx) {
 
 static size_t search_cycle(struct motion_context ctx,
                            enum search_direction direction) {
-  struct search_match *match = editor_search(ctx.editor, NULL, ctx.pos, direction);
-  return match_or_default(match, ctx.pos);
+  struct region match;
+  if (editor_search(ctx.editor, NULL, ctx.pos, direction, &match)) {
+    return match.start;
+  }
+  return ctx.pos;
 }
 
 static size_t search_next(struct motion_context ctx) {
@@ -316,11 +319,11 @@ static size_t word_under_cursor(struct motion_context ctx, size_t start,
   struct buf *pattern = buf_create(1);
   buf_printf(pattern, "[[:<:]]%s[[:>:]]", word->buf);
   history_add_item(&ctx.editor->search_history, pattern->buf);
-  struct search_match *match =
-    editor_search(ctx.editor, pattern->buf, start, direction);
+  struct region match;
+  bool found = editor_search(ctx.editor, pattern->buf, start, direction, &match);
   buf_free(word);
   buf_free(pattern);
-  return match_or_default(match, ctx.pos);
+  return found ? match.start : ctx.pos;
 }
 
 static size_t word_under_cursor_next(struct motion_context ctx) {

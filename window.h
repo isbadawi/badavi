@@ -5,6 +5,7 @@
 #include <sys/queue.h>
 
 #include "options.h"
+#include "util.h"
 
 struct window {
   struct window *parent;
@@ -42,7 +43,8 @@ struct window {
       struct mark *cursor;
 
       // The incremental match if 'incsearch' is enabled.
-      struct search_match *incsearch_match;
+      bool have_incsearch_match;
+      struct region incsearch_match;
 
       // The visual mode selection.
       // NULL if not in visual mode.

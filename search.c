@@ -1,13 +1,13 @@
 #include "search.h"
 
+#include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
-#define PCRE2_CODE_UNIT_WIDTH 8
-#include <pcre2.h>
-
+#include "buf.h"
 #include "buffer.h"
 #include "editor.h"
 #include "gap.h"
@@ -30,153 +30,136 @@ bool editor_ignore_case(struct editor *editor, char *pattern) {
   return true;
 }
 
-void regex_search(char *str, size_t len, char *pattern, bool ignore_case,
-                  struct search_result *result) {
+int search_init(struct search *search, char *pattern, bool ignore_case,
+    char *str, size_t len) {
+  memset(search, 0, sizeof(*search));
+
   int flags = PCRE2_MULTILINE;
   if (ignore_case) {
     flags |= PCRE2_CASELESS;
   }
   int errorcode = 0;
   PCRE2_SIZE erroroffset = 0;
-  pcre2_code *regex = pcre2_compile(
-      (unsigned char*) pattern,
-      PCRE2_ZERO_TERMINATED,
-      flags,
-      &errorcode,
-      &erroroffset,
-      NULL);
-
-  if (!regex) {
-    result->ok = false;
-    pcre2_get_error_message(errorcode,
-        (unsigned char*)result->error, sizeof(result->error));
-    return;
+  search->regex = pcre2_compile(
+      (unsigned char*) pattern, PCRE2_ZERO_TERMINATED,
+      flags, &errorcode, &erroroffset, NULL);
+  if (!search->regex) {
+    return errorcode;
   }
-  result->ok = true;
+  search->groups = pcre2_match_data_create_from_pattern(search->regex, NULL);
 
-  TAILQ_INIT(&result->matches);
-  pcre2_match_data *match = pcre2_match_data_create_from_pattern(regex, NULL);
-
-  int rc = 1;
-  size_t start = 0;
-  while (rc > 0) {
-    // In multiline mode, pcre2 assumes the string is at the beginning of a
-    // line unless told otherwise. This affects patterns that use ^.
-    flags = 0;
-    if (start > 0 && str[start - 1] != '\n') {
-      flags |= PCRE2_NOTBOL;
-    }
-
-    rc = pcre2_match(
-        regex,
-        (unsigned char*)str, len,
-        start, flags, match, NULL);
-
-    if (rc > 0) {
-      PCRE2_SIZE *offsets = pcre2_get_ovector_pointer(match);
-      struct search_match *smatch = xmalloc(sizeof(*smatch));
-      region_set(&smatch->region, offsets[0], offsets[1]);
-      TAILQ_INSERT_TAIL(&result->matches, smatch, pointers);
-      start += max(1, offsets[1] - start);
-    }
-  }
-
-  pcre2_match_data_free(match);
-  pcre2_code_free(regex);
+  search->str = (unsigned char*)str;
+  search->len = len;
+  search->start = 0;
+  return 0;
 }
 
-struct search_match *editor_search(struct editor *editor, char *pattern,
-                             size_t start, enum search_direction direction) {
-  bool free_pattern = false;
+void search_deinit(struct search *search) {
+  pcre2_code_free(search->regex);
+  pcre2_match_data_free(search->groups);
+}
+
+void search_get_error(int error, char *buf, size_t buflen) {
+  pcre2_get_error_message(error, (unsigned char*)buf, buflen);
+}
+
+bool search_next_match(struct search *search, struct region *match) {
+  // In multiline mode, pcre2 assumes the string is at the beginning of a
+  // line unless told otherwise. This affects patterns that use ^.
+  int flags = 0;
+  if (search->start > 0 && search->str[search->start - 1] != '\n') {
+    flags |= PCRE2_NOTBOL;
+  }
+
+  int rc = pcre2_match(
+      search->regex, search->str, search->len,
+      search->start, flags, search->groups, NULL);
+
+  if (rc > 0) {
+    PCRE2_SIZE *offsets = pcre2_get_ovector_pointer(search->groups);
+    region_set(match, offsets[0], offsets[1]);
+    search->start += max(1, offsets[1] - search->start);
+    return true;
+  }
+  return false;
+}
+
+bool editor_search(struct editor *editor, char *pattern,
+    size_t start, enum search_direction direction, struct region *match) {
   if (!pattern) {
     struct editor_register *reg = editor_get_register(editor, '/');
-    pattern = reg->read(reg);
+    assert(reg->buf);
+    pattern = reg->buf->buf;
     if (!*pattern) {
       editor_status_err(editor, "No previous regular expression");
-      free(pattern);
       return NULL;
     }
-    free_pattern = true;
   }
 
   struct gapbuf *gb = editor->window->buffer->text;
   // Move the gap so the searched region is contiguous.
   gb_mvgap(gb, 0);
-  struct search_result result;
   bool ignore_case = editor_ignore_case(editor, pattern);
 
-  regex_search(gb->gapend, gb_size(gb), pattern, ignore_case, &result);
+  struct search search;
+  int rc = search_init(&search, pattern, ignore_case, gb->gapend, gb_size(gb));
 
-  if (!result.ok) {
-    editor_status_err(editor, "Bad regex \"%s\": %s", pattern, result.error);
-    return NULL;
+  if (rc < 0) {
+    char error[48];
+    search_get_error(rc, error, sizeof(error));
+    editor_status_err(editor, "Bad regex \"%s\": %s", pattern, error);
+    return false;
   }
 
-  if (TAILQ_EMPTY(&result.matches)) {
-    editor_status_err(editor, "Pattern not found: \"%s\"", pattern);
-    return NULL;
-  }
+#define return search_deinit(&search); return
 
-  struct search_match *match = NULL;
-  struct search_match *m;
   if (direction == SEARCH_FORWARDS) {
-    TAILQ_FOREACH(m, &result.matches, pointers) {
-      if (m->region.start > start) {
-        match = m;
-        break;
-      }
+    search.start = start + 1;
+    if (search_next_match(&search, match)) {
+      return true;
     }
 
-    if (!match) {
-      editor_status_msg(editor, "search hit BOTTOM, continuing at TOP");
-      match = TAILQ_FIRST(&result.matches);
+    editor_status_msg(editor, "search hit BOTTOM, continuing at TOP");
+    search.start = 0;
+    if (search_next_match(&search, match)) {
+      return true;
     }
-  } else {
-    struct search_match *last = NULL;
-    TAILQ_FOREACH(m, &result.matches, pointers) {
-      if (last && last->region.start < start && start <= m->region.start) {
-        match = last;
-        break;
-      }
-      last = m;
-    }
-    if (last->region.start < start) {
-      match = last;
-    }
-    if (!match) {
-      editor_status_msg(editor, "search hit TOP, continuing at BOTTOM");
-      match = TAILQ_LAST(&result.matches, match_list);
-    }
+
+    editor_status_err(editor, "Pattern not found: \"%s\"", pattern);
+    return false;
   }
 
-  if (free_pattern) {
-    free(pattern);
+  assert(direction == SEARCH_BACKWARDS);
+
+  if (!search_next_match(&search, match)) {
+    editor_status_err(editor, "Pattern not found: \"%s\"", pattern);
+    return false;
   }
 
-  TAILQ_REMOVE(&result.matches, match, pointers);
-  search_result_free_matches(&result);
-  return match;
-}
-
-void search_result_free_matches(struct search_result *result) {
-  struct search_match *m, *tm;
-  TAILQ_FOREACH_SAFE(m, &result->matches, pointers, tm) {
-    free(m);
+  if (match->start >= start) {
+    editor_status_msg(editor, "search hit TOP, continuing at BOTTOM");
+    while (search_next_match(&search, match)) {}
+    return true;
   }
-}
 
-size_t match_or_default(struct search_match *match, size_t def) {
-  if (match) {
-    size_t start = match->region.start;
-    free(match);
-    return start;
+  struct region prev = *match;
+  while (match->start < start) {
+    prev = *match;
+    if (!search_next_match(&search, match)) {
+      return true;
+    }
   }
-  return def;
+  *match = prev;
+  return true;
+#undef return
 }
 
 void editor_jump_to_match(struct editor *editor, char *pattern,
                           size_t start, enum search_direction direction) {
-  struct search_match *match = editor_search(editor, pattern, start, direction);
-  window_set_cursor(editor->window,
-      match_or_default(match, window_cursor(editor->window)));
+  struct region match;
+  if (editor_search(editor, pattern, start, direction, &match)) {
+    window_set_cursor(editor->window, match.start);
+  } else {
+    window_set_cursor(editor->window, window_cursor(editor->window));
+  }
 }

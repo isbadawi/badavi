@@ -123,7 +123,12 @@ uint32_t gb_utf8(struct gapbuf *gb, size_t pos) {
 struct buf *gb_getstring(struct gapbuf *gb, size_t pos, size_t n) {
   struct buf *strbuf = buf_create(n + 1);
   char *buf = strbuf->buf;
+  gb_getstring_into(gb, pos, n, buf);
+  strbuf->len = n;
+  return strbuf;
+}
 
+void gb_getstring_into(struct gapbuf *gb, size_t pos, size_t n, char *buf) {
   char *start = gb->bufstart + gb_index(gb, pos);
   char *end = gb->bufstart + gb_index(gb, pos + n);
   if (end < gb->gapstart || start >= gb->gapend) {
@@ -137,8 +142,6 @@ struct buf *gb_getstring(struct gapbuf *gb, size_t pos, size_t n) {
     memcpy(buf + l, gb->gapend, r);
   }
   buf[n] = '\0';
-  strbuf->len = n;
-  return strbuf;
 }
 
 struct buf *gb_getline(struct gapbuf *gb, size_t pos) {

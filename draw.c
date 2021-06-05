@@ -313,7 +313,6 @@ static void window_draw_leaf(struct window *window, struct editor *editor) {
   struct syntax syntax;
   struct syntax_token token = {SYNTAX_TOKEN_NONE, 0, 0};
   bool highlight = syntax_init(&syntax, window->buffer);
-
   for (size_t y = 0; y < rows; ++y) {
     size_t line = y + window->top;
     window_draw_line_number(window, line);
@@ -349,6 +348,8 @@ static void window_draw_leaf(struct window *window, struct editor *editor) {
       }
     }
   }
+  syntax_deinit(&syntax);
+
   window_draw_visual_mode_selection(window);
   window_draw_cursorline(window);
 

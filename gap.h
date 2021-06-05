@@ -61,6 +61,9 @@ size_t gb_utf8len_line(struct gapbuf *gb, size_t line);
 // Reads n characters starting at offset pos.
 struct buf *gb_getstring(struct gapbuf *gb, size_t pos, size_t n);
 
+// Like gb_getstring, but read into a buffer instead of allocating.
+void gb_getstring_into(struct gapbuf *gb, size_t pos, size_t n, char *buf);
+
 // Returns the line the given pos is on.
 struct buf *gb_getline(struct gapbuf *gb, size_t pos);
 

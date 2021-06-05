@@ -3,6 +3,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
+
 struct syntax_token {
   enum syntax_token_kind {
     SYNTAX_TOKEN_NONE,
@@ -30,8 +33,11 @@ struct syntax {
     STATE_INIT,
     STATE_PREPROC
   } state;
+  pcre2_code *regex;
+  pcre2_match_data *groups;
 };
 
 char *syntax_detect_filetype(char *path);
 bool syntax_init(struct syntax *syntax, struct buffer *buffer);
+void syntax_deinit(struct syntax *syntax);
 void syntax_token_at(struct syntax *syntax, struct syntax_token *token, size_t pos);

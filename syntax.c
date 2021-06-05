@@ -1,5 +1,6 @@
 #include "syntax.h"
 
+#include <assert.h>
 #include <ctype.h>
 #include <string.h>
 
@@ -7,31 +8,20 @@
 #include "gap.h"
 #include "util.h"
 
-char *c_types[] = {
-  "char", "short", "int", "long", "signed", "unsigned", "void",
-  "float", "double", "struct", "enum", "union", "typedef",
-  "size_t", "ssize_t", "off_t", "ptrdiff_t", "sig_atomic_t",
-  "clock_t", "time_t", "va_list", "jmp_buf", "FILE", "DIR",
-  "bool", "_Bool", "int8_t", "uint8_t", "int16_t", "uint16_t",
-  "int32_t", "uint32_t", "int64_t", "uint64_t", "intptr_t", "uintptr_t",
+char c_regex[] =
+  // Types
+  "(char|short|int|long|signed|unsigned|void|float|double|struct|enum|union|"
+  "typedef|size_t|ssize_t|off_t|ptrdiff_t|sig_atomic_t|clock_t|time_t|va_list|"
+  "jmp_buf|FILE|DIR|bool|_Bool|int8_t|uint8_t|int16_t|uint16_t|int32_t|"
+  "uint32_t|int64_t|uint64_t|intptr_t|uintptr_t|"
   // These are not really types but just for the purposes of highlighting
-  "auto", "const", "extern", "inline", "register", "restrict",
-  "static", "volatile",
-};
-
-char *c_preproc[] = {
-  "#include", "#define", "#undef", "#pragma",
-  "#ifdef", "#ifndef", "#if", "#else", "#error", "#endif",
-};
-
-char *c_consts[] = {
-  "true", "false", "NULL",
-};
-
-char *c_stmts[] = {
-  "asm", "break", "case", "continue", "default", "do", "else", "for", "goto",
-  "if", "return", "sizeof", "switch", "while",
-};
+  "auto|const|extern|inline|register|restrict|static|volatile)|"
+  // Preprocessor directives
+  "(#include|#define|#undef|#pragma|#ifdef|#ifndef|#if|#else|#error|#endif)|"
+  // Constants
+  "(true|false|NULL)|"
+  // Statements
+  "(asm|break|case|continue|default|do|else|for|goto|if|return|sizeof|switch|while)\\b";
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))
 
@@ -47,18 +37,6 @@ static bool gb_startswith_at(struct gapbuf *gb, size_t pos, char *prefix) {
 
 static bool is_word_char(char c) {
   return isalnum(c) || c == '_';
-}
-
-static size_t gb_startswith_any_at(
-    struct gapbuf *gb, size_t pos, char **prefixes, size_t num_prefixes) {
-  for (size_t i = 0; i < num_prefixes; ++i) {
-    size_t len = strlen(prefixes[i]);
-    if (gb_startswith_at(gb, pos, prefixes[i]) &&
-        !is_word_char(gb_getchar(gb, pos + len))) {
-      return len;
-    }
-  }
-  return 0;
 }
 
 static size_t gb_findstring(struct gapbuf *gb, size_t from, char *s) {
@@ -82,7 +60,6 @@ static void c_next_token(struct syntax *syntax, struct syntax_token *token) {
   struct gapbuf *gb = syntax->buffer->text;
   size_t size = gb_size(gb);
   char ch = gb_getchar(gb, syntax->pos);
-  size_t len;
 
 #define RETURN_TOKEN(type, len_) \
     token->pos = syntax->pos; \
@@ -102,25 +79,31 @@ static void c_next_token(struct syntax *syntax, struct syntax_token *token) {
     RETURN_TOKEN(LITERAL_NUMBER, 1);
   }
 
-  len = gb_startswith_any_at(gb, syntax->pos, c_consts, ARRAY_SIZE(c_consts));
-  if (len) {
-    RETURN_TOKEN(LITERAL_NUMBER, len);
-  }
+  char prefix[16];
+  gb_getstring_into(gb, syntax->pos, 16, prefix);
 
-  len = gb_startswith_any_at(gb, syntax->pos, c_types, ARRAY_SIZE(c_types));
-  if (len) {
-    RETURN_TOKEN(TYPE, len);
-  }
+  int rc = pcre2_match(syntax->regex,
+      (unsigned char*) prefix, PCRE2_ZERO_TERMINATED, 0, 0, syntax->groups, NULL);
+  if (rc > 0) {
+    PCRE2_SIZE *offsets = pcre2_get_ovector_pointer(syntax->groups);
 
-  len = gb_startswith_any_at(gb, syntax->pos, c_stmts, ARRAY_SIZE(c_stmts));
-  if (len) {
-    RETURN_TOKEN(STATEMENT, len);
-  }
+    token->pos = syntax->pos;
+    token->len = offsets[1] - offsets[0];
+    syntax->pos += token->len;
 
-  len = gb_startswith_any_at(gb, syntax->pos, c_preproc, ARRAY_SIZE(c_preproc));
-  if (len) {
-    syntax->state = STATE_PREPROC;
-    RETURN_TOKEN(PREPROC, len);
+    if (offsets[2] != PCRE2_UNSET) {
+      token->kind = SYNTAX_TOKEN_TYPE;
+    } else if (offsets[4] != PCRE2_UNSET) {
+      syntax->state = STATE_PREPROC;
+      token->kind = SYNTAX_TOKEN_PREPROC;
+    } else if (offsets[6] != PCRE2_UNSET) {
+      token->kind = SYNTAX_TOKEN_LITERAL_NUMBER;
+    } else if (offsets[8] != PCRE2_UNSET) {
+      token->kind = SYNTAX_TOKEN_STATEMENT;
+    } else {
+      assert(0);
+    }
+    return;
   }
 
   if (gb_startswith_at(gb, syntax->pos, "//")) {
@@ -191,8 +174,9 @@ static struct filetype {
   char *name;
   char *exts[2];
   tokenizer_func tokenizer;
+  char *regex;
 } supported_filetypes[] = {
-  {"c", {"c", "h"}, c_token_at},
+  {"c", {"c", "h"}, c_token_at, c_regex},
 };
 
 char *syntax_detect_filetype(char *path) {
@@ -211,25 +195,39 @@ char *syntax_detect_filetype(char *path) {
   return "";
 }
 
-static tokenizer_func tokenizer_for(char *type) {
-  for (size_t i = 0; i < ARRAY_SIZE(supported_filetypes); ++i) {
-    struct filetype *filetype = &supported_filetypes[i];
-    if (!strcmp(type, filetype->name)) {
-      return filetype->tokenizer;
-    }
-  }
-  return NULL;
-}
-
 bool syntax_init(struct syntax *syntax, struct buffer *buffer) {
   syntax->buffer = buffer;
-  syntax->tokenizer = tokenizer_for(buffer->opt.filetype);
+  syntax->tokenizer = NULL;
+  unsigned char *regex = NULL;
+  for (size_t i = 0; i < ARRAY_SIZE(supported_filetypes); ++i) {
+    struct filetype *filetype = &supported_filetypes[i];
+    if (!strcmp(buffer->opt.filetype, filetype->name)) {
+      syntax->tokenizer = filetype->tokenizer;
+      regex = (unsigned char*) filetype->regex;
+    }
+  }
+
   if (!syntax->tokenizer) {
     return false;
   }
   syntax->state = STATE_INIT;
   syntax->pos = 0;
+
+  int errorcode;
+  PCRE2_SIZE erroroffset;
+  syntax->regex = pcre2_compile(regex,
+      PCRE2_ZERO_TERMINATED, PCRE2_ANCHORED,
+      &errorcode, &erroroffset, NULL);
+  assert(regex);
+  syntax->groups = pcre2_match_data_create_from_pattern(syntax->regex, NULL);
   return true;
+}
+
+void syntax_deinit(struct syntax *syntax) {
+  if (syntax->tokenizer) {
+    pcre2_code_free(syntax->regex);
+    pcre2_match_data_free(syntax->groups);
+  }
 }
 
 void syntax_token_at(struct syntax *syntax, struct syntax_token *token, size_t pos) {

@@ -132,16 +132,15 @@ void buf_vprintf(struct buf *buf, const char *format, va_list args) {
   va_copy(args_copy, args);
   // Try once...
   size_t n = (size_t) vsnprintf(buf->buf, buf->cap, format, args);
-  va_end(args);
 
   // vsnprintf returns the required size if it wasn't enough, so grow to that
   // size and try again.
   if (n >= buf->cap) {
     buf_grow(buf, n + 1);
     n = (size_t) vsnprintf(buf->buf, buf->cap, format, args_copy);
-    va_end(args_copy);
   }
 
+  va_end(args_copy);
   buf->len = n;
 }
 

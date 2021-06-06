@@ -15,11 +15,11 @@ char c_regex[] =
   "jmp_buf|FILE|DIR|bool|_Bool|int8_t|uint8_t|int16_t|uint16_t|int32_t|"
   "uint32_t|int64_t|uint64_t|intptr_t|uintptr_t|"
   // These are not really types but just for the purposes of highlighting
-  "auto|const|extern|inline|register|restrict|static|volatile)|"
+  "auto|const|extern|inline|register|restrict|static|volatile)\\b|"
   // Preprocessor directives
-  "(#include|#define|#undef|#pragma|#ifdef|#ifndef|#if|#else|#error|#endif)|"
+  "(#include|#define|#undef|#pragma|#ifdef|#ifndef|#if|#else|#error|#endif)\\b|"
   // Constants
-  "(true|false|NULL)|"
+  "(true|false|NULL)\\b|"
   // Statements
   "(asm|break|case|continue|default|do|else|for|goto|if|return|sizeof|switch|while)\\b";
 

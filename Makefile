@@ -117,7 +117,7 @@ endef
 
 $(eval $(call cmake_dep,TERMBOX,-DBUILD_SHARED_LIBS=OFF -DBUILD_DEMOS=OFF))
 $(eval $(call cmake_dep,LIBCLIPBOARD))
-$(eval $(call cmake_dep,PCRE2))
+$(eval $(call cmake_dep,PCRE2,-DPCRE2_BUILD_PCRE2GREP=OFF -DPCRE2_BUILD_TESTS=OFF))
 
 # We define the rule for test objects first because in GNU make 3.81, when
 # multiple pattern rules match a target, the first one is chosen. This is

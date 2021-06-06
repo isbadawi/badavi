@@ -22,7 +22,9 @@ struct window *window_create(struct buffer *buffer, size_t w, size_t h) {
   window->buffer = NULL;
   window->alternate_path = NULL;
   window->cursor = xmalloc(sizeof(*window->cursor));
-  window_set_buffer(window, buffer);
+  if (buffer) {
+    window_set_buffer(window, buffer);
+  }
   window->visual_mode_selection = NULL;
 
   window->w = w;

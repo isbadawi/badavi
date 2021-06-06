@@ -168,17 +168,17 @@ struct editor *editor_create_and_open(size_t width, size_t height, char *path) {
 
   editor_init_options(editor);
 
-  TAILQ_INIT(&editor->buffers);
-  struct buffer *buffer;
-  if (path) {
-    buffer = buffer_open(path);
-  } else {
-    buffer = buffer_create(NULL);
-  }
-  buffer_inherit_editor_options(buffer, editor);
-  TAILQ_INSERT_TAIL(&editor->buffers, buffer, pointers);
+  editor->window = window_create(NULL, editor->width, editor->height - 1);
 
-  editor->window = window_create(buffer, editor->width, editor->height - 1);
+  TAILQ_INIT(&editor->buffers);
+  if (!path) {
+    struct buffer *buffer = buffer_create(NULL);
+    buffer_inherit_editor_options(buffer, editor);
+    TAILQ_INSERT_TAIL(&editor->buffers, buffer, pointers);
+    window_set_buffer(editor->window, buffer);
+  } else {
+    editor_open(editor, path);
+  }
 
   history_init(&editor->command_history, &editor->opt.history);
   history_init(&editor->search_history, &editor->opt.history);

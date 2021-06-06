@@ -17,6 +17,7 @@ int main(int argc, char *argv[]) {
   enum window_split_type split_type = WINDOW_LEAF;
   bool pathargs[argc];
   memset(pathargs, 0, sizeof(pathargs));
+  char *initial_path = NULL;
 
   char *rc = NULL;
   char default_rc[255];
@@ -42,14 +43,18 @@ int main(int argc, char *argv[]) {
     } else if (*arg == '+') {
       line = arg + 1;
     } else {
-      pathargs[i] = true;
+      if (!initial_path) {
+        initial_path = arg;
+      } else {
+        pathargs[i] = true;
+      }
     }
   }
 
   terminal_init();
 
-  struct editor *editor = editor_create(
-      (size_t) tb_width(), (size_t) tb_height());
+  struct editor *editor = editor_create_and_open(
+      (size_t) tb_width(), (size_t) tb_height(), initial_path);
 
   if (!rc) {
     snprintf(default_rc, sizeof(default_rc), "%s/.badavimrc", homedir());
@@ -65,14 +70,6 @@ int main(int argc, char *argv[]) {
   if (tag) {
     editor_jump_to_tag(editor, tag);
   } else {
-    int i;
-    for (i = 1; i < argc; ++i) {
-      if (pathargs[i]) {
-        editor_open(editor, argv[i++]);
-        break;
-      }
-    }
-
     if (split_type != WINDOW_LEAF) {
       enum window_split_direction direction;
       if (split_type == WINDOW_SPLIT_HORIZONTAL) {
@@ -81,7 +78,7 @@ int main(int argc, char *argv[]) {
         assert(split_type == WINDOW_SPLIT_VERTICAL);
         direction = WINDOW_SPLIT_RIGHT;
       }
-      for (; i < argc; ++i) {
+      for (int i = 1; i < argc; ++i) {
         if (pathargs[i]) {
           editor->window = window_split(editor->window, direction);
           editor_open(editor, argv[i]);

@@ -102,6 +102,7 @@ struct editor {
 };
 
 struct editor *editor_create(size_t width, size_t height);
+struct editor *editor_create_and_open(size_t width, size_t height, char *path);
 void editor_free(struct editor *editor);
 
 void editor_open(struct editor *editor, char *path);

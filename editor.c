@@ -102,7 +102,7 @@ void editor_free(struct editor *editor) {
   free(editor);
 }
 
-struct editor *editor_create(size_t width, size_t height) {
+struct editor *editor_create_and_open(size_t width, size_t height, char *path) {
   struct editor *editor = xmalloc(sizeof(*editor));
 
   editor->width = width;
@@ -169,7 +169,12 @@ struct editor *editor_create(size_t width, size_t height) {
   editor_init_options(editor);
 
   TAILQ_INIT(&editor->buffers);
-  struct buffer *buffer = buffer_create(NULL);
+  struct buffer *buffer;
+  if (path) {
+    buffer = buffer_open(path);
+  } else {
+    buffer = buffer_create(NULL);
+  }
   buffer_inherit_editor_options(buffer, editor);
   TAILQ_INSERT_TAIL(&editor->buffers, buffer, pointers);
 
@@ -179,6 +184,10 @@ struct editor *editor_create(size_t width, size_t height) {
   history_init(&editor->search_history, &editor->opt.history);
 
   return editor;
+}
+
+struct editor *editor_create(size_t width, size_t height) {
+  return editor_create_and_open(width, height, NULL);
 }
 
 struct editor_register *editor_get_register(struct editor *editor, char name) {

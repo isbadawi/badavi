@@ -95,6 +95,7 @@ void window_set_buffer(struct window *window, struct buffer *buffer);
 
 size_t window_cursor(struct window *window);
 void window_set_cursor(struct window *window, size_t pos);
+void window_center_cursor(struct window *window);
 
 size_t window_w(struct window *window);
 size_t window_h(struct window *window);

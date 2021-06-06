@@ -471,6 +471,17 @@ void window_set_cursor(struct window *window, size_t pos) {
   region_set(&window->cursor->region, pos, pos + 1);
 }
 
+void window_center_cursor(struct window *window) {
+  size_t cursor = window_cursor(window);
+  size_t line, col;
+  gb_pos_to_linecol(window->buffer->text, cursor, &line, &col);
+
+  size_t h = window_h(window);
+  if (line > h/2) {
+    window->top = line - h/2;
+  }
+}
+
 void window_page_up(struct window *window) {
   if (window->top == 0) {
     return;

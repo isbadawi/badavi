@@ -389,7 +389,7 @@ static struct motion motion_table[] = {
   {'W', next_WORD_start, EXCLUSIVE},
   {'e', next_word_end, INCLUSIVE},
   {'E', next_WORD_end, INCLUSIVE},
-  {'G', down, LINEWISE}, // See motion_apply...
+  {'G', NULL, LINEWISE}, // See motion_apply...
   {'t', till_forward_exclusive, INCLUSIVE},
   {'f', till_forward_inclusive, INCLUSIVE},
   {'T', till_backward_exclusive, INCLUSIVE},
@@ -431,18 +431,21 @@ struct motion *motion_get(struct editor *editor, struct tb_event *ev) {
 }
 
 size_t motion_apply(struct motion *motion, struct editor *editor) {
-  unsigned int n = editor->count ? editor->count : 1;
-
   size_t cursor = window_cursor(editor->window);
   struct motion_context ctx = {cursor, editor->window, editor};
 
-  size_t nlines = gb_nlines(editor->window->buffer->text);
-  // TODO(isbadawi): This is a hack to make G work correctly.
+  // For G, don't repeatedly apply a motion; jump directly to the target line.
   if (motion->name == 'G') {
-    n = (editor->count ? editor->count : (unsigned int) nlines) - 1;
-    ctx.pos = buffer_top(ctx);
+    struct gapbuf *gb = editor->window->buffer->text;
+    int line = gb_nlines(gb) - 1;
+    if (editor->count) {
+      line = min((int)editor->count - 1, line);
+    }
+    editor->count = 0;
+    return gb_linecol_to_pos(gb, line, 0);
   }
 
+  unsigned int n = editor->count ? editor->count : 1;
   for (unsigned int i = 0; i < n; ++i) {
     ctx.pos = motion->op(ctx);
   }

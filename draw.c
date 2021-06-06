@@ -238,17 +238,13 @@ static void window_draw_ruler(struct window *window) {
   tb_string(W2S(w - strlen(ruler) - 1, h), fg, bg, ruler);
 }
 
-static void window_draw_line_number(struct window *window, size_t line) {
+static void window_draw_line_number(struct window *window, size_t line, size_t cursorline) {
   bool number = window->opt.number;
   bool relativenumber = window->opt.relativenumber;
 
   if (!number && !relativenumber) {
     return;
   }
-
-  size_t cursorline, cursorcol;
-  gb_pos_to_linecol(window->buffer->text, window_cursor(window),
-      &cursorline, &cursorcol);
 
   size_t linenumber = line + 1;
   if (relativenumber && !(number && line == cursorline)) {
@@ -310,6 +306,10 @@ static void window_draw_leaf(struct window *window, struct editor *editor) {
   size_t numberwidth = window_numberwidth(window);
   int tabstop = window->buffer->opt.tabstop;
 
+  size_t cursorline, cursorcol;
+  gb_pos_to_linecol(window->buffer->text, window_cursor(window),
+      &cursorline, &cursorcol);
+
   struct syntax syntax;
   struct syntax_token token = {SYNTAX_TOKEN_NONE, 0, 0};
   bool highlight = syntax_init(&syntax, window->buffer);
@@ -321,7 +321,7 @@ static void window_draw_leaf(struct window *window, struct editor *editor) {
 
   for (size_t y = 0; y < rows; ++y) {
     size_t line = y + window->top;
-    window_draw_line_number(window, line);
+    window_draw_line_number(window, line, cursorline);
 
     if (y > 0) {
       line_pos += gb->lines->buf[line - 1] + 1;

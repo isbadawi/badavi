@@ -44,6 +44,7 @@ int search_init(struct search *search, char *pattern, bool ignore_case,
       (unsigned char*) pattern, PCRE2_ZERO_TERMINATED,
       flags, &errorcode, &erroroffset, NULL);
   if (!search->regex) {
+    assert(errorcode != 0);
     return errorcode;
   }
   search->groups = pcre2_match_data_create_from_pattern(search->regex, NULL);
@@ -104,7 +105,7 @@ bool editor_search(struct editor *editor, char *pattern,
   struct search search;
   int rc = search_init(&search, pattern, ignore_case, gb->gapend, gb_size(gb));
 
-  if (rc < 0) {
+  if (rc) {
     char error[48];
     search_get_error(rc, error, sizeof(error));
     editor_status_err(editor, "Bad regex \"%s\": %s", pattern, error);

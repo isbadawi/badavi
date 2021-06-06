@@ -56,7 +56,7 @@ size_t gb_utf8next(struct gapbuf *gb, size_t pos);
 // Returns the offset of the previous utf8 start byte before pos.
 size_t gb_utf8prev(struct gapbuf *gb, size_t pos);
 // Returns the number of the unicode codepoints for the given line.
-size_t gb_utf8len_line(struct gapbuf *gb, size_t line);
+size_t gb_utf8len_line(struct gapbuf *gb, size_t line_pos);
 
 // Reads n characters starting at offset pos.
 struct buf *gb_getstring(struct gapbuf *gb, size_t pos, size_t n);

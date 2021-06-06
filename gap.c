@@ -296,8 +296,7 @@ size_t gb_linecol_to_pos(struct gapbuf *gb, size_t line, size_t column) {
   return offset;
 }
 
-size_t gb_utf8len_line(struct gapbuf *gb, size_t line) {
-  size_t pos = gb_linecol_to_pos(gb, line, 0);
+size_t gb_utf8len_line(struct gapbuf *gb, size_t pos) {
   size_t len = 0;
   while (gb_getchar(gb, pos) != '\n') {
     pos += gb_utf8len(gb, pos);

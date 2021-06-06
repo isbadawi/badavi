@@ -313,17 +313,36 @@ static void window_draw_leaf(struct window *window, struct editor *editor) {
   struct syntax syntax;
   struct syntax_token token = {SYNTAX_TOKEN_NONE, 0, 0};
   bool highlight = syntax_init(&syntax, window->buffer);
+
+  size_t line_pos = 0;
+  for (size_t i = 0; i < window->top; ++i) {
+    line_pos += gb->lines->buf[i] + 1;
+  }
+
   for (size_t y = 0; y < rows; ++y) {
     size_t line = y + window->top;
     window_draw_line_number(window, line);
 
-    size_t cols = (size_t) max(0,
-        min((ssize_t) gb_utf8len_line(gb, line) - (ssize_t) window->left, (ssize_t) w));
+    if (y > 0) {
+      line_pos += gb->lines->buf[line - 1] + 1;
+    }
+
     size_t tabs = 0;
+    size_t linelen = gb_utf8len_line(gb, line_pos);
+    size_t cols = (size_t)max(0,
+        min((ssize_t)linelen - (ssize_t)window->left, (ssize_t)w));
+
+    size_t pos = line_pos;
+    for (size_t i = 0; i < window->left; ++i) {
+      pos += gb_utf8len(gb, pos);
+    }
+
     for (size_t x = 0; x < cols; ++x) {
       size_t x_offset = tabs * (tabstop - 1) + numberwidth + x;
-      size_t col = x + window->left;
-      size_t pos = gb_linecol_to_pos(gb, line, col);
+
+      if (x > 0) {
+        pos += gb_utf8len(gb, pos);
+      }
 
       tb_color fg = COLOR_WHITE;
       tb_color bg = COLOR_DEFAULT;

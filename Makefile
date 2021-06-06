@@ -41,7 +41,7 @@ ASAN_CFLAGS := $(if $(ASAN),-fsanitize=address -fsanitize-recover=address)
 LDFLAGS += $(COVERAGE_CFLAGS) $(ASAN_CFLAGS)
 
 # Use C11 for anonymous structs.
-COMMON_CFLAGS := -g -std=c11 -D_GNU_SOURCE \
+COMMON_CFLAGS := -g -std=c11 -D_GNU_SOURCE -DPCRE2_CODE_UNIT_WIDTH=8 \
 	$(addprefix -isystem ,$(dir $(THIRD_PARTY_HEADERS))) \
 	$(WARNING_CFLAGS)
 

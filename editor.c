@@ -59,7 +59,7 @@ char **commands_get_sorted(int *len) {
 static clipboard_c *clipboard = NULL;
 
 static char* register_buffer_read(struct editor_register *reg) {
-  return strdup(reg->buf->buf);
+  return xstrdup(reg->buf->buf);
 }
 
 static void register_buffer_write(struct editor_register *reg, char *text) {

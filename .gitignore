@@ -1,4 +1,6 @@
 asan-build
+build
+compile_commands.json
 coverage
 coverage-build
-build
+tags

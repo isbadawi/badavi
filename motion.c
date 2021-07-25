@@ -22,14 +22,6 @@ static bool is_line_end(struct gapbuf *gb, size_t pos) {
   return pos == gb_size(gb) - 1 || gb_getchar(gb, pos) == '\n';
 }
 
-static bool is_first_line(struct gapbuf *gb, size_t pos) {
-  return pos <= gb->lines->buf[0];
-}
-
-static bool is_last_line(struct gapbuf *gb, size_t pos) {
-  return pos >= gb_size(gb) - 1 - gb->lines->buf[gb->lines->len - 1];
-}
-
 static bool is_blank_line(struct gapbuf *gb, size_t pos) {
   return gb_getchar(gb, pos) == '\n' && is_line_start(gb, pos);
 }
@@ -44,24 +36,32 @@ static size_t right(struct motion_context ctx) {
   return is_line_end(gb, ctx.pos) ? ctx.pos : gb_utf8next(gb, ctx.pos);
 }
 
-static size_t up(struct motion_context ctx) {
-  if (is_first_line(ctx.window->buffer->text, ctx.pos)) {
-    return ctx.pos;
+static size_t goto_line(struct motion_context ctx) {
+  struct gapbuf *gb = ctx.editor->window->buffer->text;
+  int line = gb_nlines(gb) - 1;
+  if (ctx.editor->count) {
+    line = min((int)ctx.editor->count - 1, line);
   }
+  return gb_linecol_to_pos(gb, line, 0);
+}
+
+static size_t up(struct motion_context ctx) {
   struct gapbuf *gb = ctx.window->buffer->text;
   size_t x, y;
   gb_pos_to_linecol(gb, ctx.pos, &y, &x);
-  return gb_linecol_to_pos(gb, y - 1, min(x, gb->lines->buf[y - 1]));
+  int dy = ctx.editor->count ? ctx.editor->count : 1;
+  int line = max((int)y - dy, 0);
+  return gb_linecol_to_pos(gb, line, min(x, gb->lines->buf[line]));
 }
 
 static size_t down(struct motion_context ctx) {
-  if (is_last_line(ctx.window->buffer->text, ctx.pos)) {
-    return ctx.pos;
-  }
   struct gapbuf *gb = ctx.window->buffer->text;
+  int nlines = gb_nlines(gb);
   size_t x, y;
   gb_pos_to_linecol(gb, ctx.pos, &y, &x);
-  return gb_linecol_to_pos(gb, y + 1, min(x, gb->lines->buf[y + 1]));
+  int dy = ctx.editor->count ? ctx.editor->count : 1;
+  int line = min((int)y + dy, nlines - 1);
+  return gb_linecol_to_pos(gb, line, min(x, gb->lines->buf[line]));
 }
 
 static size_t line_start(struct motion_context ctx) {
@@ -372,44 +372,46 @@ static size_t matching_paren(struct motion_context ctx) {
 #define LINEWISE true, false
 #define EXCLUSIVE false, true
 #define INCLUSIVE false, false
+#define REPEAT true
+#define DIRECT false
 
 static struct motion motion_table[] = {
-  {'h', left, EXCLUSIVE},
-  {'j', down, LINEWISE},
-  {'k', up, LINEWISE},
-  {'l', right, EXCLUSIVE},
-  {'0', line_start, EXCLUSIVE},
-  {'$', line_end, INCLUSIVE},
-  {'^', first_non_blank, EXCLUSIVE},
-  {'{', paragraph_start, EXCLUSIVE},
-  {'}', paragraph_end, EXCLUSIVE},
-  {'b', prev_word_start, EXCLUSIVE},
-  {'B', prev_WORD_start, EXCLUSIVE},
-  {'w', next_word_start, EXCLUSIVE},
-  {'W', next_WORD_start, EXCLUSIVE},
-  {'e', next_word_end, INCLUSIVE},
-  {'E', next_WORD_end, INCLUSIVE},
-  {'G', NULL, LINEWISE}, // See motion_apply...
-  {'t', till_forward_exclusive, INCLUSIVE},
-  {'f', till_forward_inclusive, INCLUSIVE},
-  {'T', till_backward_exclusive, INCLUSIVE},
-  {'F', till_backward_inclusive, INCLUSIVE},
-  {'/', forward_search, EXCLUSIVE},
-  {'?', backward_search, EXCLUSIVE},
-  {'n', search_next, EXCLUSIVE},
-  {'N', search_prev, EXCLUSIVE},
-  {'*', word_under_cursor_next, EXCLUSIVE},
-  {'#', word_under_cursor_prev, EXCLUSIVE},
-  {'%', matching_paren, INCLUSIVE},
-  {-1, NULL, false, false}
+  {'h', left, EXCLUSIVE, REPEAT},
+  {'j', down, LINEWISE, DIRECT},
+  {'k', up, LINEWISE, DIRECT},
+  {'l', right, EXCLUSIVE, REPEAT},
+  {'0', line_start, EXCLUSIVE, REPEAT},
+  {'$', line_end, INCLUSIVE, REPEAT},
+  {'^', first_non_blank, EXCLUSIVE, REPEAT},
+  {'{', paragraph_start, EXCLUSIVE, REPEAT},
+  {'}', paragraph_end, EXCLUSIVE, REPEAT},
+  {'b', prev_word_start, EXCLUSIVE, REPEAT},
+  {'B', prev_WORD_start, EXCLUSIVE, REPEAT},
+  {'w', next_word_start, EXCLUSIVE, REPEAT},
+  {'W', next_WORD_start, EXCLUSIVE, REPEAT},
+  {'e', next_word_end, INCLUSIVE, REPEAT},
+  {'E', next_WORD_end, INCLUSIVE, REPEAT},
+  {'G', goto_line, LINEWISE, DIRECT},
+  {'t', till_forward_exclusive, INCLUSIVE, REPEAT},
+  {'f', till_forward_inclusive, INCLUSIVE, REPEAT},
+  {'T', till_backward_exclusive, INCLUSIVE, REPEAT},
+  {'F', till_backward_inclusive, INCLUSIVE, REPEAT},
+  {'/', forward_search, EXCLUSIVE, REPEAT},
+  {'?', backward_search, EXCLUSIVE, REPEAT},
+  {'n', search_next, EXCLUSIVE, REPEAT},
+  {'N', search_prev, EXCLUSIVE, REPEAT},
+  {'*', word_under_cursor_next, EXCLUSIVE, REPEAT},
+  {'#', word_under_cursor_prev, EXCLUSIVE, REPEAT},
+  {'%', matching_paren, INCLUSIVE, REPEAT},
+  {-1, NULL, false, false, false}
 };
 
 static struct motion g_motion_table[] = {
-  {'_', last_non_blank, INCLUSIVE},
-  {'e', prev_word_end, INCLUSIVE},
-  {'E', prev_WORD_end, INCLUSIVE},
-  {'g', buffer_top, LINEWISE},
-  {-1, NULL, false, false}
+  {'_', last_non_blank, INCLUSIVE, REPEAT},
+  {'e', prev_word_end, INCLUSIVE, REPEAT},
+  {'E', prev_WORD_end, INCLUSIVE, REPEAT},
+  {'g', buffer_top, LINEWISE, REPEAT},
+  {-1, NULL, false, false, false}
 };
 
 static struct motion *motion_find(struct motion *table, char name) {
@@ -434,15 +436,10 @@ size_t motion_apply(struct motion *motion, struct editor *editor) {
   size_t cursor = window_cursor(editor->window);
   struct motion_context ctx = {cursor, editor->window, editor};
 
-  // For G, don't repeatedly apply a motion; jump directly to the target line.
-  if (motion->name == 'G') {
-    struct gapbuf *gb = editor->window->buffer->text;
-    int line = gb_nlines(gb) - 1;
-    if (editor->count) {
-      line = min((int)editor->count - 1, line);
-    }
+  if (!motion->repeat) {
+    size_t pos = motion->op(ctx);
     editor->count = 0;
-    return gb_linecol_to_pos(gb, line, 0);
+    return pos;
   }
 
   unsigned int n = editor->count ? editor->count : 1;

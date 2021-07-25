@@ -19,6 +19,9 @@ struct motion {
   // (See :help exclusive in vim for details).
   // This is only relevant for characterwise motions.
   bool exclusive;
+  // Whether the motion callback should be invoked repeatedly
+  // (as opposed to being aware of editor->count).
+  bool repeat;
 };
 
 struct tb_event;

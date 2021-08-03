@@ -229,7 +229,7 @@ void cmdline_mode_key_pressed(struct editor *editor, struct tb_event *ev) {
     return;
   }
   case TB_KEY_ESC: case TB_KEY_CTRL_C:
-    buf_clear(editor->status);
+    editor_status_clear(editor);
     window_set_cursor(editor->window, mode->cursor);
     editor_pop_mode(editor);
     return;

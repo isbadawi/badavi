@@ -14,7 +14,11 @@
 
 static void editor_show_mode(struct editor *editor) {
   if (editor->opt.showmode) {
-    editor_status_msg(editor, "-- INSERT --");
+    if (editor->recording) {
+      editor_status_msg(editor, "-- INSERT --recording @%c", editor->recording);
+    } else {
+      editor_status_msg(editor, "-- INSERT --");
+    }
   }
 }
 
@@ -38,7 +42,7 @@ void insert_mode_exited(struct editor *editor) {
     TAILQ_REMOVE(undo_stack, group, pointers);
   }
 
-  buf_clear(editor->status);
+  editor_status_clear(editor);
 
   struct insert_mode *mode = editor_get_insert_mode(editor);
   free(mode->completion_prefix);

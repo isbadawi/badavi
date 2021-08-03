@@ -151,7 +151,7 @@ void editor_tag_stack_prev(struct editor *editor) {
   } else if (!editor->window->tag) {
     editor_status_err(editor, "at bottom of tag stack");
   } else {
-    buf_clear(editor->status);
+    editor_status_clear(editor);
     editor->status_error = false;
     window_set_buffer(editor->window, editor->window->tag->buffer);
     window_set_cursor(editor->window, editor->window->tag->cursor);

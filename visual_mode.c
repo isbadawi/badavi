@@ -24,7 +24,11 @@ void visual_mode_entered(struct editor *editor) {
     visual_mode_selection_update(editor);
   }
   if (editor->opt.showmode) {
-    editor_status_msg(editor, "-- VISUAL --");
+    if (editor->recording) {
+      editor_status_msg(editor, "-- VISUAL --recording @%c", editor->recording);
+    } else {
+      editor_status_msg(editor, "-- VISUAL --");
+    }
   }
 }
 
@@ -32,7 +36,7 @@ void visual_mode_exited(struct editor *editor) {
   struct visual_mode *mode = editor_get_visual_mode(editor);
   mode->cursor = 0;
   editor->window->visual_mode_selection = NULL;
-  buf_clear(editor->status);
+  editor_status_clear(editor);
 }
 
 void visual_mode_key_pressed(struct editor* editor, struct tb_event* ev) {

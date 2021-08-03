@@ -117,6 +117,7 @@ struct editor *editor_create_and_open(size_t width, size_t height, char *path) {
   memset(&editor->popup, 0, sizeof(editor->popup));
 
   editor->highlight_search_matches = false;
+  editor->recording = '\0';
 
   memset(&editor->modes, 0, sizeof(editor->modes));
 #define MODE(name) do { \
@@ -409,6 +410,32 @@ EDITOR_COMMAND(buffers, ls) {
     flags[3] = buffer->opt.modified ? '+' : flags[3];
     const char *path = editor_buffer_name(editor, buffer);
     buf_appendf(editor->message, "\n  %d %s \"%s\"", i++, flags, path);
+  }
+  editor_status_msg(editor, "Press ENTER to continue ");
+  editor->status_cursor = editor->status->len - 1;
+}
+
+EDITOR_COMMAND(registers, reg) {
+  buf_clear(editor->message);
+  buf_appendf(editor->message, "\n Type Name Content");
+  for (int i = 0; i < EDITOR_NUM_REGISTERS; ++i) {
+    struct editor_register *reg = &editor->registers[i];
+    if (arg && !strchr(arg, reg->name)) {
+      continue;
+    }
+    char *contents = reg->read(reg);
+    if (*contents) {
+      buf_appendf(editor->message, "\n  c   \"%c   ", reg->name);
+      for (char *c = contents; *c; ++c) {
+        if (*c < 32 || *c == 127) {
+          // Escape using caret notation.
+          buf_appendf(editor->message, "^%c", *c ^ 0x40);
+        } else {
+          buf_appendf(editor->message, "%c", *c);
+        }
+      }
+    }
+    free(contents);
   }
   editor_status_msg(editor, "Press ENTER to continue ");
   editor->status_cursor = editor->status->len - 1;
@@ -707,7 +734,7 @@ static void editor_suspend(struct editor *editor) {
   editor_draw(editor);
 }
 
-static int editor_poll_event(struct editor *editor, struct tb_event *ev) {
+static int editor_poll_event(struct editor *editor, struct tb_event *ev, bool *synthetic) {
   struct editor_event *top = TAILQ_FIRST(&editor->synthetic_events);
   if (top) {
     TAILQ_REMOVE(&editor->synthetic_events, top, pointers);
@@ -716,13 +743,17 @@ static int editor_poll_event(struct editor *editor, struct tb_event *ev) {
     ev->key = top->key;
     ev->ch = top->ch;
     free(top);
+    *synthetic = true;
     return ev->type;
   }
+
+  *synthetic = false;
   return tb_poll_event(ev);
 }
 
 bool editor_waitkey(struct editor *editor, struct tb_event *ev) {
-  if (editor_poll_event(editor, ev) < 0) {
+  bool synthetic = false;
+  if (editor_poll_event(editor, ev, &synthetic) < 0) {
     return false;
   }
   if (ev->type == TB_EVENT_KEY && ev->key == TB_KEY_CTRL_Z) {
@@ -737,6 +768,24 @@ bool editor_waitkey(struct editor *editor, struct tb_event *ev) {
     window_equalize(root, WINDOW_SPLIT_HORIZONTAL);
     window_equalize(root, WINDOW_SPLIT_VERTICAL);
   } else {
+    if (!synthetic && editor->recording && ev->ch != 'q') {
+      struct editor_register *reg = editor_get_register(editor, editor->recording);
+      assert(reg);
+      char *rec = reg->read(reg);
+
+      char ch = ev->ch;
+      switch (ev->key) {
+      case TB_KEY_ENTER: ch = '\n'; break;
+      case TB_KEY_ESC: ch = '\e'; break;
+      case TB_KEY_TAB: ch = '\t'; break;
+      case TB_KEY_BACKSPACE: ch = '\b'; break;
+      }
+      char add[2] = {ch, '\0'};
+      strcat(rec, add);
+      reg->write(reg, rec);
+
+      free(rec);
+    }
     return true;
   }
   editor_draw(editor);
@@ -804,9 +853,11 @@ void editor_send_keys(struct editor *editor, const char *keys) {
       k += key_len + 1;
       break;
     }
-    case ' ':
-      ev->key = TB_KEY_SPACE;
-      break;
+    case ' ': ev->key = TB_KEY_SPACE; break;
+    case '\t': ev->key = TB_KEY_TAB; break;
+    case '\n': ev->key = TB_KEY_ENTER; break;
+    case '\e': ev->key = TB_KEY_ESC; break;
+    case '\b': ev->key = TB_KEY_BACKSPACE; break;
     default:
       ev->ch = (uint32_t) *k;
       break;
@@ -851,6 +902,13 @@ void editor_status_err(struct editor *editor, const char *format, ...) {
   buf_vprintf(editor->status, format, args);
   va_end(args);
   editor->status_error = true;
+}
+
+void editor_status_clear(struct editor *editor) {
+  buf_clear(editor->status);
+  if (editor->recording) {
+    editor_status_msg(editor, "recording @%c", editor->recording);
+  }
 }
 
 void editor_undo(struct editor *editor) {

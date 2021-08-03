@@ -62,7 +62,7 @@ void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
   if (editor->message->len) {
     if (ev->key == TB_KEY_ENTER) {
       buf_clear(editor->message);
-      buf_clear(editor->status);
+      editor_status_clear(editor);
       editor->status_cursor = 0;
     }
     return;
@@ -226,6 +226,45 @@ void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
   case 'D': editor_send_keys(editor, "d$"); break;
   case 'C': editor_send_keys(editor, "c$"); break;
   casemod('J') editor_join_lines(editor); break;
+  case 'q': {
+    if (editor->recording) {
+      editor->recording = '\0';
+      editor_status_clear(editor);
+      break;
+    }
+
+    char ch = editor_getchar(editor);
+    struct editor_register *reg = editor_get_register(editor, ch);
+    if (!reg) {
+      break;
+    }
+    reg->write(reg, "");
+
+    editor->recording = ch;
+    editor_status_msg(editor, "recording @%c", ch);
+    break;
+  }
+  case '@': {
+    char ch = editor_getchar(editor);
+    struct editor_register *reg = editor_get_register(editor, ch);
+    if (!reg) {
+      break;
+    }
+
+    char *rec = reg->read(reg);
+
+    int count = 1;
+    if (editor->count) {
+      count = editor->count;
+    }
+
+    for (int i = 0; i < count; ++i) {
+      editor_send_keys(editor, rec);
+    }
+
+    free(rec);
+    break;
+  }
   case 'g': {
     struct tb_event next;
     editor_waitkey(editor, &next);

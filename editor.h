@@ -81,6 +81,9 @@ struct editor {
 
   bool highlight_search_matches;
 
+  // Which register is being recorded into (or '\0' if not recording).
+  char recording;
+
   // Temporary input state.
   // TODO(isbadawi): This feels like a kludge but I don't know...
   unsigned int count;
@@ -133,6 +136,7 @@ ATTR_PRINTFLIKE(2, 3)
 void editor_status_msg(struct editor *editor, const char *format, ...);
 ATTR_PRINTFLIKE(2, 3)
 void editor_status_err(struct editor *editor, const char *format, ...);
+void editor_status_clear(struct editor *editor);
 
 void editor_push_event(struct editor *editor, struct tb_event *ev);
 void editor_send_keys(struct editor *editor, const char *keys);

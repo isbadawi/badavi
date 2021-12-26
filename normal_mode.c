@@ -228,6 +228,16 @@ void normal_mode_key_pressed(struct editor* editor, struct tb_event* ev) {
   casemod('J') editor_join_lines(editor); break;
   case 'q': {
     if (editor->recording) {
+      // This 'q' is recorded already by the time we get here, so strip it out.
+      struct editor_register *reg =
+        editor_get_register(editor, editor->recording);
+      char *rec = reg->read(reg);
+      size_t len = strlen(rec);
+      assert(rec[len - 1] == 'q');
+      rec[len - 1] = '\0';
+      reg->write(reg, rec);
+      free(rec);
+
       editor->recording = '\0';
       editor_status_clear(editor);
       break;

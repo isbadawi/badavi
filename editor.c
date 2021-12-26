@@ -768,7 +768,7 @@ bool editor_waitkey(struct editor *editor, struct tb_event *ev) {
     window_equalize(root, WINDOW_SPLIT_HORIZONTAL);
     window_equalize(root, WINDOW_SPLIT_VERTICAL);
   } else {
-    if (!synthetic && editor->recording && ev->ch != 'q') {
+    if (!synthetic && editor->recording) {
       struct editor_register *reg = editor_get_register(editor, editor->recording);
       assert(reg);
       char *rec = reg->read(reg);

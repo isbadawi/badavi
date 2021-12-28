@@ -15,6 +15,7 @@ struct editor_event {
   uint8_t type;
   uint16_t key;
   uint32_t ch;
+  bool from_test;
 
   TAILQ_ENTRY(editor_event) pointers;
 };
@@ -140,6 +141,11 @@ void editor_status_clear(struct editor *editor);
 
 void editor_push_event(struct editor *editor, struct tb_event *ev);
 void editor_send_keys(struct editor *editor, const char *keys);
+
+// Should only be used for testing -- it allows you to send "real" key
+// presses that the code won't consider synthetic.
+void editor_send_keys_internal(
+    struct editor *editor, const char *keys, bool from_test);
 
 void editor_undo(struct editor *editor);
 void editor_redo(struct editor *editor);

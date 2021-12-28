@@ -16,7 +16,7 @@
 static struct editor *editor = NULL;
 
 static char *type(const char *keys) {
-  editor_send_keys(editor, keys);
+  editor_send_keys_internal(editor, keys, /* from_test */ true);
   return editor->status->buf;
 }
 
@@ -204,4 +204,11 @@ void test_editor__completion(void) {
   cl_assert_equal_s(type("<tab>"), ":split");
   cl_assert_equal_s(type("<bs><bs><bs><bs><bs>vsp<tab>"), ":vsplit");
   type("<esc>");
+}
+
+void test_editor__recording(void) {
+  type("qqohello, world!<esc>q");
+  assert_buffer_contents("\nhello, world!\n");
+  type("@q");
+  assert_buffer_contents("\nhello, world!\nhello, world!\n");
 }

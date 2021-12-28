@@ -742,8 +742,8 @@ static int editor_poll_event(struct editor *editor, struct tb_event *ev, bool *s
     ev->type = top->type;
     ev->key = top->key;
     ev->ch = top->ch;
+    *synthetic = !top->from_test;
     free(top);
-    *synthetic = true;
     return ev->type;
   }
 
@@ -812,16 +812,19 @@ void editor_push_event(struct editor *editor, struct tb_event *ev) {
   event->type = ev->type;
   event->key = ev->key;
   event->ch = ev->ch;
+  event->from_test = false;
   TAILQ_INSERT_HEAD(&editor->synthetic_events, event, pointers);
 }
 
-void editor_send_keys(struct editor *editor, const char *keys) {
+void editor_send_keys_internal(
+    struct editor *editor, const char *keys, bool from_test) {
   struct editor_event *last = NULL;
   for (const char *k = keys; *k; ++k) {
     struct editor_event *ev = xmalloc(sizeof(*ev));
     ev->type = TB_EVENT_KEY;
     ev->key = 0;
     ev->ch = 0;
+    ev->from_test = from_test;
     switch (*k) {
     case '<': {
       char key[10];
@@ -880,6 +883,10 @@ void editor_send_keys(struct editor *editor, const char *keys) {
     assert(ok);
     editor_handle_key_press(editor, &ev);
   }
+}
+
+void editor_send_keys(struct editor *editor, const char *keys) {
+  editor_send_keys_internal(editor, keys, /* from_test */ false);
 }
 
 void editor_status_msg(struct editor *editor, const char *format, ...) {

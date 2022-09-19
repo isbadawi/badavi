@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 struct buf;
+struct region;
 
 // A "gap buffer" or "split buffer". It's a big buffer that internally
 // is separated into two buffers with a gap in the middle -- this allows
@@ -89,3 +90,5 @@ ssize_t gb_lastindexof(struct gapbuf *gb, char c, size_t start);
 void gb_pos_to_linecol(struct gapbuf *gb, size_t pos, size_t *line, size_t *offset);
 // Vice versa.
 size_t gb_linecol_to_pos(struct gapbuf *gb, size_t line, size_t offset);
+
+struct region *gb_getlines(struct gapbuf *gb);

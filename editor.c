@@ -587,6 +587,20 @@ EDITOR_COMMAND(source, so) {
   editor_source(editor, arg);
 }
 
+static int linecmp(const void *a, const void *b) {
+  char linea[256];
+  return strcmp(*(char * const *)a, *(char * const *)b);
+}
+
+EDITOR_COMMAND(sort, sor) {
+  struct gapbuf *gb = editor->window->buffer->text;
+  struct region *lines = gb_getlines(gb);
+
+  qsort(lines, gb_nlines(gb), sizeof(*lines), linecmp);
+
+  free(lines);
+}
+
 struct editor_command *command_parse(
     char *command, char **arg, bool *force) {
   if (!*command) {

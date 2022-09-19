@@ -319,3 +319,14 @@ size_t gb_utf8prev(struct gapbuf *gb, size_t pos) {
   } while (!isutf8start(gb_getchar(gb, pos)));
   return pos;
 }
+
+struct region *gb_getlines(struct gapbuf *gb) {
+  struct region *lines = xmalloc(sizeof(*lines) * gb->lines->len);
+  size_t pos = 0;
+  for (size_t i = 0; i < gb->lines->len; ++i) {
+    lines[i].start = pos;
+    lines[i].end = pos + gb->lines->buf[i];
+    pos += gb->lines->buf[i] + 1;
+  }
+  return lines;
+}

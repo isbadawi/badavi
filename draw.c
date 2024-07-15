@@ -198,11 +198,6 @@ static void window_get_ruler(struct window *window, char *buf, size_t buflen) {
 }
 
 static void window_draw_plate(struct window *window, struct editor *editor) {
-  size_t w = window_w(window);
-  if (window_right(window)) {
-    --w;
-  }
-
   const char *path = editor_buffer_name(editor, window->buffer);
 
   char plate[256];

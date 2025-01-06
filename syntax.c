@@ -79,7 +79,7 @@ static void c_next_token(struct syntax *syntax, struct syntax_token *token) {
     RETURN_TOKEN(LITERAL_NUMBER, 1);
   }
 
-  char prefix[16];
+  char prefix[16 + 1];
   gb_getstring_into(gb, syntax->pos, 16, prefix);
 
   int rc = pcre2_match(syntax->regex,

@@ -277,11 +277,11 @@ static void editor_command_set_impl(
 
   pcre2_match_data *groups = pcre2_match_data_create_from_pattern(regex, NULL);
   int rc = pcre2_match(regex, (unsigned char*) arg, PCRE2_ZERO_TERMINATED, 0, 0, groups, NULL);
-  pcre2_code_free(regex);
 
 #define ENSURE(condition, fmt, ...) \
   if (!(condition)) { \
     if (groups) pcre2_match_data_free(groups); \
+    if (regex) pcre2_code_free(regex); \
     editor_status_err(editor, fmt, ##__VA_ARGS__); \
     return; \
   }
@@ -302,6 +302,8 @@ static void editor_command_set_impl(
   bool negate = offsets[3] != PCRE2_UNSET;
   pcre2_match_data_free(groups);
   groups = NULL;
+  pcre2_code_free(regex);
+  regex = NULL;
 
   INVALID(negate && info->type != OPTION_TYPE_bool);
 
